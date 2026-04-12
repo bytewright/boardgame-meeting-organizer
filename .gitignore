@@ -28,3 +28,5 @@ target/
 !.mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/
+/src/main/frontend/generated/
+/src/main/frontend/index.html

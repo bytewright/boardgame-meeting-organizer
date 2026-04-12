@@ -1,0 +1,47 @@
+package org.bytewright.bgmo.usecases;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.*;
+
+import java.util.Set;
+import org.bytewright.bgmo.domain.model.MeetupCreation;
+import org.bytewright.bgmo.domain.model.MeetupEvent;
+import org.bytewright.bgmo.domain.model.MeetupJoinRequest;
+import org.bytewright.bgmo.domain.model.user.RegisteredUser;
+import org.bytewright.bgmo.domain.service.data.MeetupDao;
+import org.bytewright.bgmo.testutils.IntegrationTest;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+
+class MeetupWorkflowsTest extends IntegrationTest {
+  @Autowired private MeetupWorkflows meetupWorkflows;
+  @Autowired private MeetupDao meetupDao;
+
+  @Test
+  void testCreateAndJoinMeetup() {
+    // ARRANGE
+    RegisteredUser creator = helper.user();
+    RegisteredUser joiner = helper.user();
+    MeetupEvent meetupEvent =
+        meetupWorkflows.create(
+            MeetupCreation.builder()
+                .title("myEvent")
+                .creator(creator)
+                .eventDate(helper.now())
+                .joinSlots(1)
+                .build());
+    // ACT
+    meetupWorkflows.requestToJoin(meetupEvent.getId(), joiner.getId(), null);
+    // ASSERT
+    MeetupEvent meetup = meetupDao.findById(meetupEvent.getId()).orElseThrow();
+    assertThat(meetup.getJoinRequests()).hasSize(1);
+    MeetupJoinRequest request = meetup.getJoinRequests().getFirst();
+    assertThat(request)
+        .returns(meetup.getId(), MeetupJoinRequest::getMeetupId)
+        .returns(joiner.getId(), MeetupJoinRequest::getUserId);
+    // ACT
+    MeetupEvent refetchedEvent =
+        meetupWorkflows.confirmAttendees(meetup.getId(), Set.of(joiner.getId()));
+    assertThat(refetchedEvent.getConfirmedAttendeeIds()).containsExactly(joiner.getId());
+  }
+}
