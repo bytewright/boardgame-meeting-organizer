@@ -33,8 +33,7 @@ import org.bytewright.bgmo.usecases.MeetupWorkflows;
 @PermitAll
 public class DashboardView extends VerticalLayout implements BeforeEnterObserver {
 
-  private static final DateTimeFormatter DATE_FMT =
-          DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm");
+  private static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm");
 
   private final SessionAuthenticationService authService;
   private final MeetupWorkflows meetupWorkflows;
@@ -42,9 +41,9 @@ public class DashboardView extends VerticalLayout implements BeforeEnterObserver
   private RegisteredUser currentUser;
 
   public DashboardView(
-          SessionAuthenticationService authService,
-          MeetupWorkflows meetupWorkflows,
-          MeetupDao meetupDao) {
+      SessionAuthenticationService authService,
+      MeetupWorkflows meetupWorkflows,
+      MeetupDao meetupDao) {
     this.authService = authService;
     this.meetupWorkflows = meetupWorkflows;
     this.meetupDao = meetupDao;
@@ -64,26 +63,26 @@ public class DashboardView extends VerticalLayout implements BeforeEnterObserver
     createMeetupButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
 
     Button logoutButton =
-            new Button(
-                    "Logout",
-                    e -> {
-                      authService.logout();
-                      UI.getCurrent().navigate(LoginView.class);
-                    });
+        new Button(
+            "Logout",
+            e -> {
+              authService.logout();
+              UI.getCurrent().navigate(LoginView.class);
+            });
 
     HorizontalLayout headerLayout =
-            new HorizontalLayout(welcomeHeader, createMeetupButton, logoutButton);
+        new HorizontalLayout(welcomeHeader, createMeetupButton, logoutButton);
     headerLayout.setAlignItems(Alignment.BASELINE);
     headerLayout.setFlexGrow(1, welcomeHeader);
     add(headerLayout);
 
     // ── Upcoming meetups grid ────────────────────────────────────────────────
     List<MeetupEvent> upcomingMeetups =
-            meetupDao.findAll().stream()
-                    .filter(m -> !m.isCanceled())
-                    .filter(m -> m.getEventDate().isAfter(ZonedDateTime.now()))
-                    .sorted(Comparator.comparing(MeetupEvent::getEventDate))
-                    .toList();
+        meetupDao.findAll().stream()
+            .filter(m -> !m.isCanceled())
+            .filter(m -> m.getEventDate().isAfter(ZonedDateTime.now()))
+            .sorted(Comparator.comparing(MeetupEvent::getEventDate))
+            .toList();
 
     if (upcomingMeetups.isEmpty()) {
       add(new Span("No upcoming meetups — be the first to create one!"));
@@ -95,16 +94,16 @@ public class DashboardView extends VerticalLayout implements BeforeEnterObserver
     grid.addColumn(m -> m.getEventDate().format(DATE_FMT)).setHeader("Date & Time").setFlexGrow(1);
     grid.addColumn(m -> m.getDurationHours() + "h").setHeader("Duration").setAutoWidth(true);
     grid.addColumn(
-                    m ->
-                            m.isUnlimitedSlots()
-                                    ? "∞"
-                                    : m.getConfirmedAttendeeIds().size() + " / " + m.getJoinSlots())
-            .setHeader("Slots")
-            .setAutoWidth(true);
+            m ->
+                m.isUnlimitedSlots()
+                    ? "∞"
+                    : m.getConfirmedAttendeeIds().size() + " / " + m.getJoinSlots())
+        .setHeader("Slots")
+        .setAutoWidth(true);
     grid.addComponentColumn(this::buildRowActions).setHeader("Actions").setAutoWidth(true);
 
     grid.setItems(upcomingMeetups);
-    //grid.setHeightByRows(true);
+    // grid.setHeightByRows(true);
     add(grid);
   }
 
@@ -113,33 +112,36 @@ public class DashboardView extends VerticalLayout implements BeforeEnterObserver
     actions.setSpacing(true);
 
     Button detailsBtn =
-            new Button(
-                    "Details",
-                    e -> UI.getCurrent().navigate(MeetupDetailView.class, new RouteParam("meetupId", meetup.getId().toString())));
+        new Button(
+            "Details",
+            e ->
+                UI.getCurrent()
+                    .navigate(
+                        MeetupDetailView.class,
+                        new RouteParam("meetupId", meetup.getId().toString())));
     detailsBtn.addThemeVariants(ButtonVariant.LUMO_SMALL, ButtonVariant.LUMO_TERTIARY);
     actions.add(detailsBtn);
 
     boolean isOwnMeetup = meetup.getCreatorId().equals(currentUser.getId());
     if (!isOwnMeetup) {
       boolean alreadyRequested =
-              meetup.getJoinRequests().stream()
-                      .anyMatch(r -> r.getUserId().equals(currentUser.getId()));
+          meetup.getJoinRequests().stream()
+              .anyMatch(r -> r.getUserId().equals(currentUser.getId()));
       boolean alreadyConfirmed = meetup.getConfirmedAttendeeIds().contains(currentUser.getId());
       boolean isFull =
-              !meetup.isUnlimitedSlots()
+          !meetup.isUnlimitedSlots()
               && meetup.getConfirmedAttendeeIds().size() >= meetup.getJoinSlots();
 
       Button joinBtn =
-              new Button(
-                      "Request to Join",
-                      e -> {
-                        meetupWorkflows.requestToJoin(meetup.getId(), currentUser.getId(), null);
-                        Notification n =
-                                Notification.show(
-                                        "Join request sent!", 3000, Notification.Position.TOP_CENTER);
-                        n.addThemeVariants(NotificationVariant.LUMO_SUCCESS);
-                        buildUI();
-                      });
+          new Button(
+              "Request to Join",
+              e -> {
+                meetupWorkflows.requestToJoin(meetup.getId(), currentUser.getId(), null);
+                Notification n =
+                    Notification.show("Join request sent!", 3000, Notification.Position.TOP_CENTER);
+                n.addThemeVariants(NotificationVariant.LUMO_SUCCESS);
+                buildUI();
+              });
       joinBtn.addThemeVariants(ButtonVariant.LUMO_SMALL, ButtonVariant.LUMO_SUCCESS);
 
       if (alreadyConfirmed) {

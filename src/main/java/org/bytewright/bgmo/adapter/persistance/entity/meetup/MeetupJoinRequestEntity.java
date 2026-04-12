@@ -1,7 +1,6 @@
 package org.bytewright.bgmo.adapter.persistance.entity.meetup;
 
 import jakarta.persistence.*;
-import jakarta.persistence.metamodel.StaticMetamodel;
 import java.io.Serializable;
 import java.time.Instant;
 import java.util.UUID;

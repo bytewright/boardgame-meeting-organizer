@@ -1,7 +1,6 @@
 package org.bytewright.bgmo.usecases;
 
 import java.time.Duration;
-import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
