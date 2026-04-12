@@ -30,4 +30,5 @@ public class MeetupEvent implements HasUUID {
   private UUID creatorId;
   private List<MeetupJoinRequest> joinRequests;
   private Set<UUID> confirmedAttendeeIds;
+  private List<UUID> offeredGames;
 }

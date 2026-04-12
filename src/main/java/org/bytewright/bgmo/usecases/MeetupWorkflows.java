@@ -43,6 +43,7 @@ public class MeetupWorkflows {
             .joinSlots(event.getJoinSlots() != null ? event.getJoinSlots() : -1)
             .unlimitedSlots(event.isUnlimitedSlots())
             .durationHours(event.getDurationHours())
+            .offeredGames(event.getOfferedGames())
             .build();
     return meetupDao.createOrUpdate(meetupEvent);
   }

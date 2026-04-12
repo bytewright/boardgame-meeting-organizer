@@ -2,6 +2,8 @@ package org.bytewright.bgmo.domain.model;
 
 import jakarta.annotation.Nullable;
 import java.time.ZonedDateTime;
+import java.util.List;
+import java.util.UUID;
 import lombok.Builder;
 import lombok.Data;
 import org.bytewright.bgmo.domain.model.user.RegisteredUser;
@@ -19,4 +21,5 @@ public class MeetupCreation {
   @Nullable private Integer joinSlots;
   private boolean unlimitedSlots;
   private RegisteredUser creator;
+  private List<UUID> offeredGames;
 }

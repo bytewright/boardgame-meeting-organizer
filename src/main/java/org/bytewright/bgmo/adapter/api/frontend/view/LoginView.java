@@ -38,7 +38,8 @@ public class LoginView extends VerticalLayout implements BeforeEnterObserver {
         event -> {
           boolean isAuthenticated = authService.login(event.getUsername(), event.getPassword());
           if (isAuthenticated) {
-            Notification.show(getTranslation("login.success"), 3000, Notification.Position.TOP_CENTER);
+            Notification.show(
+                getTranslation("login.success"), 3000, Notification.Position.TOP_CENTER);
             UI.getCurrent().navigate(DashboardView.class);
           } else {
             loginForm.setError(true);

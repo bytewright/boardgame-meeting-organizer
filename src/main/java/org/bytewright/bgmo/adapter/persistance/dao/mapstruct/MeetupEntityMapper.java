@@ -32,6 +32,7 @@ public abstract class MeetupEntityMapper extends BaseEntityMapper<MeetupEvent, M
 
   @Mapping(source = "creatorId", target = "creator.id")
   @Mapping(source = "confirmedAttendeeIds", target = "confirmedAttendees")
+  @Mapping(source = "offeredGames", target = "offeredGames")
   @Override
   public abstract void updateEntity(@MappingTarget MeetupEntity currentEntity, MeetupEvent model);
 

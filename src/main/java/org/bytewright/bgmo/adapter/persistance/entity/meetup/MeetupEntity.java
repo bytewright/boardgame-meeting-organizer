@@ -8,6 +8,7 @@ import java.util.*;
 import lombok.*;
 import lombok.Builder;
 import org.bytewright.bgmo.adapter.persistance.entity.AbstractEntity;
+import org.bytewright.bgmo.adapter.persistance.entity.GameEntity;
 import org.bytewright.bgmo.adapter.persistance.entity.user.RegisteredUserEntity;
 import org.bytewright.bgmo.domain.model.data.HasUUID;
 import org.hibernate.annotations.UuidGenerator;
@@ -82,4 +83,14 @@ public class MeetupEntity extends AbstractEntity<UUID> implements HasUUID {
   @Builder.Default
   @Setter(AccessLevel.NONE)
   private Set<RegisteredUserEntity> confirmedAttendees = new HashSet<>();
+
+  @ManyToMany(fetch = FetchType.LAZY)
+  @JoinTable(
+      name = "meetup_offered_games",
+      joinColumns = @JoinColumn(name = "game_id"),
+      inverseJoinColumns = @JoinColumn(name = "meeting_id"))
+  @ToString.Exclude
+  @Builder.Default
+  @Setter(AccessLevel.NONE)
+  private List<GameEntity> offeredGames = new ArrayList<>();
 }
