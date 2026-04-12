@@ -39,7 +39,8 @@ public class SessionAuthenticationService implements CurrentUserAccessor {
       getCurrentUser().map(RegisteredUser::getId).ifPresent(authenticationService::logout);
     } finally {
       VaadinSession.getCurrent().setAttribute(CURRENT_USER_SESSION_KEY, null);
-      VaadinSession.getCurrent().close();
+      // I think thats not needed?
+      // VaadinSession.getCurrent().close();
     }
   }
 
