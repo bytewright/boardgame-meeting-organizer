@@ -10,11 +10,12 @@ import com.vaadin.flow.component.notification.NotificationVariant;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.*;
 import jakarta.annotation.security.PermitAll;
-import java.time.format.DateTimeFormatter;
+
 import java.util.*;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.bytewright.bgmo.adapter.api.frontend.SessionAuthenticationService;
+import org.bytewright.bgmo.adapter.api.frontend.service.i18n.LocaleService;
 import org.bytewright.bgmo.domain.model.MeetupEvent;
 import org.bytewright.bgmo.domain.model.MeetupJoinRequest;
 import org.bytewright.bgmo.domain.model.user.RegisteredUser;
@@ -28,9 +29,7 @@ import org.bytewright.bgmo.usecases.MeetupWorkflows;
 @PermitAll
 public class MeetupDetailView extends VerticalLayout implements BeforeEnterObserver {
 
-  private static final DateTimeFormatter DATE_FMT =
-      DateTimeFormatter.ofPattern("EEEE, dd.MM.yyyy 'at' HH:mm", Locale.ENGLISH);
-
+  private final LocaleService localeService;
   private final SessionAuthenticationService authService;
   private final MeetupWorkflows meetupWorkflows;
   private final MeetupDao meetupDao;
@@ -40,10 +39,12 @@ public class MeetupDetailView extends VerticalLayout implements BeforeEnterObser
   private MeetupEvent meetup;
 
   public MeetupDetailView(
+      LocaleService localeService,
       SessionAuthenticationService authService,
       MeetupWorkflows meetupWorkflows,
       MeetupDao meetupDao,
       RegisteredUserDao userDao) {
+    this.localeService = localeService;
     this.authService = authService;
     this.meetupWorkflows = meetupWorkflows;
     this.meetupDao = meetupDao;
@@ -59,13 +60,15 @@ public class MeetupDetailView extends VerticalLayout implements BeforeEnterObser
 
     // ── Back navigation ────────────────────────────────────────────────────
     Button backBtn =
-        new Button("← Back to Dashboard", e -> UI.getCurrent().navigate(DashboardView.class));
+        new Button(
+            getTranslation("meetup.toDashboard"),
+            e -> UI.getCurrent().navigate(DashboardView.class));
     backBtn.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
     add(backBtn);
 
     // ── Canceled banner ────────────────────────────────────────────────────
     if (meetup.isCanceled()) {
-      Span canceledBadge = new Span("⚠ This meetup has been CANCELED");
+      Span canceledBadge = new Span(getTranslation("meetup.canceled"));
       canceledBadge
           .getStyle()
           .set("color", "var(--lumo-error-color)")
@@ -81,18 +84,18 @@ public class MeetupDetailView extends VerticalLayout implements BeforeEnterObser
         new Paragraph(
             meetup.getDescription() != null && !meetup.getDescription().isBlank()
                 ? meetup.getDescription()
-                : "No description provided.");
+                : getTranslation("meetup.no-desc"));
 
-    Span dateSpan = new Span("📅 " + meetup.getEventDate().format(DATE_FMT));
-    Span durationSpan = new Span("⏱ " + meetup.getDurationHours() + " hour(s)");
+    Span dateSpan = new Span("📅 " + meetup.getEventDate().format(localeService.getFormatter()));
+    Span durationSpan = new Span(getTranslation("meetup.duration", meetup.getDurationHours()));
 
     String slotsText =
         meetup.isUnlimitedSlots()
-            ? "∞ unlimited slots"
-            : meetup.getConfirmedAttendeeIds().size()
-                + " / "
-                + meetup.getJoinSlots()
-                + " slots filled";
+            ? getTranslation("meetup.unlimitedSlots")
+            : getTranslation(
+                "meetup.slotsFilled",
+                meetup.getConfirmedAttendeeIds().size(),
+                meetup.getJoinSlots());
     Span slotsSpan = new Span("👥 " + slotsText);
 
     VerticalLayout infoSection =
@@ -123,7 +126,7 @@ public class MeetupDetailView extends VerticalLayout implements BeforeEnterObser
             && meetup.getConfirmedAttendeeIds().size() >= meetup.getJoinSlots();
 
     if (alreadyConfirmed) {
-      Span status = new Span("✓ You are confirmed for this meetup!");
+      Span status = new Span(getTranslation("meetup.join-confirmed"));
       status
           .getStyle()
           .set("color", "var(--lumo-success-color)")
@@ -131,17 +134,18 @@ public class MeetupDetailView extends VerticalLayout implements BeforeEnterObser
           .set("font-size", "1.1em");
       add(status);
     } else if (alreadyRequested) {
-      Span status = new Span("⏳ Your join request is awaiting the organiser's approval.");
+      Span status = new Span(getTranslation("meetup.join-requested"));
       status.getStyle().set("color", "var(--lumo-primary-color)");
       add(status);
     } else {
       Button joinBtn =
           new Button(
-              isFull ? "Event is full" : "Request to Join",
+              isFull ? getTranslation("meetup.join-full") : getTranslation("meetup.join-request"),
               e -> {
                 meetupWorkflows.requestToJoin(meetup.getId(), currentUser.getId(), null);
                 Notification n =
-                    Notification.show("Join request sent!", 3000, Notification.Position.TOP_CENTER);
+                    Notification.show(
+                        getTranslation("meetup.joinSent"), 3000, Notification.Position.TOP_CENTER);
                 n.addThemeVariants(NotificationVariant.LUMO_SUCCESS);
                 refreshMeetup();
               });
@@ -154,13 +158,13 @@ public class MeetupDetailView extends VerticalLayout implements BeforeEnterObser
   // ── Owner view ────────────────────────────────────────────────────────────
 
   private void buildOwnerSection() {
-    add(new H3("Join Requests"));
+    add(new H3(getTranslation("meetup.joinRequests")));
 
     List<MeetupJoinRequest> requests = meetup.getJoinRequests();
     Set<UUID> confirmedIds = meetup.getConfirmedAttendeeIds();
 
     if (requests.isEmpty()) {
-      add(new Span("No join requests yet."));
+      add(new Span(getTranslation("meetup.joinRequestsNone")));
     } else {
       Grid<MeetupJoinRequest> requestGrid = new Grid<>();
       requestGrid
@@ -176,7 +180,11 @@ public class MeetupDetailView extends VerticalLayout implements BeforeEnterObser
           .setHeader("User")
           .setFlexGrow(1);
       requestGrid
-          .addColumn(req -> confirmedIds.contains(req.getUserId()) ? "✓ Confirmed" : "Pending")
+          .addColumn(
+              req ->
+                  confirmedIds.contains(req.getUserId())
+                      ? getTranslation("meetup.joinStatusConfirm")
+                      : getTranslation("meetup.joinStatusPending"))
           .setHeader("Status")
           .setAutoWidth(true);
       requestGrid
@@ -227,8 +235,7 @@ public class MeetupDetailView extends VerticalLayout implements BeforeEnterObser
 
       if (remainingSlots > 0 && pendingCount > 0) {
         Button randomBtn =
-            new Button(
-                "🎲 Choose Random Attendees for " + remainingSlots + " Remaining Slot(s)",
+            new Button(getTranslation("meetup.random-confirm",remainingSlots),
                 e -> confirmRandomAttendees(remainingSlots));
         randomBtn.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
         randomBtn.setEnabled(!meetup.isCanceled());

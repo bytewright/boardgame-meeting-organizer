@@ -13,7 +13,6 @@ import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.*;
 import jakarta.annotation.security.PermitAll;
 import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
@@ -24,6 +23,7 @@ import org.bytewright.bgmo.domain.model.MeetupEvent;
 import org.bytewright.bgmo.domain.model.user.RegisteredUser;
 import org.bytewright.bgmo.domain.service.data.MeetupDao;
 import org.bytewright.bgmo.usecases.MeetupWorkflows;
+import org.bytewright.bgmo.adapter.api.frontend.service.i18n.LocaleService;
 
 @Slf4j
 @Route("")
@@ -33,18 +33,18 @@ import org.bytewright.bgmo.usecases.MeetupWorkflows;
 @PermitAll
 public class DashboardView extends VerticalLayout implements BeforeEnterObserver {
 
-  private static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm");
-
+  private final LocaleService localeService;
   private final SessionAuthenticationService authService;
   private final MeetupWorkflows meetupWorkflows;
   private final MeetupDao meetupDao;
   private RegisteredUser currentUser;
 
   public DashboardView(
-      SessionAuthenticationService authService,
-      MeetupWorkflows meetupWorkflows,
-      MeetupDao meetupDao) {
-    this.authService = authService;
+          LocaleService localeService, SessionAuthenticationService authService,
+          MeetupWorkflows meetupWorkflows,
+          MeetupDao meetupDao) {
+      this.localeService = localeService;
+      this.authService = authService;
     this.meetupWorkflows = meetupWorkflows;
     this.meetupDao = meetupDao;
 
@@ -91,7 +91,7 @@ public class DashboardView extends VerticalLayout implements BeforeEnterObserver
 
     Grid<MeetupEvent> grid = new Grid<>(MeetupEvent.class, false);
     grid.addColumn(MeetupEvent::getTitle).setHeader("Title").setFlexGrow(2);
-    grid.addColumn(m -> m.getEventDate().format(DATE_FMT)).setHeader("Date & Time").setFlexGrow(1);
+    grid.addColumn(m -> m.getEventDate().format(localeService.getFormatter())).setHeader("Date & Time").setFlexGrow(1);
     grid.addColumn(m -> m.getDurationHours() + "h").setHeader("Duration").setAutoWidth(true);
     grid.addColumn(
             m ->

@@ -23,41 +23,43 @@ public class MeetupCreateDialog extends Dialog {
   public MeetupCreateDialog(
       RegisteredUser creator, MeetupWorkflows meetupWorkflows, Runnable onSuccess) {
 
-    setHeaderTitle("Create New Meetup");
+    setHeaderTitle(getTranslation("meetup-creation.title"));
     setWidth("480px");
     setCloseOnOutsideClick(false);
 
     // ── Form fields ──────────────────────────────────────────────────────────
-    TextField titleField = new TextField("Title");
+    TextField titleField = new TextField(getTranslation("meetup-creation.field.title"));
     titleField.setRequired(true);
     titleField.setWidthFull();
-    titleField.setPlaceholder("e.g. Saturday Catan Night");
+    titleField.setPlaceholder(getTranslation("meetup-creation.titlePlaceholder"));
 
-    TextArea descriptionField = new TextArea("Description");
+    TextArea descriptionField = new TextArea(getTranslation("meetup-creation.field.desc"));
     descriptionField.setWidthFull();
     descriptionField.setMinHeight("80px");
-    descriptionField.setPlaceholder("Optional details about the meetup…");
+    descriptionField.setPlaceholder(getTranslation("meetup-creation.field.description"));
 
-    DateTimePicker eventDatePicker = new DateTimePicker("Date & Time");
+    DateTimePicker eventDatePicker =
+        new DateTimePicker(getTranslation("meetup-creation.field.date"));
     eventDatePicker.setRequiredIndicatorVisible(true);
     eventDatePicker.setWidthFull();
 
-    IntegerField durationField = new IntegerField("Duration (hours)");
+    IntegerField durationField = new IntegerField(getTranslation("meetup-creation.field.duration"));
     durationField.setMin(1);
     durationField.setMax(24);
     durationField.setValue(3);
     durationField.setStepButtonsVisible(true);
     durationField.setWidthFull();
 
-    Checkbox unlimitedSlotsCheck = new Checkbox("Unlimited slots");
+    Checkbox unlimitedSlotsCheck =
+        new Checkbox(getTranslation("meetup-creation.field.slotsUnlimited"));
     unlimitedSlotsCheck.setValue(false);
 
-    IntegerField slotsField = new IntegerField("Max Attendees");
+    IntegerField slotsField = new IntegerField(getTranslation("meetup-creation.field.slots"));
     slotsField.setMin(1);
-    slotsField.setValue(8);
+    slotsField.setValue(3);
     slotsField.setStepButtonsVisible(true);
     slotsField.setWidthFull();
-    slotsField.setHelperText("Number of spots available (excluding yourself)");
+    slotsField.setHelperText(getTranslation("meetup-creation.field.slotsHelper"));
 
     // Slot count field is hidden when unlimited is checked
     unlimitedSlotsCheck.addValueChangeListener(e -> slotsField.setVisible(!e.getValue()));
@@ -74,26 +76,27 @@ public class MeetupCreateDialog extends Dialog {
     add(form);
 
     // ── Footer buttons ───────────────────────────────────────────────────────
-    Button cancelButton = new Button("Cancel", e -> close());
+    Button cancelButton = new Button(getTranslation("meetup-creation.action.cancel"), e -> close());
     cancelButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
 
     Button saveButton =
         new Button(
-            "Create Meetup",
+            getTranslation("meetup-creation.action.create"),
             e -> {
               if (titleField.isEmpty()) {
                 titleField.setInvalid(true);
-                titleField.setErrorMessage("Title is required");
+                titleField.setErrorMessage(getTranslation("meetup-creation.field.titleError"));
                 return;
               }
               if (eventDatePicker.isEmpty()) {
                 eventDatePicker.setInvalid(true);
-                eventDatePicker.setErrorMessage("Date and time are required");
+                eventDatePicker.setErrorMessage(getTranslation("meetup-creation.field.dateError"));
                 return;
               }
               if (durationField.isEmpty() || durationField.getValue() < 1) {
                 durationField.setInvalid(true);
-                durationField.setErrorMessage("Duration must be at least 1 hour");
+                durationField.setErrorMessage(
+                    getTranslation("meetup-creation.field.durationError"));
                 return;
               }
 
@@ -114,7 +117,10 @@ public class MeetupCreateDialog extends Dialog {
               meetupWorkflows.create(creation);
 
               Notification n =
-                  Notification.show("Meetup created!", 3000, Notification.Position.TOP_CENTER);
+                  Notification.show(
+                      getTranslation("meetup-creation.success"),
+                      3000,
+                      Notification.Position.TOP_CENTER);
               n.addThemeVariants(NotificationVariant.LUMO_SUCCESS);
               close();
               onSuccess.run();

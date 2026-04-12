@@ -38,18 +38,18 @@ public class LoginView extends VerticalLayout implements BeforeEnterObserver {
         event -> {
           boolean isAuthenticated = authService.login(event.getUsername(), event.getPassword());
           if (isAuthenticated) {
-            Notification.show("Login successful!", 3000, Notification.Position.TOP_CENTER);
+            Notification.show(getTranslation("login.success"), 3000, Notification.Position.TOP_CENTER);
             UI.getCurrent().navigate(DashboardView.class);
           } else {
             loginForm.setError(true);
           }
         });
 
-    Button registerButton = new Button("No account? Register here");
+    Button registerButton = new Button(getTranslation("login.register"));
     registerButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
     registerButton.addClickListener(e -> Notification.show("Registration is not yet implemented."));
 
-    add(new H1("Boardgame Meeting Organizer"), loginForm, registerButton);
+    add(new H1(getTranslation("login.title")), loginForm, registerButton);
   }
 
   @Override
