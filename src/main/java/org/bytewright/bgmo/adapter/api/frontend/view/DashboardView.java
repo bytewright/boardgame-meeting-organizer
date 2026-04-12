@@ -18,12 +18,12 @@ import java.util.List;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.bytewright.bgmo.adapter.api.frontend.SessionAuthenticationService;
+import org.bytewright.bgmo.adapter.api.frontend.service.i18n.LocaleService;
 import org.bytewright.bgmo.adapter.api.frontend.view.component.MeetupCreateDialog;
 import org.bytewright.bgmo.domain.model.MeetupEvent;
 import org.bytewright.bgmo.domain.model.user.RegisteredUser;
 import org.bytewright.bgmo.domain.service.data.MeetupDao;
 import org.bytewright.bgmo.usecases.MeetupWorkflows;
-import org.bytewright.bgmo.adapter.api.frontend.service.i18n.LocaleService;
 
 @Slf4j
 @Route("")
@@ -40,11 +40,12 @@ public class DashboardView extends VerticalLayout implements BeforeEnterObserver
   private RegisteredUser currentUser;
 
   public DashboardView(
-          LocaleService localeService, SessionAuthenticationService authService,
-          MeetupWorkflows meetupWorkflows,
-          MeetupDao meetupDao) {
-      this.localeService = localeService;
-      this.authService = authService;
+      LocaleService localeService,
+      SessionAuthenticationService authService,
+      MeetupWorkflows meetupWorkflows,
+      MeetupDao meetupDao) {
+    this.localeService = localeService;
+    this.authService = authService;
     this.meetupWorkflows = meetupWorkflows;
     this.meetupDao = meetupDao;
 
@@ -57,14 +58,15 @@ public class DashboardView extends VerticalLayout implements BeforeEnterObserver
     removeAll();
 
     // ── Header row ──────────────────────────────────────────────────────────
-    H2 welcomeHeader = new H2("Welcome, " + currentUser.getName() + "!");
+    H2 welcomeHeader = new H2(getTranslation("dashboard.welcome", currentUser.getName()));
 
-    Button createMeetupButton = new Button("+ New Meetup", e -> openCreateDialog());
+    Button createMeetupButton =
+        new Button(getTranslation("meetup.create"), e -> openCreateDialog());
     createMeetupButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
 
     Button logoutButton =
         new Button(
-            "Logout",
+            getTranslation("meetup.logout"),
             e -> {
               authService.logout();
               UI.getCurrent().navigate(LoginView.class);
@@ -85,25 +87,33 @@ public class DashboardView extends VerticalLayout implements BeforeEnterObserver
             .toList();
 
     if (upcomingMeetups.isEmpty()) {
-      add(new Span("No upcoming meetups — be the first to create one!"));
+      add(new Span(getTranslation("dashboard.no-meetups")));
       return;
     }
 
     Grid<MeetupEvent> grid = new Grid<>(MeetupEvent.class, false);
-    grid.addColumn(MeetupEvent::getTitle).setHeader("Title").setFlexGrow(2);
-    grid.addColumn(m -> m.getEventDate().format(localeService.getFormatter())).setHeader("Date & Time").setFlexGrow(1);
-    grid.addColumn(m -> m.getDurationHours() + "h").setHeader("Duration").setAutoWidth(true);
+    grid.addColumn(MeetupEvent::getTitle)
+        .setHeader(getTranslation("dashboard.grid.title"))
+        .setFlexGrow(2);
+    grid.addColumn(m -> m.getEventDate().format(localeService.getFormatter()))
+        .setHeader(getTranslation("dashboard.grid.date"))
+        .setFlexGrow(1);
+    grid.addColumn(m -> getTranslation("meetup.duration", m.getDurationHours()))
+        .setHeader(getTranslation("dashboard.grid.duration"))
+        .setAutoWidth(true);
     grid.addColumn(
             m ->
                 m.isUnlimitedSlots()
-                    ? "∞"
-                    : m.getConfirmedAttendeeIds().size() + " / " + m.getJoinSlots())
-        .setHeader("Slots")
+                    ? getTranslation("meetup.unlimitedSlots")
+                    : getTranslation(
+                        "meetup.slotsFilled", m.getConfirmedAttendeeIds().size(), m.getJoinSlots()))
+        .setHeader(getTranslation("dashboard.grid.slots"))
         .setAutoWidth(true);
-    grid.addComponentColumn(this::buildRowActions).setHeader("Actions").setAutoWidth(true);
+    grid.addComponentColumn(this::buildRowActions)
+        .setHeader(getTranslation("dashboard.grid.actions"))
+        .setAutoWidth(true);
 
     grid.setItems(upcomingMeetups);
-    // grid.setHeightByRows(true);
     add(grid);
   }
 
@@ -113,7 +123,7 @@ public class DashboardView extends VerticalLayout implements BeforeEnterObserver
 
     Button detailsBtn =
         new Button(
-            "Details",
+            getTranslation("meetup.details"),
             e ->
                 UI.getCurrent()
                     .navigate(
@@ -134,24 +144,25 @@ public class DashboardView extends VerticalLayout implements BeforeEnterObserver
 
       Button joinBtn =
           new Button(
-              "Request to Join",
+              getTranslation("meetup.join-request"),
               e -> {
                 meetupWorkflows.requestToJoin(meetup.getId(), currentUser.getId(), null);
                 Notification n =
-                    Notification.show("Join request sent!", 3000, Notification.Position.TOP_CENTER);
+                    Notification.show(
+                        getTranslation("meetup.joinSent"), 3000, Notification.Position.TOP_CENTER);
                 n.addThemeVariants(NotificationVariant.LUMO_SUCCESS);
                 buildUI();
               });
       joinBtn.addThemeVariants(ButtonVariant.LUMO_SMALL, ButtonVariant.LUMO_SUCCESS);
 
       if (alreadyConfirmed) {
-        joinBtn.setText("✓ Confirmed");
+        joinBtn.setText(getTranslation("meetup.join-short.confirmed"));
         joinBtn.setEnabled(false);
       } else if (alreadyRequested) {
-        joinBtn.setText("Requested");
+        joinBtn.setText(getTranslation("meetup.join-short.requested"));
         joinBtn.setEnabled(false);
       } else if (isFull) {
-        joinBtn.setText("Full");
+        joinBtn.setText(getTranslation("meetup.join-short.full"));
         joinBtn.setEnabled(false);
       }
       actions.add(joinBtn);

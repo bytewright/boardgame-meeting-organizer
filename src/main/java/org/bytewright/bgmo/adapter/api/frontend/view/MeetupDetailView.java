@@ -39,11 +39,11 @@ public class MeetupDetailView extends VerticalLayout implements BeforeEnterObser
   private MeetupEvent meetup;
 
   public MeetupDetailView(
-      LocaleService localeService,
-      SessionAuthenticationService authService,
-      MeetupWorkflows meetupWorkflows,
-      MeetupDao meetupDao,
-      RegisteredUserDao userDao) {
+          LocaleService localeService,
+          SessionAuthenticationService authService,
+          MeetupWorkflows meetupWorkflows,
+          MeetupDao meetupDao,
+          RegisteredUserDao userDao) {
     this.localeService = localeService;
     this.authService = authService;
     this.meetupWorkflows = meetupWorkflows;
@@ -60,9 +60,9 @@ public class MeetupDetailView extends VerticalLayout implements BeforeEnterObser
 
     // ── Back navigation ────────────────────────────────────────────────────
     Button backBtn =
-        new Button(
-            getTranslation("meetup.toDashboard"),
-            e -> UI.getCurrent().navigate(DashboardView.class));
+            new Button(
+                    getTranslation("meetup.toDashboard"),
+                    e -> UI.getCurrent().navigate(DashboardView.class));
     backBtn.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
     add(backBtn);
 
@@ -70,10 +70,10 @@ public class MeetupDetailView extends VerticalLayout implements BeforeEnterObser
     if (meetup.isCanceled()) {
       Span canceledBadge = new Span(getTranslation("meetup.canceled"));
       canceledBadge
-          .getStyle()
-          .set("color", "var(--lumo-error-color)")
-          .set("font-weight", "bold")
-          .set("font-size", "1.1em");
+              .getStyle()
+              .set("color", "var(--lumo-error-color)")
+              .set("font-weight", "bold")
+              .set("font-size", "1.1em");
       add(canceledBadge);
     }
 
@@ -81,25 +81,25 @@ public class MeetupDetailView extends VerticalLayout implements BeforeEnterObser
     H2 titleHeading = new H2(meetup.getTitle());
 
     Paragraph description =
-        new Paragraph(
-            meetup.getDescription() != null && !meetup.getDescription().isBlank()
-                ? meetup.getDescription()
-                : getTranslation("meetup.no-desc"));
+            new Paragraph(
+                    meetup.getDescription() != null && !meetup.getDescription().isBlank()
+                            ? meetup.getDescription()
+                            : getTranslation("meetup.no-desc"));
 
     Span dateSpan = new Span("📅 " + meetup.getEventDate().format(localeService.getFormatter()));
     Span durationSpan = new Span(getTranslation("meetup.duration", meetup.getDurationHours()));
 
     String slotsText =
-        meetup.isUnlimitedSlots()
-            ? getTranslation("meetup.unlimitedSlots")
-            : getTranslation(
-                "meetup.slotsFilled",
-                meetup.getConfirmedAttendeeIds().size(),
-                meetup.getJoinSlots());
+            meetup.isUnlimitedSlots()
+                    ? getTranslation("meetup.unlimitedSlots")
+                    : getTranslation(
+                    "meetup.slotsFilled",
+                    meetup.getConfirmedAttendeeIds().size(),
+                    meetup.getJoinSlots());
     Span slotsSpan = new Span("👥 " + slotsText);
 
     VerticalLayout infoSection =
-        new VerticalLayout(titleHeading, description, dateSpan, durationSpan, slotsSpan);
+            new VerticalLayout(titleHeading, description, dateSpan, durationSpan, slotsSpan);
     infoSection.setPadding(false);
     infoSection.setSpacing(true);
     add(infoSection);
@@ -119,19 +119,19 @@ public class MeetupDetailView extends VerticalLayout implements BeforeEnterObser
 
   private void buildGuestSection() {
     boolean alreadyRequested =
-        meetup.getJoinRequests().stream().anyMatch(r -> r.getUserId().equals(currentUser.getId()));
+            meetup.getJoinRequests().stream().anyMatch(r -> r.getUserId().equals(currentUser.getId()));
     boolean alreadyConfirmed = meetup.getConfirmedAttendeeIds().contains(currentUser.getId());
     boolean isFull =
-        !meetup.isUnlimitedSlots()
+            !meetup.isUnlimitedSlots()
             && meetup.getConfirmedAttendeeIds().size() >= meetup.getJoinSlots();
 
     if (alreadyConfirmed) {
       Span status = new Span(getTranslation("meetup.join-confirmed"));
       status
-          .getStyle()
-          .set("color", "var(--lumo-success-color)")
-          .set("font-weight", "bold")
-          .set("font-size", "1.1em");
+              .getStyle()
+              .set("color", "var(--lumo-success-color)")
+              .set("font-weight", "bold")
+              .set("font-size", "1.1em");
       add(status);
     } else if (alreadyRequested) {
       Span status = new Span(getTranslation("meetup.join-requested"));
@@ -139,16 +139,16 @@ public class MeetupDetailView extends VerticalLayout implements BeforeEnterObser
       add(status);
     } else {
       Button joinBtn =
-          new Button(
-              isFull ? getTranslation("meetup.join-full") : getTranslation("meetup.join-request"),
-              e -> {
-                meetupWorkflows.requestToJoin(meetup.getId(), currentUser.getId(), null);
-                Notification n =
-                    Notification.show(
-                        getTranslation("meetup.joinSent"), 3000, Notification.Position.TOP_CENTER);
-                n.addThemeVariants(NotificationVariant.LUMO_SUCCESS);
-                refreshMeetup();
-              });
+              new Button(
+                      isFull ? getTranslation("meetup.join-full") : getTranslation("meetup.join-request"),
+                      e -> {
+                        meetupWorkflows.requestToJoin(meetup.getId(), currentUser.getId(), null);
+                        Notification n =
+                                Notification.show(
+                                        getTranslation("meetup.joinSent"), 3000, Notification.Position.TOP_CENTER);
+                        n.addThemeVariants(NotificationVariant.LUMO_SUCCESS);
+                        refreshMeetup();
+                      });
       joinBtn.addThemeVariants(ButtonVariant.LUMO_PRIMARY, ButtonVariant.LUMO_SUCCESS);
       joinBtn.setEnabled(!meetup.isCanceled() && !isFull);
       add(joinBtn);
@@ -168,60 +168,49 @@ public class MeetupDetailView extends VerticalLayout implements BeforeEnterObser
     } else {
       Grid<MeetupJoinRequest> requestGrid = new Grid<>();
       requestGrid
-          .addColumn(
-              req -> {
-                UUID userId = req.getUserId();
-
-                return userDao
-                    .find(userId)
-                    .map(RegisteredUser::getName)
-                    .orElseGet(userId::toString);
-              })
-          .setHeader("User")
-          .setFlexGrow(1);
+              .addColumn(req -> resolveUserName(req.getUserId()))
+              .setHeader(getTranslation("meetup.grid.user"))
+              .setFlexGrow(1);
       requestGrid
-          .addColumn(
-              req ->
-                  confirmedIds.contains(req.getUserId())
-                      ? getTranslation("meetup.joinStatusConfirm")
-                      : getTranslation("meetup.joinStatusPending"))
-          .setHeader("Status")
-          .setAutoWidth(true);
+              .addColumn(
+                      req ->
+                              confirmedIds.contains(req.getUserId())
+                                      ? getTranslation("meetup.joinStatusConfirm")
+                                      : getTranslation("meetup.joinStatusPending"))
+              .setHeader(getTranslation("meetup.grid.status"))
+              .setAutoWidth(true);
       requestGrid
-          .addComponentColumn(
-              req -> {
-                boolean isConfirmed = confirmedIds.contains(req.getUserId());
-                Button confirmBtn =
-                    new Button(
-                        isConfirmed ? "Confirmed" : "Confirm",
-                        e -> {
-                          try {
-                            meetupWorkflows.confirmAttendees(
-                                meetup.getId(), Set.of(req.getUserId()));
-                            UUID userId = req.getUserId();
-
-                            Notification.show(
-                                userDao
-                                        .find(userId)
-                                        .map(RegisteredUser::getName)
-                                        .orElseGet(userId::toString)
-                                    + " confirmed!",
-                                2000,
-                                Notification.Position.BOTTOM_START);
-                            refreshMeetup();
-                          } catch (IllegalArgumentException ex) {
-                            Notification n =
-                                Notification.show(
-                                    ex.getMessage(), 4000, Notification.Position.MIDDLE);
-                            n.addThemeVariants(NotificationVariant.LUMO_ERROR);
-                          }
-                        });
-                confirmBtn.addThemeVariants(ButtonVariant.LUMO_SMALL, ButtonVariant.LUMO_SUCCESS);
-                confirmBtn.setEnabled(!isConfirmed && !meetup.isCanceled());
-                return confirmBtn;
-              })
-          .setHeader("Action")
-          .setAutoWidth(true);
+              .addComponentColumn(
+                      req -> {
+                        boolean isConfirmed = confirmedIds.contains(req.getUserId());
+                        Button confirmBtn =
+                                new Button(
+                                        getTranslation(
+                                                isConfirmed ? "meetup.joinStatusConfirm" : "meetup.confirm"),
+                                        e -> {
+                                          try {
+                                            meetupWorkflows.confirmAttendees(
+                                                    meetup.getId(), Set.of(req.getUserId()));
+                                            Notification.show(
+                                                    getTranslation(
+                                                            "meetup.attendeeConfirmed",
+                                                            resolveUserName(req.getUserId())),
+                                                    2000,
+                                                    Notification.Position.BOTTOM_START);
+                                            refreshMeetup();
+                                          } catch (IllegalArgumentException ex) {
+                                            Notification n =
+                                                    Notification.show(
+                                                            ex.getMessage(), 4000, Notification.Position.MIDDLE);
+                                            n.addThemeVariants(NotificationVariant.LUMO_ERROR);
+                                          }
+                                        });
+                        confirmBtn.addThemeVariants(ButtonVariant.LUMO_SMALL, ButtonVariant.LUMO_SUCCESS);
+                        confirmBtn.setEnabled(!isConfirmed && !meetup.isCanceled());
+                        return confirmBtn;
+                      })
+              .setHeader(getTranslation("meetup.grid.action"))
+              .setAutoWidth(true);
 
       requestGrid.setItems(requests);
       add(requestGrid);
@@ -230,18 +219,19 @@ public class MeetupDetailView extends VerticalLayout implements BeforeEnterObser
     // Random attendee picker — only meaningful when slots are limited
     if (!meetup.isUnlimitedSlots()) {
       long pendingCount =
-          requests.stream().filter(r -> !confirmedIds.contains(r.getUserId())).count();
+              requests.stream().filter(r -> !confirmedIds.contains(r.getUserId())).count();
       int remainingSlots = Math.max(0, meetup.getJoinSlots() - confirmedIds.size());
 
       if (remainingSlots > 0 && pendingCount > 0) {
         Button randomBtn =
-            new Button(getTranslation("meetup.random-confirm",remainingSlots),
-                e -> confirmRandomAttendees(remainingSlots));
+                new Button(
+                        getTranslation("meetup.random-confirm", remainingSlots),
+                        e -> confirmRandomAttendees(remainingSlots));
         randomBtn.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
         randomBtn.setEnabled(!meetup.isCanceled());
         add(randomBtn);
       } else if (remainingSlots == 0) {
-        Span fullLabel = new Span("All slots are filled.");
+        Span fullLabel = new Span(getTranslation("meetup.allSlotsFilled"));
         fullLabel.getStyle().set("color", "var(--lumo-success-color)").set("font-weight", "bold");
         add(fullLabel);
       }
@@ -250,29 +240,29 @@ public class MeetupDetailView extends VerticalLayout implements BeforeEnterObser
 
   private void confirmRandomAttendees(int slotsLeft) {
     List<UUID> unconfirmedRequesters =
-        meetup.getJoinRequests().stream()
-            .map(MeetupJoinRequest::getUserId)
-            .filter(uid -> !meetup.getConfirmedAttendeeIds().contains(uid))
-            .collect(Collectors.toCollection(ArrayList::new));
+            meetup.getJoinRequests().stream()
+                    .map(MeetupJoinRequest::getUserId)
+                    .filter(uid -> !meetup.getConfirmedAttendeeIds().contains(uid))
+                    .collect(Collectors.toCollection(ArrayList::new));
 
     if (unconfirmedRequesters.isEmpty()) {
       Notification.show(
-          "No pending requests to pick from.", 3000, Notification.Position.TOP_CENTER);
+              getTranslation("meetup.randomNoPending"), 3000, Notification.Position.TOP_CENTER);
       return;
     }
 
     Collections.shuffle(unconfirmedRequesters);
     Set<UUID> toConfirm =
-        new HashSet<>(
-            unconfirmedRequesters.subList(0, Math.min(slotsLeft, unconfirmedRequesters.size())));
+            new HashSet<>(
+                    unconfirmedRequesters.subList(0, Math.min(slotsLeft, unconfirmedRequesters.size())));
 
     try {
       meetupWorkflows.confirmAttendees(meetup.getId(), toConfirm);
       Notification n =
-          Notification.show(
-              toConfirm.size() + " attendee(s) randomly confirmed!",
-              3000,
-              Notification.Position.TOP_CENTER);
+              Notification.show(
+                      getTranslation("meetup.randomConfirmed", toConfirm.size()),
+                      3000,
+                      Notification.Position.TOP_CENTER);
       n.addThemeVariants(NotificationVariant.LUMO_SUCCESS);
       refreshMeetup();
     } catch (IllegalArgumentException ex) {
@@ -282,6 +272,10 @@ public class MeetupDetailView extends VerticalLayout implements BeforeEnterObser
   }
 
   // ── Helpers ───────────────────────────────────────────────────────────────
+
+  private String resolveUserName(UUID userId) {
+    return userDao.find(userId).map(RegisteredUser::getName).orElseGet(userId::toString);
+  }
 
   private void refreshMeetup() {
     this.meetup = meetupDao.findOrThrow(meetup.getId());
