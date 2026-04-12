@@ -1,0 +1,15 @@
+<configuration>
+    <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
+    <include resource="org/springframework/boot/logging/logback/console-appender.xml"/>
+
+    <springProfile name="!production">
+        <logger name="org.springframework.security" level="DEBUG"/>
+    </springProfile>
+
+    <logger name="org.bytewright" level="debug"/>
+    <logger name="org.atmosphere.cpr.AtmosphereFramework" level="warn"/>
+
+    <root level="INFO">
+        <appender-ref ref="CONSOLE"/>
+    </root>
+</configuration>
