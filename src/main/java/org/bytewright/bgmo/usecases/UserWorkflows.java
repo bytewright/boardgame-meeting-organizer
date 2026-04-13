@@ -6,6 +6,7 @@ import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.bytewright.bgmo.domain.model.Game;
+import org.bytewright.bgmo.domain.model.user.ContactInfo;
 import org.bytewright.bgmo.domain.model.user.RegisteredUser;
 import org.bytewright.bgmo.domain.service.data.GameDao;
 import org.bytewright.bgmo.domain.service.data.RegisteredUserDao;
@@ -31,5 +32,12 @@ public class UserWorkflows {
     game.setOwnerId(userId);
     log.info("Adding game to user {}: {}", userId, game);
     return gameDao.createOrUpdate(game);
+  }
+
+  public RegisteredUser addContactInfo(UUID userId, ContactInfo contactInfo) {
+    ContactInfo contactInfoWithId = contactInfo.withUserId(userId);
+    RegisteredUser user = userDao.findOrThrow(userId);
+    user.getContactInfos().add(contactInfoWithId);
+    return userDao.createOrUpdate(user);
   }
 }

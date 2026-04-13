@@ -2,9 +2,11 @@ package org.bytewright.bgmo.adapter.persistance.entity.user;
 
 import jakarta.persistence.*;
 import java.time.Instant;
-import java.util.UUID;
+import java.util.*;
 import lombok.*;
 import org.bytewright.bgmo.adapter.persistance.entity.AbstractEntity;
+import org.bytewright.bgmo.adapter.persistance.entity.GameEntity;
+import org.bytewright.bgmo.adapter.persistance.entity.GameEntity_;
 import org.bytewright.bgmo.domain.model.data.HasUUID;
 import org.hibernate.annotations.UuidGenerator;
 import org.springframework.data.annotation.CreatedDate;
@@ -32,10 +34,17 @@ public class RegisteredUserEntity extends AbstractEntity<UUID> implements HasUUI
   private UUID id;
 
   @Column(nullable = false)
-  private String name;
+  private String loginName;
+
+  @Column(nullable = false, length = 1024)
+  private String displayName;
 
   @Column(nullable = false)
   private String email;
+
+  @Column private String signalHandle;
+
+  @Column private String telegramHandle;
 
   @Column(nullable = false)
   private String passwordHash;
@@ -50,4 +59,16 @@ public class RegisteredUserEntity extends AbstractEntity<UUID> implements HasUUI
 
   @Column(name = "last_login")
   private Instant tsLastLogin;
+
+  @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, mappedBy = GameEntity_.OWNER)
+  @ToString.Exclude
+  @Builder.Default
+  @Setter(AccessLevel.NONE)
+  private Set<GameEntity> ownedGames = new HashSet<>();
+
+  @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, mappedBy = ContactInfoEntity_.USER)
+  @ToString.Exclude
+  @Builder.Default
+  @Setter(AccessLevel.NONE)
+  private Set<ContactInfoEntity> contactInfos = new HashSet<>();
 }

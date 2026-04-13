@@ -58,7 +58,7 @@ public class DashboardView extends VerticalLayout implements BeforeEnterObserver
     removeAll();
 
     // ── Header row ──────────────────────────────────────────────────────────
-    H2 welcomeHeader = new H2(getTranslation("dashboard.welcome", currentUser.getName()));
+    H2 welcomeHeader = new H2(getTranslation("dashboard.welcome", currentUser.getDisplayName()));
 
     Button createMeetupButton =
         new Button(getTranslation("meetup.create"), e -> openCreateDialog());

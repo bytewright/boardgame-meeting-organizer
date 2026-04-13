@@ -57,7 +57,8 @@ public class MockDataInitializer implements ApplicationListener<ApplicationReady
   private RegisteredUser createUser(int index) {
     String userName = "user-%d".formatted(index);
     return RegisteredUser.builder()
-        .name(userName)
+        .loginName(userName)
+        .displayName(userName)
         .passwordHash("noPw")
         .email("%s@some.mail".formatted(userName))
         .build();
@@ -66,7 +67,8 @@ public class MockDataInitializer implements ApplicationListener<ApplicationReady
   private RegisteredUser createAdmin(int index) {
     String userName = index == 0 ? "admin" : "admin-%d".formatted(index);
     return RegisteredUser.builder()
-        .name(userName)
+        .loginName(userName)
+        .displayName(userName)
         .passwordHash("admin")
         .email("%s@admin.mail".formatted(userName))
         .build();

@@ -271,7 +271,7 @@ public class MeetupDetailView extends VerticalLayout implements BeforeEnterObser
   // ── Helpers ───────────────────────────────────────────────────────────────
 
   private String resolveUserName(UUID userId) {
-    return userDao.find(userId).map(RegisteredUser::getName).orElseGet(userId::toString);
+    return userDao.find(userId).map(RegisteredUser::getDisplayName).orElseGet(userId::toString);
   }
 
   private void refreshMeetup() {

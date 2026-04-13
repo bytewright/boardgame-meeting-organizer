@@ -56,7 +56,9 @@ public class MeetupWorkflows {
       return;
     }
     RegisteredUser user = userDao.findOrThrow(userId);
-    var request = new MeetupJoinRequest(meetupEvent.getId(), user.getId(), timeSource.now());
+    var request =
+        new MeetupJoinRequest(
+            meetupEvent.getId(), user.getId(), user.getDisplayName(), timeSource.now());
     meetupEvent.getJoinRequests().add(request);
     meetupDao.createOrUpdate(meetupEvent);
   }

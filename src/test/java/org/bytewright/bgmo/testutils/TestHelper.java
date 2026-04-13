@@ -7,7 +7,6 @@ import java.util.Random;
 import lombok.RequiredArgsConstructor;
 import org.bytewright.bgmo.domain.model.user.RegisteredUser;
 import org.bytewright.bgmo.domain.service.automation.TimeSource;
-import org.bytewright.bgmo.domain.service.data.RegisteredUserDao;
 import org.bytewright.bgmo.usecases.UserWorkflows;
 import org.springframework.stereotype.Service;
 
@@ -15,7 +14,6 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class TestHelper {
   private static final Random rnd = new SecureRandom("TestSeed".getBytes(StandardCharsets.UTF_8));
-  private final RegisteredUserDao userDao;
   private final UserWorkflows userWorkflows;
   private final TimeSource timeSource;
 
@@ -24,7 +22,8 @@ public class TestHelper {
     return userWorkflows
         .create(
             RegisteredUser.builder()
-                .name(uniqueName)
+                .loginName(uniqueName)
+                .displayName(uniqueName)
                 .email("%s@mail.com".formatted(uniqueName))
                 .passwordHash("somePwHash")
                 .build())

@@ -25,6 +25,9 @@ public class MeetupJoinRequestEntity {
   @Column(name = "created_at", nullable = false, updatable = false)
   private Instant tsCreation;
 
+  @Column(nullable = false)
+  private String displayName;
+
   @ManyToOne
   @MapsId("meetupId")
   @JoinColumn(name = "meetup_id")

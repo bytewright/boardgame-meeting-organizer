@@ -4,5 +4,11 @@ import java.util.UUID;
 
 public interface HasUUID extends HasId<UUID> {
   @Override
-  UUID getId();
+  default UUID getId() {
+    return id();
+  }
+
+  default UUID id() {
+    return getId();
+  }
 }

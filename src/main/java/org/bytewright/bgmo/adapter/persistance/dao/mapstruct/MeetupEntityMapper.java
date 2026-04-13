@@ -59,6 +59,7 @@ public abstract class MeetupEntityMapper extends BaseEntityMapper<MeetupEvent, M
         .meetupJoinKey(compositeKey)
         .meetup(meetup)
         .user(user)
+        .displayName(request.getDisplayName())
         .tsCreation(request.getTsCreation())
         .build();
   }
