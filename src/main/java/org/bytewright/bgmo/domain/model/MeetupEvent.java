@@ -3,7 +3,6 @@ package org.bytewright.bgmo.domain.model;
 import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.util.List;
-import java.util.Set;
 import java.util.UUID;
 import lombok.Builder;
 import lombok.Data;
@@ -26,9 +25,9 @@ public class MeetupEvent implements HasUUID {
   private int durationHours;
   private int joinSlots;
   private boolean unlimitedSlots;
+  private boolean allowAnonSignup;
   private boolean canceled;
   private UUID creatorId;
   private List<MeetupJoinRequest> joinRequests;
-  private Set<UUID> confirmedAttendeeIds;
   private List<UUID> offeredGames;
 }

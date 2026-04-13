@@ -84,7 +84,7 @@ public abstract class BaseEntityMapper<
     return Optional.ofNullable(entities).stream()
         .flatMap(Collection::stream)
         .map(this::toDto)
-        .toList();
+        .collect(Collectors.toCollection(ArrayList::new));
   }
 
   public Set<ENTITY_TYPE> toEntitySet(Set<DTO_TYPE> dtos) {

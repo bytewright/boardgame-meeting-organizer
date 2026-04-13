@@ -58,6 +58,9 @@ public class MeetupEntity extends AbstractEntity<UUID> implements HasUUID {
   private boolean unlimitedSlots;
 
   @Column(nullable = false)
+  private boolean allowAnonSignup;
+
+  @Column(nullable = false)
   private boolean canceled;
 
   @ManyToOne(optional = false)
@@ -73,16 +76,6 @@ public class MeetupEntity extends AbstractEntity<UUID> implements HasUUID {
   @Setter(AccessLevel.NONE)
   @OrderBy(MeetupJoinRequestEntity_.TS_CREATION + " ASC")
   private List<MeetupJoinRequestEntity> joinRequests = new ArrayList<>();
-
-  @ManyToMany(fetch = FetchType.LAZY)
-  @JoinTable(
-      name = "meetup_confirmed_users",
-      joinColumns = @JoinColumn(name = "user_id"),
-      inverseJoinColumns = @JoinColumn(name = "meeting_id"))
-  @ToString.Exclude
-  @Builder.Default
-  @Setter(AccessLevel.NONE)
-  private Set<RegisteredUserEntity> confirmedAttendees = new HashSet<>();
 
   @ManyToMany(fetch = FetchType.LAZY)
   @JoinTable(

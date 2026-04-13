@@ -21,6 +21,8 @@ import org.bytewright.bgmo.adapter.api.frontend.SessionAuthenticationService;
 import org.bytewright.bgmo.adapter.api.frontend.service.i18n.LocaleService;
 import org.bytewright.bgmo.adapter.api.frontend.view.component.MeetupCreateDialog;
 import org.bytewright.bgmo.domain.model.MeetupEvent;
+import org.bytewright.bgmo.domain.model.MeetupJoinRequest;
+import org.bytewright.bgmo.domain.model.RequestState;
 import org.bytewright.bgmo.domain.model.user.RegisteredUser;
 import org.bytewright.bgmo.domain.service.data.MeetupDao;
 import org.bytewright.bgmo.usecases.MeetupWorkflows;
@@ -106,7 +108,13 @@ public class DashboardView extends VerticalLayout implements BeforeEnterObserver
                 m.isUnlimitedSlots()
                     ? getTranslation("meetup.unlimitedSlots")
                     : getTranslation(
-                        "meetup.slotsFilled", m.getConfirmedAttendeeIds().size(), m.getJoinSlots()))
+                        "meetup.slotsFilled",
+                        m.getJoinRequests().stream()
+                            .filter(
+                                meetupJoinRequest ->
+                                    RequestState.ACCEPTED == meetupJoinRequest.getRequestState())
+                            .count(),
+                        m.getJoinSlots()))
         .setHeader(getTranslation("dashboard.grid.slots"))
         .setAutoWidth(true);
     grid.addComponentColumn(this::buildRowActions)
@@ -134,13 +142,17 @@ public class DashboardView extends VerticalLayout implements BeforeEnterObserver
 
     boolean isOwnMeetup = meetup.getCreatorId().equals(currentUser.getId());
     if (!isOwnMeetup) {
-      boolean alreadyRequested =
+      Optional<MeetupJoinRequest> myRequest =
           meetup.getJoinRequests().stream()
-              .anyMatch(r -> r.getUserId().equals(currentUser.getId()));
-      boolean alreadyConfirmed = meetup.getConfirmedAttendeeIds().contains(currentUser.getId());
-      boolean isFull =
-          !meetup.isUnlimitedSlots()
-              && meetup.getConfirmedAttendeeIds().size() >= meetup.getJoinSlots();
+              .filter(r -> currentUser.getId().equals(r.getUserId()))
+              .findAny();
+      boolean alreadyRequested = myRequest.isPresent();
+      boolean alreadyConfirmed =
+          myRequest
+              .map(MeetupJoinRequest::getRequestState)
+              .map(state -> RequestState.ACCEPTED == state)
+              .orElse(false);
+      boolean isFull = meetupWorkflows.isFull(meetup);
 
       Button joinBtn =
           new Button(

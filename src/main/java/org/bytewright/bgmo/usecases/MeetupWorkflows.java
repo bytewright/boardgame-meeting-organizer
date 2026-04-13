@@ -1,18 +1,17 @@
 package org.bytewright.bgmo.usecases;
 
 import jakarta.transaction.Transactional;
-import java.util.Set;
 import java.util.UUID;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.bytewright.bgmo.domain.model.MeetupCreation;
 import org.bytewright.bgmo.domain.model.MeetupEvent;
 import org.bytewright.bgmo.domain.model.MeetupJoinRequest;
+import org.bytewright.bgmo.domain.model.RequestState;
 import org.bytewright.bgmo.domain.model.user.RegisteredUser;
 import org.bytewright.bgmo.domain.service.automation.TimeSource;
 import org.bytewright.bgmo.domain.service.data.MeetupDao;
+import org.bytewright.bgmo.domain.service.data.ModelDao;
 import org.bytewright.bgmo.domain.service.data.RegisteredUserDao;
 import org.springframework.stereotype.Service;
 
@@ -21,6 +20,7 @@ import org.springframework.stereotype.Service;
 @Transactional
 @RequiredArgsConstructor
 public class MeetupWorkflows {
+  private final ModelDao<MeetupJoinRequest> joinRequestModelDao;
   private final RegisteredUserDao userDao;
   private final MeetupDao meetupDao;
   private final TimeSource timeSource;
@@ -42,6 +42,7 @@ public class MeetupWorkflows {
             .tsCreation(timeSource.now())
             .joinSlots(event.getJoinSlots() != null ? event.getJoinSlots() : -1)
             .unlimitedSlots(event.isUnlimitedSlots())
+            .allowAnonSignup(event.isAllowAnonSignup())
             .durationHours(event.getDurationHours())
             .offeredGames(event.getOfferedGames())
             .build();
@@ -57,24 +58,47 @@ public class MeetupWorkflows {
     }
     RegisteredUser user = userDao.findOrThrow(userId);
     var request =
-        new MeetupJoinRequest(
-            meetupEvent.getId(), user.getId(), user.getDisplayName(), timeSource.now());
+        MeetupJoinRequest.builder()
+            .meetupId(meetupEvent.getId())
+            .userId(user.getId())
+            .displayName(user.getDisplayName())
+            .tsCreation(timeSource.now())
+            .build();
     meetupEvent.getJoinRequests().add(request);
     meetupDao.createOrUpdate(meetupEvent);
   }
 
-  public MeetupEvent confirmAttendees(UUID meetupId, Set<UUID> attendeeIds) {
+  public void requestToJoinAnon(
+      UUID meetupId, UUID anonToken, String displayName, String contactInfo) {
     MeetupEvent meetupEvent = meetupDao.findOrThrow(meetupId);
-    Set<UUID> confirmedAttendeeIds =
-        Stream.concat(meetupEvent.getConfirmedAttendeeIds().stream(), attendeeIds.stream())
-            .collect(Collectors.toSet());
-    if (!meetupEvent.isUnlimitedSlots()
-        && confirmedAttendeeIds.size() > meetupEvent.getJoinSlots()) {
+  }
+
+  public MeetupEvent confirmAttendee(UUID meetupId, MeetupJoinRequest joinRequest) {
+    MeetupEvent meetupEvent = meetupDao.findOrThrow(meetupId);
+    if (meetupEvent.getJoinRequests().stream().noneMatch(r -> r.equals(joinRequest))) {
       throw new IllegalArgumentException(
-          "Attendee count %d would be too much for event %s"
-              .formatted(confirmedAttendeeIds.size(), meetupId));
+          "Given join request is not persisted with meeting! " + joinRequest);
     }
-    meetupEvent.getConfirmedAttendeeIds().addAll(confirmedAttendeeIds);
-    return meetupDao.createOrUpdate(meetupEvent);
+    if (isFull(meetupEvent)) {
+      throw new IllegalStateException(
+          "Meeting is already full, can't confirm more requests: " + meetupEvent);
+    }
+    transitionToAccepted(joinRequest);
+    return meetupDao.findOrThrow(meetupId);
+  }
+
+  private void transitionToAccepted(MeetupJoinRequest joinRequest) {
+    if (joinRequest.getRequestState() != RequestState.CANCELED) {
+      joinRequest.setRequestState(RequestState.ACCEPTED);
+    }
+    joinRequestModelDao.createOrUpdate(joinRequest);
+  }
+
+  public boolean isFull(MeetupEvent meetup) {
+    long acceptedCount =
+        meetup.getJoinRequests().stream()
+            .filter(r -> RequestState.ACCEPTED == r.getRequestState())
+            .count();
+    return !meetup.isUnlimitedSlots() && acceptedCount == meetup.getJoinSlots();
   }
 }

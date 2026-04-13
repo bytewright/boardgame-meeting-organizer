@@ -1,11 +1,13 @@
 package org.bytewright.bgmo.adapter.persistance.entity.meetup;
 
 import jakarta.persistence.*;
-import java.io.Serializable;
 import java.time.Instant;
 import java.util.UUID;
 import lombok.*;
+import org.bytewright.bgmo.adapter.persistance.entity.AbstractEntity;
 import org.bytewright.bgmo.adapter.persistance.entity.user.RegisteredUserEntity;
+import org.bytewright.bgmo.domain.model.RequestState;
+import org.hibernate.annotations.UuidGenerator;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
@@ -18,8 +20,12 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 @AllArgsConstructor
 @NoArgsConstructor
 @EntityListeners(AuditingEntityListener.class)
-public class MeetupJoinRequestEntity {
-  @EmbeddedId private MeetupJoinKey meetupJoinKey;
+public class MeetupJoinRequestEntity extends AbstractEntity<UUID> {
+
+  @Id
+  @UuidGenerator(style = UuidGenerator.Style.TIME)
+  @Column(nullable = false, updatable = false)
+  private UUID id;
 
   @CreatedDate
   @Column(name = "created_at", nullable = false, updatable = false)
@@ -28,29 +34,17 @@ public class MeetupJoinRequestEntity {
   @Column(nullable = false)
   private String displayName;
 
-  @ManyToOne
-  @MapsId("meetupId")
-  @JoinColumn(name = "meetup_id")
+  @Column private UUID anonToken;
+  @Column private String contactInfo;
+
+  @Enumerated(EnumType.STRING)
+  @Column(nullable = false)
+  @Builder.Default
+  private RequestState requestState = RequestState.OPEN;
+
+  @ManyToOne(optional = false)
+  @JoinColumn(nullable = false)
   private MeetupEntity meetup;
 
-  @ManyToOne
-  @MapsId("userId")
-  @JoinColumn(name = "user_id")
-  private RegisteredUserEntity user;
-
-  @Getter
-  @Setter
-  @Builder
-  @ToString
-  @Embeddable
-  @NoArgsConstructor
-  @AllArgsConstructor
-  public static class MeetupJoinKey implements Serializable {
-
-    @Column(nullable = false, updatable = false)
-    private UUID meetupId;
-
-    @Column(nullable = false, updatable = false)
-    private UUID userId;
-  }
+  @ManyToOne @JoinColumn private RegisteredUserEntity user;
 }

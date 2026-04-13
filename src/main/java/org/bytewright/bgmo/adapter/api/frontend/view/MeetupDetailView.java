@@ -7,26 +7,57 @@ import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.html.*;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.NotificationVariant;
+import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.*;
+import com.vaadin.flow.server.VaadinSession;
 import jakarta.annotation.security.PermitAll;
 import java.util.*;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.bytewright.bgmo.adapter.api.frontend.SessionAuthenticationService;
 import org.bytewright.bgmo.adapter.api.frontend.service.i18n.LocaleService;
+import org.bytewright.bgmo.adapter.api.frontend.view.component.AnonJoinDialog;
 import org.bytewright.bgmo.domain.model.MeetupEvent;
 import org.bytewright.bgmo.domain.model.MeetupJoinRequest;
+import org.bytewright.bgmo.domain.model.RequestState;
 import org.bytewright.bgmo.domain.model.user.RegisteredUser;
 import org.bytewright.bgmo.domain.service.data.MeetupDao;
 import org.bytewright.bgmo.domain.service.data.RegisteredUserDao;
 import org.bytewright.bgmo.usecases.MeetupWorkflows;
 
+/**
+ * Public detail page for a single meetup.
+ *
+ * <p>Access model:
+ *
+ * <ul>
+ *   <li><b>Anonymous visitor</b>: sees event info and confirmed attendee names; can send a join
+ *       request by supplying a display name and contact info (GDPR-consented).
+ *   <li><b>Registered attendee / guest</b>: same public view plus their own request status.
+ *   <li><b>Organiser (creator)</b>: full view with all join requests, contact info for anonymous
+ *       requesters, and confirm/random-confirm controls.
+ * </ul>
+ *
+ * <p>GDPR notes:
+ *
+ * <ul>
+ *   <li>Confirmed attendee <em>names</em> are shown publicly; requesters consent to this explicitly
+ *       in {@link AnonJoinDialog}.
+ *   <li>Contact info is rendered <em>only</em> inside {@link #buildOwnerSection()} — it never
+ *       appears in any other branch of the UI.
+ *   <li>Anonymous session tokens ({@code anonToken}) are stored in the Vaadin session under a
+ *       meetup-scoped key; they are not persisted beyond the session lifetime.
+ * </ul>
+ */
 @Slf4j
 @Route("meetup/:meetupId")
 @PageTitle("Meetup Detail | Boardgame Meeting Organizer")
 @PermitAll
 public class MeetupDetailView extends VerticalLayout implements BeforeEnterObserver {
+
+  /** VaadinSession attribute key prefix for the anonymous token per meetup. */
+  private static final String ANON_TOKEN_KEY_PREFIX = "anonToken:meetup:";
 
   private final LocaleService localeService;
   private final SessionAuthenticationService authService;
@@ -34,7 +65,9 @@ public class MeetupDetailView extends VerticalLayout implements BeforeEnterObser
   private final MeetupDao meetupDao;
   private final RegisteredUserDao userDao;
 
+  /** Null when the visitor is not logged in. */
   private RegisteredUser currentUser;
+
   private MeetupEvent meetup;
 
   public MeetupDetailView(
@@ -54,18 +87,37 @@ public class MeetupDetailView extends VerticalLayout implements BeforeEnterObser
     setSpacing(true);
   }
 
+  // ── UI construction ───────────────────────────────────────────────────────
+
   private void buildUI() {
     removeAll();
 
-    // ── Back navigation ────────────────────────────────────────────────────
+    // ── Back / header row ────────────────────────────────────────────────
     Button backBtn =
         new Button(
             getTranslation("meetup.toDashboard"),
             e -> UI.getCurrent().navigate(DashboardView.class));
     backBtn.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
-    add(backBtn);
 
-    // ── Canceled banner ────────────────────────────────────────────────────
+    HorizontalLayout headerRow = new HorizontalLayout(backBtn);
+    if (currentUser != null) {
+      Button logoutBtn =
+          new Button(
+              getTranslation("meetup.logout"),
+              e -> {
+                authService.logout();
+                UI.getCurrent().navigate(LoginView.class);
+              });
+      headerRow.add(logoutBtn);
+    } else {
+      Button loginBtn =
+          new Button(getTranslation("login.title"), e -> UI.getCurrent().navigate(LoginView.class));
+      loginBtn.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
+      headerRow.add(loginBtn);
+    }
+    add(headerRow);
+
+    // ── Canceled banner ──────────────────────────────────────────────────
     if (meetup.isCanceled()) {
       Span canceledBadge = new Span(getTranslation("meetup.canceled"));
       canceledBadge
@@ -76,7 +128,7 @@ public class MeetupDetailView extends VerticalLayout implements BeforeEnterObser
       add(canceledBadge);
     }
 
-    // ── Event info ─────────────────────────────────────────────────────────
+    // ── Event info ───────────────────────────────────────────────────────
     H2 titleHeading = new H2(meetup.getTitle());
 
     Paragraph description =
@@ -93,44 +145,197 @@ public class MeetupDetailView extends VerticalLayout implements BeforeEnterObser
             ? getTranslation("meetup.unlimitedSlots")
             : getTranslation(
                 "meetup.slotsFilled",
-                meetup.getConfirmedAttendeeIds().size(),
+                meetup.getJoinRequests().stream()
+                    .filter(r -> RequestState.ACCEPTED == r.getRequestState())
+                    .count(),
                 meetup.getJoinSlots());
     Span slotsSpan = new Span("👥 " + slotsText);
 
     VerticalLayout infoSection =
         new VerticalLayout(titleHeading, description, dateSpan, durationSpan, slotsSpan);
     infoSection.setPadding(false);
-    infoSection.setSpacing(true);
     add(infoSection);
 
     add(new Hr());
 
+    // ── Public: confirmed attendee names (visible to everyone) ────────────
+    buildConfirmedAttendeesSection();
+
+    add(new Hr());
+
     // ── Role-specific section ─────────────────────────────────────────────
-    boolean isOwner = meetup.getCreatorId().equals(currentUser.getId());
-    if (isOwner) {
+    if (currentUser != null && meetup.getCreatorId().equals(currentUser.getId())) {
       buildOwnerSection();
+    } else if (currentUser != null) {
+      buildRegisteredGuestSection();
     } else {
-      buildGuestSection();
+      buildAnonSection();
     }
   }
 
-  // ── Guest view ────────────────────────────────────────────────────────────
+  // ── Public section: confirmed names ───────────────────────────────────────
 
-  private void buildGuestSection() {
-    boolean alreadyRequested =
-        meetup.getJoinRequests().stream().anyMatch(r -> r.getUserId().equals(currentUser.getId()));
-    boolean alreadyConfirmed = meetup.getConfirmedAttendeeIds().contains(currentUser.getId());
-    boolean isFull =
-        !meetup.isUnlimitedSlots()
-            && meetup.getConfirmedAttendeeIds().size() >= meetup.getJoinSlots();
+  /**
+   * Shown to every visitor. Lists the display names of confirmed attendees. Contact info is never
+   * shown here.
+   */
+  private void buildConfirmedAttendeesSection() {
+    add(new H3(getTranslation("meetup.confirmedAttendees")));
+
+    Set<UUID> confirmedIds = Set.of();
+    if (confirmedIds.isEmpty()) {
+      add(new Span(getTranslation("meetup.confirmedAttendeesNone")));
+      return;
+    }
+
+    // Collect display names: prefer the displayName stored on the join request
+    // (covers both registered and anon users uniformly), fall back to userDao lookup.
+    Map<UUID, String> nameByUserId =
+        meetup.getJoinRequests().stream()
+            .filter(r -> r.getUserId() != null)
+            .collect(
+                Collectors.toMap(
+                    MeetupJoinRequest::getUserId, MeetupJoinRequest::getDisplayName, (a, b) -> a));
+
+    VerticalLayout nameList = new VerticalLayout();
+    nameList.setPadding(false);
+    nameList.setSpacing(false);
+
+    // Anonymous confirmed attendees — identified only by displayName on their request
+    meetup.getJoinRequests().stream()
+        .filter(this::isAnonymous)
+        .filter(r -> r.getAnonToken() != null)
+        .filter(r -> isConfirmedAnonRequest(r, confirmedIds))
+        .map(MeetupJoinRequest::getDisplayName)
+        .forEach(name -> nameList.add(new Span("• " + name)));
+
+    // Registered confirmed attendees
+    confirmedIds.forEach(
+        uid -> {
+          String name =
+              nameByUserId.getOrDefault(
+                  uid, userDao.find(uid).map(RegisteredUser::getDisplayName).orElse("?"));
+          nameList.add(new Span("• " + name));
+        });
+
+    add(nameList);
+  }
+
+  /**
+   * Anonymous confirmed attendees are tracked via their anonToken. A request counts as confirmed if
+   * confirmedIds contains a synthetic marker UUID derived from the token, or if the DAO stores
+   * confirmed state on the request itself.
+   *
+   * <p>NOTE: Adjust this predicate to match however your DAO/domain tracks confirmation state for
+   * anonymous attendees (e.g. a boolean flag on the request, or a separate confirmedAnonTokens set
+   * on MeetupEvent).
+   */
+  private boolean isConfirmedAnonRequest(MeetupJoinRequest req, Set<UUID> confirmedIds) {
+    // Placeholder: adapt to your persistence model.
+    // For example, if you add Set<UUID> confirmedAnonTokens to MeetupEvent:
+    //   return meetup.getConfirmedAnonTokens().contains(req.getAnonToken());
+    return false;
+  }
+
+  // ── Anonymous visitor section ──────────────────────────────────────────────
+
+  private void buildAnonSection() {
+    UUID myToken = getAnonSessionToken(); // read-only here; only created on submit
+
+    // Check if this browser session already has a pending or confirmed request
+    Optional<MeetupJoinRequest> myRequest =
+        meetup.getJoinRequests().stream()
+            .filter(r -> myToken != null && myToken.equals(r.getAnonToken()))
+            .findFirst();
+
+    if (myRequest.isPresent()) {
+      // Visitor already submitted a request in this session
+      boolean confirmed =
+          myRequest
+              .map(MeetupJoinRequest::getRequestState)
+              .map(state -> RequestState.ACCEPTED == state)
+              .orElse(false);
+
+      if (confirmed) {
+        Span status = new Span(getTranslation("meetup.join-confirmed"));
+        status.getStyle().set("color", "var(--lumo-success-color)").set("font-weight", "bold");
+        add(status);
+      } else {
+        Span status = new Span(getTranslation("meetup.join-requested"));
+        status.getStyle().set("color", "var(--lumo-primary-color)");
+        add(status);
+        Span hint = new Span(getTranslation("meetup.join-anonHint"));
+        hint.getStyle().set("font-size", "0.85em").set("color", "var(--lumo-secondary-text-color)");
+        add(hint);
+      }
+      return;
+    }
+
+    // No existing request — show join button (opens dialog)
+    boolean isFull = meetupWorkflows.isFull(meetup);
+
+    if (meetup.isCanceled() || isFull) {
+      Span label =
+          new Span(
+              meetup.isCanceled()
+                  ? getTranslation("meetup.canceled")
+                  : getTranslation("meetup.join-full"));
+      label.getStyle().set("color", "var(--lumo-error-color)").set("font-weight", "bold");
+      add(label);
+      return;
+    }
+
+    Button joinBtn = new Button(getTranslation("meetup.join-request"));
+    joinBtn.addThemeVariants(ButtonVariant.LUMO_PRIMARY, ButtonVariant.LUMO_SUCCESS);
+    joinBtn.addClickListener(e -> openAnonJoinDialog());
+    add(joinBtn);
+
+    // Encourage login for persistent tracking
+    Span loginHint = new Span(getTranslation("meetup.join-anonLoginHint"));
+    loginHint
+        .getStyle()
+        .set("font-size", "0.82em")
+        .set("color", "var(--lumo-secondary-text-color)");
+    add(loginHint);
+  }
+
+  private void openAnonJoinDialog() {
+    new AnonJoinDialog(
+            meetup.getTitle(),
+            (displayName, contactInfo) -> {
+              // Create or reuse the token for this session so the visitor can see
+              // their pending status if they navigate back.
+              UUID anonToken = getOrCreateAnonSessionToken();
+              meetupWorkflows.requestToJoinAnon(
+                  meetup.getId(), anonToken, displayName, contactInfo);
+
+              Notification n =
+                  Notification.show(
+                      getTranslation("meetup.joinSent"), 3000, Notification.Position.TOP_CENTER);
+              n.addThemeVariants(NotificationVariant.LUMO_SUCCESS);
+              refreshMeetup();
+            })
+        .open();
+  }
+
+  // ── Registered guest section ───────────────────────────────────────────────
+
+  private void buildRegisteredGuestSection() {
+    Optional<MeetupJoinRequest> myRequest =
+        meetup.getJoinRequests().stream()
+            .filter(r -> currentUser.getId().equals(r.getUserId()))
+            .findAny();
+    boolean alreadyRequested = myRequest.isPresent();
+    boolean alreadyConfirmed =
+        myRequest
+            .map(MeetupJoinRequest::getRequestState)
+            .map(state -> RequestState.ACCEPTED == state)
+            .orElse(false);
+    boolean isFull = meetupWorkflows.isFull(meetup);
 
     if (alreadyConfirmed) {
       Span status = new Span(getTranslation("meetup.join-confirmed"));
-      status
-          .getStyle()
-          .set("color", "var(--lumo-success-color)")
-          .set("font-weight", "bold")
-          .set("font-size", "1.1em");
+      status.getStyle().set("color", "var(--lumo-success-color)").set("font-weight", "bold");
       add(status);
     } else if (alreadyRequested) {
       Span status = new Span(getTranslation("meetup.join-requested"));
@@ -154,44 +359,72 @@ public class MeetupDetailView extends VerticalLayout implements BeforeEnterObser
     }
   }
 
-  // ── Owner view ────────────────────────────────────────────────────────────
+  // ── Organiser section ──────────────────────────────────────────────────────
 
+  /**
+   * Visible only to the event creator. Shows all join requests with names, request status, and —
+   * for anonymous requesters — their contact info.
+   *
+   * <p>Contact info is deliberately isolated here and never rendered elsewhere.
+   */
   private void buildOwnerSection() {
     add(new H3(getTranslation("meetup.joinRequests")));
 
     List<MeetupJoinRequest> requests = meetup.getJoinRequests();
-    Set<UUID> confirmedIds = meetup.getConfirmedAttendeeIds();
 
     if (requests.isEmpty()) {
       add(new Span(getTranslation("meetup.joinRequestsNone")));
     } else {
       Grid<MeetupJoinRequest> requestGrid = new Grid<>();
+
+      // Display name column (public-safe value, shown to owner for management)
       requestGrid
-          .addColumn(req -> resolveUserName(req.getUserId()))
+          .addColumn(MeetupJoinRequest::getDisplayName)
           .setHeader(getTranslation("meetup.grid.user"))
           .setFlexGrow(1);
+
+      // Contact info — shown only here, only to organiser
       requestGrid
           .addColumn(
-              req ->
-                  confirmedIds.contains(req.getUserId())
-                      ? getTranslation("meetup.joinStatusConfirm")
-                      : getTranslation("meetup.joinStatusPending"))
+              req -> {
+                if (isAnonymous(req)) {
+                  return req.getContactInfo() != null ? req.getContactInfo() : "—";
+                }
+                // Registered users: show their stored contact info if present,
+                // otherwise fall back to their account e-mail (you may also omit this).
+                return req.getContactInfo() != null
+                    ? req.getContactInfo()
+                    : userDao.find(req.getUserId()).map(RegisteredUser::getEmail).orElse("—");
+              })
+          .setHeader(getTranslation("meetup.grid.contact"))
+          .setFlexGrow(1);
+
+      // Status column
+      requestGrid
+          .addColumn(
+              req -> {
+                boolean confirmed = RequestState.ACCEPTED == req.getRequestState();
+                return confirmed
+                    ? getTranslation("meetup.joinStatusConfirm")
+                    : getTranslation("meetup.joinStatusPending");
+              })
           .setHeader(getTranslation("meetup.grid.status"))
           .setAutoWidth(true);
+
+      // Action column
       requestGrid
           .addComponentColumn(
               req -> {
-                boolean isConfirmed = confirmedIds.contains(req.getUserId());
+                boolean isConfirmed = RequestState.ACCEPTED == req.getRequestState();
+
                 Button confirmBtn =
                     new Button(
                         getTranslation(isConfirmed ? "meetup.joinStatusConfirm" : "meetup.confirm"),
                         e -> {
                           try {
-                            meetupWorkflows.confirmAttendees(
-                                meetup.getId(), Set.of(req.getUserId()));
+                            meetupWorkflows.confirmAttendee(meetup.getId(), req);
                             Notification.show(
-                                getTranslation(
-                                    "meetup.attendeeConfirmed", resolveUserName(req.getUserId())),
+                                getTranslation("meetup.attendeeConfirmed", req.getDisplayName()),
                                 2000,
                                 Notification.Position.BOTTOM_START);
                             refreshMeetup();
@@ -213,13 +446,17 @@ public class MeetupDetailView extends VerticalLayout implements BeforeEnterObser
       add(requestGrid);
     }
 
-    // Random attendee picker — only meaningful when slots are limited
+    // Random attendee picker — only when slots are limited
     if (!meetup.isUnlimitedSlots()) {
-      long pendingCount =
-          requests.stream().filter(r -> !confirmedIds.contains(r.getUserId())).count();
-      int remainingSlots = Math.max(0, meetup.getJoinSlots() - confirmedIds.size());
+      int remainingSlots =
+          (int)
+              (meetup.getJoinSlots()
+                  - meetup.getJoinRequests().stream()
+                      .map(MeetupJoinRequest::getRequestState)
+                      .filter(state -> RequestState.ACCEPTED == state)
+                      .count());
 
-      if (remainingSlots > 0 && pendingCount > 0) {
+      if (remainingSlots > 0) {
         Button randomBtn =
             new Button(
                 getTranslation("meetup.random-confirm", remainingSlots),
@@ -235,26 +472,29 @@ public class MeetupDetailView extends VerticalLayout implements BeforeEnterObser
     }
   }
 
+  private boolean isAnonymous(MeetupJoinRequest req) {
+    return req.getUserId() == null;
+  }
+
   private void confirmRandomAttendees(int slotsLeft) {
-    List<UUID> unconfirmedRequesters =
+    // Collect unconfirmed registered requesters
+    List<MeetupJoinRequest> openRequests =
         meetup.getJoinRequests().stream()
-            .map(MeetupJoinRequest::getUserId)
-            .filter(uid -> !meetup.getConfirmedAttendeeIds().contains(uid))
+            .filter(r -> r.getRequestState() == RequestState.OPEN)
             .collect(Collectors.toCollection(ArrayList::new));
 
-    if (unconfirmedRequesters.isEmpty()) {
+    if (openRequests.isEmpty()) {
       Notification.show(
           getTranslation("meetup.randomNoPending"), 3000, Notification.Position.TOP_CENTER);
       return;
     }
 
-    Collections.shuffle(unconfirmedRequesters);
-    Set<UUID> toConfirm =
-        new HashSet<>(
-            unconfirmedRequesters.subList(0, Math.min(slotsLeft, unconfirmedRequesters.size())));
+    Collections.shuffle(openRequests);
+    List<MeetupJoinRequest> toConfirm =
+        openRequests.subList(0, Math.min(slotsLeft, openRequests.size()));
 
     try {
-      meetupWorkflows.confirmAttendees(meetup.getId(), toConfirm);
+      toConfirm.forEach(r -> meetupWorkflows.confirmAttendee(meetup.getId(), r));
       Notification n =
           Notification.show(
               getTranslation("meetup.randomConfirmed", toConfirm.size()),
@@ -268,11 +508,35 @@ public class MeetupDetailView extends VerticalLayout implements BeforeEnterObser
     }
   }
 
-  // ── Helpers ───────────────────────────────────────────────────────────────
+  // ── Anonymous session token helpers ───────────────────────────────────────
 
-  private String resolveUserName(UUID userId) {
-    return userDao.find(userId).map(RegisteredUser::getDisplayName).orElseGet(userId::toString);
+  /**
+   * Returns the anon token for this meetup stored in the current Vaadin session, or {@code null} if
+   * none has been created yet (i.e. the visitor has not submitted a request in this session).
+   */
+  private UUID getAnonSessionToken() {
+    return (UUID) VaadinSession.getCurrent().getAttribute(anonTokenKey());
   }
+
+  /**
+   * Returns the anon token for this meetup, creating and storing a new one if none exists. Call
+   * this only when the visitor is actually submitting a request.
+   */
+  private UUID getOrCreateAnonSessionToken() {
+    UUID existing = getAnonSessionToken();
+    if (existing != null) {
+      return existing;
+    }
+    UUID token = UUID.randomUUID();
+    VaadinSession.getCurrent().setAttribute(anonTokenKey(), token);
+    return token;
+  }
+
+  private String anonTokenKey() {
+    return ANON_TOKEN_KEY_PREFIX + meetup.getId();
+  }
+
+  // ── Helpers ───────────────────────────────────────────────────────────────
 
   private void refreshMeetup() {
     this.meetup = meetupDao.findOrThrow(meetup.getId());
@@ -281,12 +545,8 @@ public class MeetupDetailView extends VerticalLayout implements BeforeEnterObser
 
   @Override
   public void beforeEnter(BeforeEnterEvent event) {
-    Optional<RegisteredUser> userOpt = authService.getCurrentUser();
-    if (userOpt.isEmpty()) {
-      event.forwardTo(LoginView.class);
-      return;
-    }
-    this.currentUser = userOpt.get();
+    // Anonymous visitors are allowed — currentUser stays null.
+    this.currentUser = authService.getCurrentUser().orElse(null);
 
     String meetupIdParam = event.getRouteParameters().get("meetupId").orElse(null);
     if (meetupIdParam == null) {

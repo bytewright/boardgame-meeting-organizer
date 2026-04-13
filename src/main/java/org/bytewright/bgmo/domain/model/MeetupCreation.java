@@ -20,6 +20,7 @@ public class MeetupCreation {
   private int durationHours;
   @Nullable private Integer joinSlots;
   private boolean unlimitedSlots;
+  private boolean allowAnonSignup;
   private RegisteredUser creator;
   private List<UUID> offeredGames;
 }
