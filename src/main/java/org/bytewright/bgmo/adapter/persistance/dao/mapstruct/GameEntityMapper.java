@@ -31,7 +31,7 @@ public abstract class GameEntityMapper extends BaseEntityMapper<Game, GameEntity
   public abstract Game toDto(GameEntity entity);
 
   @Override
-  public List<Game> findGamesByUser(UUID userId) {
+  public List<Game> findByOwnerId(UUID userId) {
     return gameRepository.findByOwner_IdOrderByNameAsc(userId).stream().map(this::toDto).toList();
   }
 

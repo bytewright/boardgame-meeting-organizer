@@ -6,6 +6,7 @@ import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.bytewright.bgmo.domain.model.Game;
+import org.bytewright.bgmo.domain.model.data.HasUUID;
 import org.bytewright.bgmo.domain.model.user.ContactInfo;
 import org.bytewright.bgmo.domain.model.user.RegisteredUser;
 import org.bytewright.bgmo.domain.service.data.GameDao;
@@ -20,6 +21,7 @@ public class UserWorkflows {
   private final RegisteredUserDao userDao;
   private final GameDao gameDao;
 
+  /** User obj should have no id. For updating an existing model use {@link RegisteredUserDao#createOrUpdate(HasUUID)}*/
   public Optional<RegisteredUser> create(RegisteredUser user) {
     if (user.getId() != null) {
       throw new IllegalArgumentException("User has an id already");
@@ -27,6 +29,7 @@ public class UserWorkflows {
     return Optional.of(userDao.createOrUpdate(user));
   }
 
+  /** Game obj should have no id. For updating an existing model use {@link GameDao#createOrUpdate(HasUUID)}*/
   public Game addGameToLibrary(UUID userId, Game game) {
     if (game.getId() != null) return game;
     game.setOwnerId(userId);

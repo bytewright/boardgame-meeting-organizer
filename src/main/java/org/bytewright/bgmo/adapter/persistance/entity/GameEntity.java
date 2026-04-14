@@ -55,6 +55,8 @@ public class GameEntity extends AbstractEntity<UUID> implements HasUUID {
 
   @Column @Nullable private Double complexity;
 
+  @Column @Nullable  private String artworkLink;
+
   @ManyToOne(fetch = FetchType.LAZY, optional = false)
   @JoinColumn(nullable = false, updatable = false)
   @ToString.Exclude

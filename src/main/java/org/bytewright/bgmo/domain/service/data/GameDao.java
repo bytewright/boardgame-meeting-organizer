@@ -5,5 +5,5 @@ import java.util.UUID;
 import org.bytewright.bgmo.domain.model.Game;
 
 public interface GameDao extends ModelDao<Game> {
-  List<Game> findGamesByUser(UUID userId);
+  List<Game> findByOwnerId(UUID userId);
 }
