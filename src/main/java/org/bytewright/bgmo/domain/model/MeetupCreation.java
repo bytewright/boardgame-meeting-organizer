@@ -10,6 +10,7 @@ import org.bytewright.bgmo.domain.model.user.RegisteredUser;
 
 /**
  * This is a minimal event creation DTO
+ *
  * @see MeetupEvent
  */
 @Data

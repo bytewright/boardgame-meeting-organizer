@@ -30,4 +30,8 @@ public class MeetupEvent implements HasUUID {
   private UUID creatorId;
   private List<MeetupJoinRequest> joinRequests;
   private List<UUID> offeredGames;
+
+  public String logIdentity() {
+    return "Meetup['%s';%s]".formatted(title, id);
+  }
 }

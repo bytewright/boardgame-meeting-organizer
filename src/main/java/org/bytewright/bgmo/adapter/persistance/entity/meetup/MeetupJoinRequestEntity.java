@@ -42,7 +42,7 @@ public class MeetupJoinRequestEntity extends AbstractEntity<UUID> {
   @Builder.Default
   private RequestState requestState = RequestState.OPEN;
 
-  @ManyToOne(optional = false)
+  @ManyToOne(optional = false, cascade = CascadeType.ALL)
   @JoinColumn(nullable = false)
   private MeetupEntity meetup;
 

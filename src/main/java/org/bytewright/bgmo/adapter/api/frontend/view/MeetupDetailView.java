@@ -5,6 +5,7 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.html.*;
+import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.NotificationVariant;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
@@ -18,10 +19,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.bytewright.bgmo.adapter.api.frontend.SessionAuthenticationService;
 import org.bytewright.bgmo.adapter.api.frontend.service.i18n.LocaleService;
 import org.bytewright.bgmo.adapter.api.frontend.view.component.AnonJoinDialog;
+import org.bytewright.bgmo.domain.model.Game;
 import org.bytewright.bgmo.domain.model.MeetupEvent;
 import org.bytewright.bgmo.domain.model.MeetupJoinRequest;
 import org.bytewright.bgmo.domain.model.RequestState;
 import org.bytewright.bgmo.domain.model.user.RegisteredUser;
+import org.bytewright.bgmo.domain.service.data.GameDao;
 import org.bytewright.bgmo.domain.service.data.MeetupDao;
 import org.bytewright.bgmo.domain.service.data.RegisteredUserDao;
 import org.bytewright.bgmo.usecases.MeetupWorkflows;
@@ -63,6 +66,7 @@ public class MeetupDetailView extends VerticalLayout implements BeforeEnterObser
   private final SessionAuthenticationService authService;
   private final MeetupWorkflows meetupWorkflows;
   private final MeetupDao meetupDao;
+  private final GameDao gameDao;
   private final RegisteredUserDao userDao;
 
   /** Null when the visitor is not logged in. */
@@ -75,11 +79,13 @@ public class MeetupDetailView extends VerticalLayout implements BeforeEnterObser
       SessionAuthenticationService authService,
       MeetupWorkflows meetupWorkflows,
       MeetupDao meetupDao,
+      GameDao gameDao,
       RegisteredUserDao userDao) {
     this.localeService = localeService;
     this.authService = authService;
     this.meetupWorkflows = meetupWorkflows;
     this.meetupDao = meetupDao;
+    this.gameDao = gameDao;
     this.userDao = userDao;
 
     setSizeFull();
@@ -155,9 +161,12 @@ public class MeetupDetailView extends VerticalLayout implements BeforeEnterObser
         new VerticalLayout(titleHeading, description, dateSpan, durationSpan, slotsSpan);
     infoSection.setPadding(false);
     add(infoSection);
-
     add(new Hr());
 
+    if (meetup.getOfferedGames() != null && !meetup.getOfferedGames().isEmpty()) {
+      buildOfferedGamesSection();
+      add(new Hr());
+    }
     // ── Public: confirmed attendee names (visible to everyone) ────────────
     buildConfirmedAttendeesSection();
 
@@ -173,6 +182,64 @@ public class MeetupDetailView extends VerticalLayout implements BeforeEnterObser
     }
   }
 
+  private void buildOfferedGamesSection() {
+    add(new H3(getTranslation("meetup.offeredGames")));
+
+    // Fetch the actual Game objects from the list of UUIDs
+    List<Game> games = gameDao.findAllById(meetup.getOfferedGames());
+
+    VerticalLayout gamesList = new VerticalLayout();
+    gamesList.setPadding(false);
+    gamesList.setSpacing(true);
+
+    for (Game game : games) {
+      HorizontalLayout gameCard = new HorizontalLayout();
+      gameCard.setAlignItems(Alignment.CENTER);
+      gameCard.setWidthFull();
+      gameCard
+          .getStyle()
+          .set("background", "var(--lumo-contrast-5pct)")
+          .set("border-radius", "8px")
+          .set("padding", "var(--lumo-space-s)");
+
+      // Using the artworkLink field we discussed
+      Image img =
+          new Image(
+              game.getArtworkLink() != null ? game.getArtworkLink() : "images/default-game.png",
+              "Game box");
+      img.setWidth("60px");
+      img.setHeight("60px");
+      img.getStyle().set("object-fit", "cover").set("border-radius", "4px");
+
+      VerticalLayout gameDetails = new VerticalLayout();
+      gameDetails.setPadding(false);
+      gameDetails.setSpacing(false);
+
+      Span name = new Span(game.getName());
+      name.getStyle().set("font-weight", "bold");
+
+      Span players = new Span("👥 " + game.getMinPlayers() + " - " + game.getMaxPlayers());
+      players
+          .getStyle()
+          .set("font-size", "0.85em")
+          .set("color", "var(--lumo-secondary-text-color)");
+
+      gameDetails.add(name, players);
+      gameCard.add(img, gameDetails);
+
+      // If there is a BGG link or rulebook in the urls list
+      if (game.getBggId() != null) {
+        Anchor bggLink =
+            new Anchor("https://boardgamegeek.com/boardgame/" + game.getBggId(), "BGG");
+        bggLink.setTarget("_blank");
+        gameCard.add(bggLink);
+      }
+
+      gamesList.add(gameCard);
+    }
+    add(gamesList);
+  }
+
   // ── Public section: confirmed names ───────────────────────────────────────
 
   /**
@@ -182,59 +249,23 @@ public class MeetupDetailView extends VerticalLayout implements BeforeEnterObser
   private void buildConfirmedAttendeesSection() {
     add(new H3(getTranslation("meetup.confirmedAttendees")));
 
-    Set<UUID> confirmedIds = Set.of();
-    if (confirmedIds.isEmpty()) {
+    List<String> confirmedAttendees =
+        meetup.getJoinRequests().stream()
+            .filter(r -> r.getRequestState() == RequestState.ACCEPTED)
+            .map(MeetupJoinRequest::getDisplayName)
+            .toList();
+    if (confirmedAttendees.isEmpty()) {
       add(new Span(getTranslation("meetup.confirmedAttendeesNone")));
       return;
     }
-
-    // Collect display names: prefer the displayName stored on the join request
-    // (covers both registered and anon users uniformly), fall back to userDao lookup.
-    Map<UUID, String> nameByUserId =
-        meetup.getJoinRequests().stream()
-            .filter(r -> r.getUserId() != null)
-            .collect(
-                Collectors.toMap(
-                    MeetupJoinRequest::getUserId, MeetupJoinRequest::getDisplayName, (a, b) -> a));
-
     VerticalLayout nameList = new VerticalLayout();
     nameList.setPadding(false);
     nameList.setSpacing(false);
 
-    // Anonymous confirmed attendees — identified only by displayName on their request
-    meetup.getJoinRequests().stream()
-        .filter(this::isAnonymous)
-        .filter(r -> r.getAnonToken() != null)
-        .filter(r -> isConfirmedAnonRequest(r, confirmedIds))
-        .map(MeetupJoinRequest::getDisplayName)
-        .forEach(name -> nameList.add(new Span("• " + name)));
-
     // Registered confirmed attendees
-    confirmedIds.forEach(
-        uid -> {
-          String name =
-              nameByUserId.getOrDefault(
-                  uid, userDao.find(uid).map(RegisteredUser::getDisplayName).orElse("?"));
-          nameList.add(new Span("• " + name));
-        });
+    confirmedAttendees.stream().map(name -> new Span("• " + name)).forEach(nameList::add);
 
     add(nameList);
-  }
-
-  /**
-   * Anonymous confirmed attendees are tracked via their anonToken. A request counts as confirmed if
-   * confirmedIds contains a synthetic marker UUID derived from the token, or if the DAO stores
-   * confirmed state on the request itself.
-   *
-   * <p>NOTE: Adjust this predicate to match however your DAO/domain tracks confirmation state for
-   * anonymous attendees (e.g. a boolean flag on the request, or a separate confirmedAnonTokens set
-   * on MeetupEvent).
-   */
-  private boolean isConfirmedAnonRequest(MeetupJoinRequest req, Set<UUID> confirmedIds) {
-    // Placeholder: adapt to your persistence model.
-    // For example, if you add Set<UUID> confirmedAnonTokens to MeetupEvent:
-    //   return meetup.getConfirmedAnonTokens().contains(req.getAnonToken());
-    return false;
   }
 
   // ── Anonymous visitor section ──────────────────────────────────────────────
@@ -264,10 +295,18 @@ public class MeetupDetailView extends VerticalLayout implements BeforeEnterObser
         Span status = new Span(getTranslation("meetup.join-requested"));
         status.getStyle().set("color", "var(--lumo-primary-color)");
         add(status);
-        Span hint = new Span(getTranslation("meetup.join-anonHint"));
+        Span hint = new Span(getTranslation("meetup.join-anonLoginHint"));
         hint.getStyle().set("font-size", "0.85em").set("color", "var(--lumo-secondary-text-color)");
         add(hint);
       }
+
+      Button joinCancelRequestBtn =
+          new Button(
+              getTranslation("meetup.cancel-request"),
+              VaadinIcon.CROP.create(),
+              e -> cancelRequest(myRequest.get()));
+      joinCancelRequestBtn.addThemeVariants(ButtonVariant.LUMO_PRIMARY, ButtonVariant.LUMO_SUCCESS);
+      add(joinCancelRequestBtn);
       return;
     }
 
@@ -299,6 +338,11 @@ public class MeetupDetailView extends VerticalLayout implements BeforeEnterObser
     add(loginHint);
   }
 
+  private void cancelRequest(MeetupJoinRequest meetupJoinRequest) {
+    meetupWorkflows.cancelJoinRequest(meetupJoinRequest.getId());
+    refreshMeetup();
+  }
+
   private void openAnonJoinDialog() {
     new AnonJoinDialog(
             meetup.getTitle(),
@@ -325,23 +369,43 @@ public class MeetupDetailView extends VerticalLayout implements BeforeEnterObser
         meetup.getJoinRequests().stream()
             .filter(r -> currentUser.getId().equals(r.getUserId()))
             .findAny();
-    boolean alreadyRequested = myRequest.isPresent();
+    boolean alreadyRequested =
+        myRequest
+            .map(MeetupJoinRequest::getRequestState)
+            .map(state -> RequestState.OPEN == state)
+            .orElse(false);
     boolean alreadyConfirmed =
         myRequest
             .map(MeetupJoinRequest::getRequestState)
             .map(state -> RequestState.ACCEPTED == state)
             .orElse(false);
-    boolean isFull = meetupWorkflows.isFull(meetup);
 
     if (alreadyConfirmed) {
       Span status = new Span(getTranslation("meetup.join-confirmed"));
       status.getStyle().set("color", "var(--lumo-success-color)").set("font-weight", "bold");
       add(status);
+
+      Button joinCancelRequestBtn =
+          new Button(
+              getTranslation("meetup.cancel-request"),
+              VaadinIcon.CROP.create(),
+              e -> cancelRequest(myRequest.get()));
+      joinCancelRequestBtn.addThemeVariants(ButtonVariant.LUMO_PRIMARY, ButtonVariant.LUMO_SUCCESS);
+      add(joinCancelRequestBtn);
     } else if (alreadyRequested) {
       Span status = new Span(getTranslation("meetup.join-requested"));
       status.getStyle().set("color", "var(--lumo-primary-color)");
       add(status);
+
+      Button joinCancelRequestBtn =
+          new Button(
+              getTranslation("meetup.cancel-request"),
+              VaadinIcon.CROP.create(),
+              e -> cancelRequest(myRequest.get()));
+      joinCancelRequestBtn.addThemeVariants(ButtonVariant.LUMO_PRIMARY, ButtonVariant.LUMO_SUCCESS);
+      add(joinCancelRequestBtn);
     } else {
+      boolean isFull = meetupWorkflows.isFull(meetup);
       Button joinBtn =
           new Button(
               isFull ? getTranslation("meetup.join-full") : getTranslation("meetup.join-request"),

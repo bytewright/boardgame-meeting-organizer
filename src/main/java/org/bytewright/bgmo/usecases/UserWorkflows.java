@@ -1,7 +1,6 @@
 package org.bytewright.bgmo.usecases;
 
 import jakarta.transaction.Transactional;
-import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,15 +20,21 @@ public class UserWorkflows {
   private final RegisteredUserDao userDao;
   private final GameDao gameDao;
 
-  /** User obj should have no id. For updating an existing model use {@link RegisteredUserDao#createOrUpdate(HasUUID)}*/
-  public Optional<RegisteredUser> create(RegisteredUser user) {
+  /**
+   * User obj should have no id. For updating an existing model use {@link
+   * RegisteredUserDao#createOrUpdate(HasUUID)}
+   */
+  public RegisteredUser create(RegisteredUser user) {
     if (user.getId() != null) {
       throw new IllegalArgumentException("User has an id already");
     }
-    return Optional.of(userDao.createOrUpdate(user));
+    return userDao.createOrUpdate(user);
   }
 
-  /** Game obj should have no id. For updating an existing model use {@link GameDao#createOrUpdate(HasUUID)}*/
+  /**
+   * Game obj should have no id. For updating an existing model use {@link
+   * GameDao#createOrUpdate(HasUUID)}
+   */
   public Game addGameToLibrary(UUID userId, Game game) {
     if (game.getId() != null) return game;
     game.setOwnerId(userId);
@@ -42,5 +47,11 @@ public class UserWorkflows {
     RegisteredUser user = userDao.findOrThrow(userId);
     user.getContactInfos().add(contactInfoWithId);
     return userDao.createOrUpdate(user);
+  }
+
+  public void removeGameFromLibrary(UUID gameId) {
+    // todo this will also remove the game from all meetups, maybe instead remove owner and set all
+    // fields to "deleted"?
+    gameDao.delete(gameId);
   }
 }

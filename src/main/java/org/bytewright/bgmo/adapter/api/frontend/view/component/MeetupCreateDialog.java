@@ -3,6 +3,7 @@ package org.bytewright.bgmo.adapter.api.frontend.view.component;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.checkbox.Checkbox;
+import com.vaadin.flow.component.combobox.MultiSelectComboBox;
 import com.vaadin.flow.component.datetimepicker.DateTimePicker;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.formlayout.FormLayout;
@@ -14,14 +15,19 @@ import com.vaadin.flow.component.textfield.IntegerField;
 import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
 import java.time.ZoneId;
+import org.bytewright.bgmo.domain.model.Game;
 import org.bytewright.bgmo.domain.model.MeetupCreation;
 import org.bytewright.bgmo.domain.model.user.RegisteredUser;
+import org.bytewright.bgmo.domain.service.data.GameDao;
 import org.bytewright.bgmo.usecases.MeetupWorkflows;
 
 public class MeetupCreateDialog extends Dialog {
 
   public MeetupCreateDialog(
-      RegisteredUser creator, MeetupWorkflows meetupWorkflows, Runnable onSuccess) {
+      RegisteredUser creator,
+      MeetupWorkflows meetupWorkflows,
+      GameDao gameDao,
+      Runnable onSuccess) {
 
     setHeaderTitle(getTranslation("meetup-creation.title"));
     setWidth("480px");
@@ -63,6 +69,13 @@ public class MeetupCreateDialog extends Dialog {
 
     // Slot count field is hidden when unlimited is checked
     unlimitedSlotsCheck.addValueChangeListener(e -> slotsField.setVisible(!e.getValue()));
+    // ── Game Selection ──────────────────────────────────────────────────────
+    MultiSelectComboBox<Game> gamePicker =
+        new MultiSelectComboBox<>(getTranslation("meetup-creation.field.games"));
+    gamePicker.setWidthFull();
+    gamePicker.setItems(gameDao.findByOwnerId(creator.getId())); // Fetches user's library
+    gamePicker.setItemLabelGenerator(Game::getName);
+    gamePicker.setPlaceholder(getTranslation("meetup-creation.field.gamesPlaceholder"));
 
     FormLayout form =
         new FormLayout(
@@ -71,7 +84,8 @@ public class MeetupCreateDialog extends Dialog {
             eventDatePicker,
             durationField,
             unlimitedSlotsCheck,
-            slotsField);
+            slotsField,
+            gamePicker);
     form.setResponsiveSteps(new FormLayout.ResponsiveStep("0", 1));
     add(form);
 
@@ -112,6 +126,7 @@ public class MeetupCreateDialog extends Dialog {
                       .creator(creator)
                       .unlimitedSlots(unlimited)
                       .joinSlots(slots)
+                      .offeredGames(gamePicker.getValue().stream().map(Game::getId).toList())
                       .build();
 
               meetupWorkflows.create(creation);

@@ -4,7 +4,6 @@ import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.grid.Grid;
-import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.NotificationVariant;
@@ -19,17 +18,18 @@ import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.bytewright.bgmo.adapter.api.frontend.SessionAuthenticationService;
 import org.bytewright.bgmo.adapter.api.frontend.service.i18n.LocaleService;
-import org.bytewright.bgmo.adapter.api.frontend.view.component.MeetupCreateDialog;
+import org.bytewright.bgmo.adapter.api.frontend.view.component.MainLayout;
 import org.bytewright.bgmo.domain.model.MeetupEvent;
 import org.bytewright.bgmo.domain.model.MeetupJoinRequest;
 import org.bytewright.bgmo.domain.model.RequestState;
 import org.bytewright.bgmo.domain.model.user.RegisteredUser;
+import org.bytewright.bgmo.domain.service.data.GameDao;
 import org.bytewright.bgmo.domain.service.data.MeetupDao;
 import org.bytewright.bgmo.usecases.MeetupWorkflows;
 
 @Slf4j
-@Route("")
-@RouteAlias("dashboard")
+@Route(value = "dashboard", layout = MainLayout.class)
+@RouteAlias("")
 @RouteAlias("home")
 @PageTitle("Dashboard | Boardgame Meeting Organizer")
 @PermitAll
@@ -39,17 +39,20 @@ public class DashboardView extends VerticalLayout implements BeforeEnterObserver
   private final SessionAuthenticationService authService;
   private final MeetupWorkflows meetupWorkflows;
   private final MeetupDao meetupDao;
+  private final GameDao gameDao;
   private RegisteredUser currentUser;
 
   public DashboardView(
       LocaleService localeService,
       SessionAuthenticationService authService,
       MeetupWorkflows meetupWorkflows,
-      MeetupDao meetupDao) {
+      MeetupDao meetupDao,
+      GameDao gameDao) {
     this.localeService = localeService;
     this.authService = authService;
     this.meetupWorkflows = meetupWorkflows;
     this.meetupDao = meetupDao;
+    this.gameDao = gameDao;
 
     setSizeFull();
     setPadding(true);
@@ -58,27 +61,6 @@ public class DashboardView extends VerticalLayout implements BeforeEnterObserver
 
   private void buildUI() {
     removeAll();
-
-    // ── Header row ──────────────────────────────────────────────────────────
-    H2 welcomeHeader = new H2(getTranslation("dashboard.welcome", currentUser.getDisplayName()));
-
-    Button createMeetupButton =
-        new Button(getTranslation("meetup.create"), e -> openCreateDialog());
-    createMeetupButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-
-    Button logoutButton =
-        new Button(
-            getTranslation("meetup.logout"),
-            e -> {
-              authService.logout();
-              UI.getCurrent().navigate(LoginView.class);
-            });
-
-    HorizontalLayout headerLayout =
-        new HorizontalLayout(welcomeHeader, createMeetupButton, logoutButton);
-    headerLayout.setAlignItems(Alignment.BASELINE);
-    headerLayout.setFlexGrow(1, welcomeHeader);
-    add(headerLayout);
 
     // ── Upcoming meetups grid ────────────────────────────────────────────────
     List<MeetupEvent> upcomingMeetups =
@@ -120,7 +102,12 @@ public class DashboardView extends VerticalLayout implements BeforeEnterObserver
     grid.addComponentColumn(this::buildRowActions)
         .setHeader(getTranslation("dashboard.grid.actions"))
         .setAutoWidth(true);
-
+    grid.addItemClickListener(
+        event ->
+            UI.getCurrent()
+                .navigate(
+                    MeetupDetailView.class,
+                    new RouteParam("meetupId", event.getItem().getId().toString())));
     grid.setItems(upcomingMeetups);
     add(grid);
   }
@@ -181,10 +168,6 @@ public class DashboardView extends VerticalLayout implements BeforeEnterObserver
     }
 
     return actions;
-  }
-
-  private void openCreateDialog() {
-    new MeetupCreateDialog(currentUser, meetupWorkflows, this::buildUI).open();
   }
 
   @Override

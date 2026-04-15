@@ -35,7 +35,7 @@ public class BaseEntityRepository {
   }
 
   public UUID mapEntityToId(HasUUID hasUUID) {
-    return hasUUID.getId();
+    return hasUUID == null ? null : hasUUID.getId();
   }
 
   @Nullable
