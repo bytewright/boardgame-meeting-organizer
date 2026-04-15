@@ -12,11 +12,14 @@ Whether you're a heavy-euro enthusiast or a casual party-game fan, BGMO helps yo
 - 🌍 Internationalized: Full i18n support for localized gaming communities.
 
 # 🛠️ Tech Stack
+
 See [Architecture.md](./ARCHITECTURE.md)
 - Backend: Java 21+, Spring Boot 3.4.+ (Update to spring 4.x is planned)
 - Frontend: Vaadin 24 (Web Components & Java-based UI) (Update to Vaadin 25.x is planned)
 - Persistence: Jakarta Persistence (JPA) / Spring Data / MapStruct
 - Architecture: Hexagonal / Onion-architecture / Ports & Adapters
+
+> Disclaimer: Of course AI was used in parts of this - Mostly the frontend vaadin code.
 
 # 🚀 Getting Started
 
