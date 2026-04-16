@@ -1,5 +1,6 @@
 package org.bytewright.bgmo.adapter.api.frontend.view.component;
 
+import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.applayout.AppLayout;
 import com.vaadin.flow.component.button.Button;
@@ -11,9 +12,11 @@ import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.router.RouterLayout;
 import com.vaadin.flow.router.RouterLink;
 import org.bytewright.bgmo.adapter.api.frontend.SessionAuthenticationService;
+import org.bytewright.bgmo.adapter.api.frontend.view.AdminUserApprovalView;
 import org.bytewright.bgmo.adapter.api.frontend.view.DashboardView;
 import org.bytewright.bgmo.adapter.api.frontend.view.GameLibraryView;
 import org.bytewright.bgmo.adapter.api.frontend.view.LoginView;
+import org.bytewright.bgmo.domain.model.user.UserRole;
 import org.bytewright.bgmo.domain.service.data.GameDao;
 import org.bytewright.bgmo.usecases.MeetupWorkflows;
 
@@ -64,6 +67,12 @@ public class MainLayout extends AppLayout implements RouterLayout {
     logoutBtn.addThemeVariants(ButtonVariant.LUMO_TERTIARY, ButtonVariant.LUMO_ERROR);
 
     HorizontalLayout header = new HorizontalLayout(homeLink, logo, libBtn, createBtn, logoutBtn);
+    if (authService
+        .getCurrentUser()
+        .map(registeredUser -> registeredUser.getRole() == UserRole.ADMIN)
+        .orElse(false)) {
+      header.add(adminLink());
+    }
     header.setDefaultVerticalComponentAlignment(FlexComponent.Alignment.CENTER);
     header.expand(logo); // Pushes buttons to the right
     header.setWidthFull();
@@ -71,6 +80,16 @@ public class MainLayout extends AppLayout implements RouterLayout {
     header.getStyle().set("border-bottom", "1px solid var(--lumo-contrast-10pct)");
 
     addToNavbar(header);
+  }
+
+  private Component adminLink() {
+    Button adminBtn =
+        new Button(
+            "Admin",
+            VaadinIcon.CONTROLLER.create(),
+            e -> UI.getCurrent().navigate(AdminUserApprovalView.class));
+    adminBtn.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
+    return adminBtn;
   }
 
   private void openCreateDialog() {

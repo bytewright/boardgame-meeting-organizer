@@ -6,6 +6,7 @@ import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.bytewright.bgmo.domain.model.user.RegisteredUser;
+import org.bytewright.bgmo.domain.model.user.UserRole;
 import org.bytewright.bgmo.domain.model.user.UserStatus;
 import org.bytewright.bgmo.domain.service.automation.NotificationManager;
 import org.bytewright.bgmo.domain.service.data.RegisteredUserDao;
@@ -39,5 +40,12 @@ public class AdminWorkflows {
         .filter(registeredUser -> registeredUser.getStatus().isLocked())
         .sorted(Comparator.comparing(RegisteredUser::getTsCreation))
         .toList();
+  }
+
+  public RegisteredUser makeAdmin(UUID userId) {
+    RegisteredUser user = userDao.findOrThrow(userId);
+    log.info("User '{}' is promoted to role admin!", user.logEntity());
+    user.setRole(UserRole.ADMIN);
+    return userDao.createOrUpdate(user);
   }
 }

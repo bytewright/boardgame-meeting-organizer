@@ -23,6 +23,7 @@ import org.springframework.stereotype.Component;
 public class MockDataInitializer implements ApplicationListener<ApplicationReadyEvent> {
   private static final int NUM_TEST_ADMINS = 1;
   private static final int NUM_TEST_USERS = 10;
+  private final AdminWorkflows adminWorkflows;
   private final UserWorkflows userWorkflows;
   private final MeetupWorkflows meetupWorkflows;
   private final TimeSource timeSource;
@@ -36,6 +37,8 @@ public class MockDataInitializer implements ApplicationListener<ApplicationReady
     for (int i = 0; i < NUM_TEST_ADMINS; i++) {
       RegisteredUser.Creation user = createAdmin(i);
       RegisteredUser registeredUser = userWorkflows.create(user);
+      adminWorkflows.makeAdmin(registeredUser.getId());
+      adminWorkflows.approveUser(registeredUser.getId(), registeredUser.getId());
       userWorkflows.addGameToLibrary(
           registeredUser.getId(),
           Game.builder().name("Super Game-" + i).minPlayers(1).maxPlayers(4).build());
@@ -57,6 +60,10 @@ public class MockDataInitializer implements ApplicationListener<ApplicationReady
       RegisteredUser.Creation user = createUser(i);
       log.info("User: {} pw: {}", user.getLoginName(), user.getPassword());
       RegisteredUser registeredUser = userWorkflows.create(user);
+      if (i == 0) {
+        continue;
+      }
+      adminWorkflows.approveUser(admins.getFirst().getId(), registeredUser.getId());
       Game game =
           userWorkflows.addGameToLibrary(
               registeredUser.getId(),

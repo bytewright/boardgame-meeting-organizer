@@ -1,10 +1,10 @@
 package org.bytewright.bgmo.adapter.api.frontend.view;
 
+import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.html.H1;
 import com.vaadin.flow.component.login.LoginForm;
-import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
@@ -33,21 +33,10 @@ public class LoginView extends VerticalLayout implements BeforeEnterObserver {
     LoginForm loginForm = new LoginForm();
     loginForm.setAction("login"); // Vaadin handles this internally if set
     loginForm.addForgotPasswordListener(event -> authService.passwordReset());
-    // loginForm.addLoginListener(
-    //    event -> {
-    //      boolean isAuthenticated = authService.login(event.getUsername(), event.getPassword());
-    //      if (isAuthenticated) {
-    //        Notification.show(
-    //            getTranslation("login.success"), 3000, Notification.Position.TOP_CENTER);
-    //        UI.getCurrent().navigate(DashboardView.class);
-    //      } else {
-    //        loginForm.setError(true);
-    //      }
-    //    });
 
     Button registerButton = new Button(getTranslation("login.register"));
     registerButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
-    registerButton.addClickListener(e -> Notification.show("Registration is not yet implemented."));
+    registerButton.addClickListener(e -> UI.getCurrent().navigate(RegistrationView.class));
 
     add(new H1(getTranslation("login.title")), loginForm, registerButton);
   }

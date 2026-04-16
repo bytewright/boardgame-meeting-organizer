@@ -77,9 +77,11 @@ public class DashboardView extends VerticalLayout implements BeforeEnterObserver
         .setFlexGrow(2);
     grid.addColumn(m -> m.getEventDate().format(localeService.getFormatter()))
         .setHeader(getTranslation("dashboard.grid.date"))
-        .setFlexGrow(1);
+        .setFlexGrow(0)
+        .setAutoWidth(true);
     grid.addColumn(m -> getTranslation("meetup.duration", m.getDurationHours()))
         .setHeader(getTranslation("dashboard.grid.duration"))
+        .setFlexGrow(0)
         .setAutoWidth(true);
     grid.addColumn(
             m ->
@@ -94,6 +96,7 @@ public class DashboardView extends VerticalLayout implements BeforeEnterObserver
                             .count(),
                         m.getJoinSlots()))
         .setHeader(getTranslation("dashboard.grid.slots"))
+        .setFlexGrow(0)
         .setAutoWidth(true);
     grid.addComponentColumn(this::buildRowActions)
         .setHeader(getTranslation("dashboard.grid.actions"))
