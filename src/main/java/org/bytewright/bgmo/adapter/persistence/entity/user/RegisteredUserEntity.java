@@ -18,8 +18,8 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
     name = "registered_users",
     uniqueConstraints =
         @UniqueConstraint(
-            name = "UC_USER_EMAIL",
-            columnNames = {RegisteredUserEntity_.EMAIL}))
+            name = "UC_USER_LOGIN_NAME",
+            columnNames = {RegisteredUserEntity_.LOGIN_NAME}))
 @Getter
 @Setter
 @Builder
@@ -38,13 +38,6 @@ public class RegisteredUserEntity extends AbstractEntity<UUID> implements HasUUI
 
   @Column(nullable = false, length = 1024)
   private String displayName;
-
-  @Column(nullable = false)
-  private String email;
-
-  @Column private String signalHandle;
-
-  @Column private String telegramHandle;
 
   @Column(nullable = false)
   private String passwordHash;

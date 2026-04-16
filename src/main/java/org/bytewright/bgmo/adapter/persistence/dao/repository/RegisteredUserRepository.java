@@ -8,5 +8,6 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface RegisteredUserRepository extends JpaRepository<RegisteredUserEntity, UUID> {
-  Optional<RegisteredUserEntity> findByEmailAndPasswordHash(String email, String passwordHash);
+
+  Optional<RegisteredUserEntity> findByLoginName(String loginName);
 }

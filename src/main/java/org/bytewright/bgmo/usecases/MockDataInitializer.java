@@ -9,6 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.bytewright.bgmo.domain.model.Game;
 import org.bytewright.bgmo.domain.model.MeetupCreation;
 import org.bytewright.bgmo.domain.model.MeetupEvent;
+import org.bytewright.bgmo.domain.model.user.CreateUserDto;
 import org.bytewright.bgmo.domain.model.user.RegisteredUser;
 import org.bytewright.bgmo.domain.service.automation.TimeSource;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
@@ -34,7 +35,7 @@ public class MockDataInitializer implements ApplicationListener<ApplicationReady
     List<MeetupEvent> meetupEvents = new ArrayList<>();
     UUID adminMeetup = null;
     for (int i = 0; i < NUM_TEST_ADMINS; i++) {
-      RegisteredUser user = createAdmin(i);
+      CreateUserDto user = createAdmin(i);
       RegisteredUser registeredUser = userWorkflows.create(user);
       userWorkflows.addGameToLibrary(
           registeredUser.getId(),
@@ -54,8 +55,8 @@ public class MockDataInitializer implements ApplicationListener<ApplicationReady
       adminMeetup = meetupEvent.getId();
     }
     for (int i = 0; i < NUM_TEST_USERS; i++) {
-      RegisteredUser user = createUser(i);
-      log.info("User: {} pw: {}", user.getEmail(), user.getPasswordHash());
+      CreateUserDto user = createUser(i);
+      log.info("User: {} pw: {}", user.getLoginName(), user.getPassword());
       RegisteredUser registeredUser = userWorkflows.create(user);
       Game game =
           userWorkflows.addGameToLibrary(
@@ -84,22 +85,22 @@ public class MockDataInitializer implements ApplicationListener<ApplicationReady
     log.warn("Added {} users and {} admins: {}", NUM_TEST_USERS, NUM_TEST_ADMINS, admins);
   }
 
-  private RegisteredUser createUser(int index) {
+  private CreateUserDto createUser(int index) {
     String userName = "user-%d".formatted(index);
-    return RegisteredUser.builder()
+    return CreateUserDto.builder()
         .loginName(userName)
         .displayName(userName)
-        .passwordHash("noPw")
+        .password("admin")
         .email("%s@some.mail".formatted(userName))
         .build();
   }
 
-  private RegisteredUser createAdmin(int index) {
+  private CreateUserDto createAdmin(int index) {
     String userName = index == 0 ? "admin" : "admin-%d".formatted(index);
-    return RegisteredUser.builder()
+    return CreateUserDto.builder()
         .loginName(userName)
         .displayName(userName)
-        .passwordHash("admin")
+        .password("admin")
         .email("%s@admin.mail".formatted(userName))
         .build();
   }

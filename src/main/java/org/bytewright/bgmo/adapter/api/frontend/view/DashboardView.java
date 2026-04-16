@@ -23,7 +23,6 @@ import org.bytewright.bgmo.domain.model.MeetupEvent;
 import org.bytewright.bgmo.domain.model.MeetupJoinRequest;
 import org.bytewright.bgmo.domain.model.RequestState;
 import org.bytewright.bgmo.domain.model.user.RegisteredUser;
-import org.bytewright.bgmo.domain.service.data.GameDao;
 import org.bytewright.bgmo.domain.service.data.MeetupDao;
 import org.bytewright.bgmo.usecases.MeetupWorkflows;
 
@@ -39,20 +38,17 @@ public class DashboardView extends VerticalLayout implements BeforeEnterObserver
   private final SessionAuthenticationService authService;
   private final MeetupWorkflows meetupWorkflows;
   private final MeetupDao meetupDao;
-  private final GameDao gameDao;
   private RegisteredUser currentUser;
 
   public DashboardView(
       LocaleService localeService,
       SessionAuthenticationService authService,
       MeetupWorkflows meetupWorkflows,
-      MeetupDao meetupDao,
-      GameDao gameDao) {
+      MeetupDao meetupDao) {
     this.localeService = localeService;
     this.authService = authService;
     this.meetupWorkflows = meetupWorkflows;
     this.meetupDao = meetupDao;
-    this.gameDao = gameDao;
 
     setSizeFull();
     setPadding(true);

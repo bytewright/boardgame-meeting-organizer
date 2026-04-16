@@ -13,9 +13,6 @@ public class RegisteredUser implements HasUUID {
   private UUID id;
   private String displayName;
   private String loginName;
-  private String email;
-  private String signalHandle;
-  private String telegramHandle;
   private String passwordHash;
   private Instant tsCreation;
   private Instant tsModified;

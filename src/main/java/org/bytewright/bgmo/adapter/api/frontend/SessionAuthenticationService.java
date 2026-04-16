@@ -1,56 +1,44 @@
 package org.bytewright.bgmo.adapter.api.frontend;
 
-import com.vaadin.flow.server.VaadinSession;
-import com.vaadin.flow.spring.annotation.VaadinSessionScope;
-import jakarta.transaction.Transactional;
 import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.bytewright.bgmo.adapter.api.frontend.service.security.BgmoVaadinWebSecurity;
 import org.bytewright.bgmo.domain.model.user.RegisteredUser;
-import org.bytewright.bgmo.domain.service.user.AuthenticationService;
+import org.bytewright.bgmo.domain.service.data.RegisteredUserDao;
 import org.bytewright.bgmo.domain.service.user.CurrentUserAccessor;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 @Slf4j
 @Service
-@Transactional
-@VaadinSessionScope
 @RequiredArgsConstructor
 public class SessionAuthenticationService implements CurrentUserAccessor {
-
-  private static final String CURRENT_USER_SESSION_KEY = "currentUserId";
-  private final AuthenticationService authenticationService;
-
-  public boolean login(String email, String password) {
-    Optional<RegisteredUser> userOptional = authenticationService.login(email, password);
-    if (userOptional.isPresent()) {
-      UUID userId = userOptional.map(RegisteredUser::getId).orElseThrow();
-      log.info("User has logged in using password: {}", userId);
-      // Store user in Vaadin session
-      VaadinSession.getCurrent().setAttribute(CURRENT_USER_SESSION_KEY, userId);
-      return true;
-    }
-    return false;
-  }
-
-  public void logout() {
-    try {
-      getCurrentUser().map(RegisteredUser::getId).ifPresent(authenticationService::logout);
-    } finally {
-      VaadinSession.getCurrent().setAttribute(CURRENT_USER_SESSION_KEY, null);
-      // I think thats not needed?
-      // VaadinSession.getCurrent().close();
-    }
-  }
+  private final BgmoVaadinWebSecurity bgmoVaadinWebSecurity;
+  private final RegisteredUserDao registeredUserDao;
 
   @Override
   public Optional<RegisteredUser> getCurrentUser() {
-    UUID userId = (UUID) VaadinSession.getCurrent().getAttribute(CURRENT_USER_SESSION_KEY);
-    return Optional.ofNullable(userId).flatMap(authenticationService::findById);
+    return Optional.ofNullable(SecurityContextHolder.getContext().getAuthentication())
+        .filter(Authentication::isAuthenticated)
+        .filter(auth -> !(auth instanceof AnonymousAuthenticationToken))
+        .map(Authentication::getName) // this is the UUID string, set by app impl of
+        // org.springframework.security.core.userdetails.UserDetailsService
+        .map(UUID::fromString)
+        .flatMap(registeredUserDao::find);
+  }
+
+  public void logout() {
+    bgmoVaadinWebSecurity.getAuthenticationContext().logout();
+    // Vaadin's logout should invalidate the session;
+    // SecurityContextHolder is cleared automatically
+    // UI.getCurrent().getPage().setLocation("/logout");
   }
 
   public void passwordReset() {
-    log.info("User has forgot the password, todo add impl.");
+    log.info("Password reset requested — not yet implemented.");
   }
 }

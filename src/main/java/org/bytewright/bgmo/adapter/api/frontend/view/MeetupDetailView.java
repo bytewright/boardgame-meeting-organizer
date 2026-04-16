@@ -458,7 +458,10 @@ public class MeetupDetailView extends VerticalLayout implements BeforeEnterObser
                 // otherwise fall back to their account e-mail (you may also omit this).
                 return req.getContactInfo() != null
                     ? req.getContactInfo()
-                    : userDao.find(req.getUserId()).map(RegisteredUser::getEmail).orElse("—");
+                    : userDao.find(req.getUserId()).map(RegisteredUser::getContactInfos).stream()
+                        .flatMap(Collection::stream)
+                        .map(Objects::toString)
+                        .collect(Collectors.joining());
               })
           .setHeader(getTranslation("meetup.grid.contact"))
           .setFlexGrow(1);

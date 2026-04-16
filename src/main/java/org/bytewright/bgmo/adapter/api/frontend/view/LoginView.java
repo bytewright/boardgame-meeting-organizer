@@ -1,6 +1,5 @@
 package org.bytewright.bgmo.adapter.api.frontend.view;
 
-import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.html.H1;
@@ -22,7 +21,6 @@ import org.bytewright.bgmo.adapter.api.frontend.SessionAuthenticationService;
 public class LoginView extends VerticalLayout implements BeforeEnterObserver {
 
   private final SessionAuthenticationService authService;
-  private final LoginForm loginForm = new LoginForm();
 
   public LoginView(SessionAuthenticationService authService) {
     this.authService = authService;
@@ -32,19 +30,20 @@ public class LoginView extends VerticalLayout implements BeforeEnterObserver {
     setAlignItems(Alignment.CENTER);
     setJustifyContentMode(JustifyContentMode.CENTER);
 
+    LoginForm loginForm = new LoginForm();
     loginForm.setAction("login"); // Vaadin handles this internally if set
     loginForm.addForgotPasswordListener(event -> authService.passwordReset());
-    loginForm.addLoginListener(
-        event -> {
-          boolean isAuthenticated = authService.login(event.getUsername(), event.getPassword());
-          if (isAuthenticated) {
-            Notification.show(
-                getTranslation("login.success"), 3000, Notification.Position.TOP_CENTER);
-            UI.getCurrent().navigate(DashboardView.class);
-          } else {
-            loginForm.setError(true);
-          }
-        });
+    // loginForm.addLoginListener(
+    //    event -> {
+    //      boolean isAuthenticated = authService.login(event.getUsername(), event.getPassword());
+    //      if (isAuthenticated) {
+    //        Notification.show(
+    //            getTranslation("login.success"), 3000, Notification.Position.TOP_CENTER);
+    //        UI.getCurrent().navigate(DashboardView.class);
+    //      } else {
+    //        loginForm.setError(true);
+    //      }
+    //    });
 
     Button registerButton = new Button(getTranslation("login.register"));
     registerButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);

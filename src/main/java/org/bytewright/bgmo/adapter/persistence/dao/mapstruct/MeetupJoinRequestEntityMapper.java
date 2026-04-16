@@ -6,7 +6,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.bytewright.bgmo.adapter.persistence.dao.BaseEntityMapper;
 import org.bytewright.bgmo.adapter.persistence.dao.BaseMapperConfig;
 import org.bytewright.bgmo.adapter.persistence.entity.meetup.MeetupJoinRequestEntity;
-import org.bytewright.bgmo.adapter.persistence.entity.meetup.MeetupJoinRequestEntity_;
 import org.bytewright.bgmo.domain.model.MeetupJoinRequest;
 import org.bytewright.bgmo.domain.service.data.ModelDao;
 import org.mapstruct.*;
@@ -20,8 +19,8 @@ public abstract class MeetupJoinRequestEntityMapper
     extends BaseEntityMapper<MeetupJoinRequest, MeetupJoinRequestEntity>
     implements ModelDao<MeetupJoinRequest> {
 
-  @Mapping(target = MeetupJoinRequestEntity_.MEETUP, source = "meetupId")
-  @Mapping(target = MeetupJoinRequestEntity_.USER, source = "userId")
+  @Mapping(target = "meetup", source = "meetupId")
+  @Mapping(target = "user", source = "userId")
   @Override
   public abstract void updateEntity(
       @MappingTarget MeetupJoinRequestEntity currentEntity, MeetupJoinRequest model);
