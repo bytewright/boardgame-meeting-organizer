@@ -5,7 +5,6 @@ import java.security.SecureRandom;
 import java.time.ZonedDateTime;
 import java.util.Random;
 import lombok.RequiredArgsConstructor;
-import org.bytewright.bgmo.domain.model.user.CreateUserDto;
 import org.bytewright.bgmo.domain.model.user.RegisteredUser;
 import org.bytewright.bgmo.domain.service.automation.TimeSource;
 import org.bytewright.bgmo.usecases.UserWorkflows;
@@ -21,7 +20,7 @@ public class TestHelper {
   public RegisteredUser user() {
     String uniqueName = "rndName%s".formatted(rnd.nextInt());
     return userWorkflows.create(
-        CreateUserDto.builder()
+        RegisteredUser.Creation.builder()
             .loginName(uniqueName)
             .displayName(uniqueName)
             .password("somePwHash")

@@ -18,8 +18,11 @@ public sealed interface ContactInfo extends HasUUID
 
   ContactInfo withUserId(UUID userId);
 
+  boolean isVerified();
+
   @Builder(toBuilder = true)
-  record EmailContact(UUID id, UUID userId, String email) implements ContactInfo {
+  record EmailContact(UUID id, UUID userId, String email, boolean isVerified)
+      implements ContactInfo {
     @Override
     public ContactInfoType type() {
       return ContactInfoType.EMAIL;
@@ -50,10 +53,17 @@ public sealed interface ContactInfo extends HasUUID
     public ContactInfo withUserId(UUID userId) {
       return toBuilder().userId(userId).build();
     }
+
+    @Override
+    public boolean isVerified() {
+      // App does not validate
+      return true;
+    }
   }
 
   @Builder(toBuilder = true)
-  record SignalContact(UUID id, UUID userId, String signalHandle) implements ContactInfo {
+  record SignalContact(UUID id, UUID userId, String signalHandle, boolean isVerified)
+      implements ContactInfo {
     @Override
     public ContactInfoType type() {
       return ContactInfoType.SIGNAL;
@@ -66,7 +76,8 @@ public sealed interface ContactInfo extends HasUUID
   }
 
   @Builder(toBuilder = true)
-  record TelegramContact(UUID id, UUID userId, String telegramHandle) implements ContactInfo {
+  record TelegramContact(UUID id, UUID userId, String telegramHandle, boolean isVerified)
+      implements ContactInfo {
     @Override
     public ContactInfoType type() {
       return ContactInfoType.TELEGRAM;
@@ -88,6 +99,12 @@ public sealed interface ContactInfo extends HasUUID
     @Override
     public ContactInfo withUserId(UUID userId) {
       return toBuilder().userId(userId).build();
+    }
+
+    @Override
+    public boolean isVerified() {
+      // App does not validate
+      return true;
     }
   }
 }

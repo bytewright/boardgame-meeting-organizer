@@ -9,7 +9,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.bytewright.bgmo.domain.model.Game;
 import org.bytewright.bgmo.domain.model.data.HasUUID;
 import org.bytewright.bgmo.domain.model.user.ContactInfo;
-import org.bytewright.bgmo.domain.model.user.CreateUserDto;
 import org.bytewright.bgmo.domain.model.user.RegisteredUser;
 import org.bytewright.bgmo.domain.service.automation.TimeSource;
 import org.bytewright.bgmo.domain.service.data.GameDao;
@@ -31,7 +30,7 @@ public class UserWorkflows {
    * User obj should have no id. For updating an existing model use {@link
    * RegisteredUserDao#createOrUpdate(HasUUID)}
    */
-  public RegisteredUser create(CreateUserDto userDto) {
+  public RegisteredUser create(RegisteredUser.Creation userDto) {
     RegisteredUser newUser =
         userDao.createOrUpdate(
             RegisteredUser.builder()

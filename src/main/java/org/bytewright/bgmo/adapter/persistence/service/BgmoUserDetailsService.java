@@ -22,9 +22,10 @@ public class BgmoUserDetailsService implements UserDetailsService {
         .map(
             entity ->
                 User.builder()
+                    .accountLocked(entity.getStatus().isLocked())
                     .username(entity.getId().toString()) // UUID as principal name
                     .password(entity.getPasswordHash())
-                    .roles("USER") // todo roles in model, add admin role
+                    .roles(entity.getRole().name())
                     .build())
         .orElseThrow(() -> new UsernameNotFoundException(loginName));
   }

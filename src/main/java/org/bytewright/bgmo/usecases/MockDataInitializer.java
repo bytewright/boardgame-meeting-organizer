@@ -9,7 +9,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.bytewright.bgmo.domain.model.Game;
 import org.bytewright.bgmo.domain.model.MeetupCreation;
 import org.bytewright.bgmo.domain.model.MeetupEvent;
-import org.bytewright.bgmo.domain.model.user.CreateUserDto;
 import org.bytewright.bgmo.domain.model.user.RegisteredUser;
 import org.bytewright.bgmo.domain.service.automation.TimeSource;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
@@ -35,7 +34,7 @@ public class MockDataInitializer implements ApplicationListener<ApplicationReady
     List<MeetupEvent> meetupEvents = new ArrayList<>();
     UUID adminMeetup = null;
     for (int i = 0; i < NUM_TEST_ADMINS; i++) {
-      CreateUserDto user = createAdmin(i);
+      RegisteredUser.Creation user = createAdmin(i);
       RegisteredUser registeredUser = userWorkflows.create(user);
       userWorkflows.addGameToLibrary(
           registeredUser.getId(),
@@ -55,7 +54,7 @@ public class MockDataInitializer implements ApplicationListener<ApplicationReady
       adminMeetup = meetupEvent.getId();
     }
     for (int i = 0; i < NUM_TEST_USERS; i++) {
-      CreateUserDto user = createUser(i);
+      RegisteredUser.Creation user = createUser(i);
       log.info("User: {} pw: {}", user.getLoginName(), user.getPassword());
       RegisteredUser registeredUser = userWorkflows.create(user);
       Game game =
@@ -85,9 +84,9 @@ public class MockDataInitializer implements ApplicationListener<ApplicationReady
     log.warn("Added {} users and {} admins: {}", NUM_TEST_USERS, NUM_TEST_ADMINS, admins);
   }
 
-  private CreateUserDto createUser(int index) {
+  private RegisteredUser.Creation createUser(int index) {
     String userName = "user-%d".formatted(index);
-    return CreateUserDto.builder()
+    return RegisteredUser.Creation.builder()
         .loginName(userName)
         .displayName(userName)
         .password("admin")
@@ -95,9 +94,9 @@ public class MockDataInitializer implements ApplicationListener<ApplicationReady
         .build();
   }
 
-  private CreateUserDto createAdmin(int index) {
+  private RegisteredUser.Creation createAdmin(int index) {
     String userName = index == 0 ? "admin" : "admin-%d".formatted(index);
-    return CreateUserDto.builder()
+    return RegisteredUser.Creation.builder()
         .loginName(userName)
         .displayName(userName)
         .password("admin")

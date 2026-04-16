@@ -1,5 +1,6 @@
 package org.bytewright.bgmo.adapter.persistence.entity.user;
 
+import jakarta.annotation.Nullable;
 import jakarta.persistence.*;
 import java.time.Instant;
 import java.util.*;
@@ -8,6 +9,8 @@ import org.bytewright.bgmo.adapter.persistence.entity.AbstractEntity;
 import org.bytewright.bgmo.adapter.persistence.entity.GameEntity;
 import org.bytewright.bgmo.adapter.persistence.entity.GameEntity_;
 import org.bytewright.bgmo.domain.model.data.HasUUID;
+import org.bytewright.bgmo.domain.model.user.UserRole;
+import org.bytewright.bgmo.domain.model.user.UserStatus;
 import org.hibernate.annotations.UuidGenerator;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
@@ -52,6 +55,18 @@ public class RegisteredUserEntity extends AbstractEntity<UUID> implements HasUUI
 
   @Column(name = "last_login")
   private Instant tsLastLogin;
+
+  @Enumerated(EnumType.STRING)
+  @Column(nullable = false)
+  @Builder.Default
+  private UserStatus status = UserStatus.PENDING_APPROVAL;
+
+  @Enumerated(EnumType.STRING)
+  @Column(nullable = false)
+  @Builder.Default
+  private UserRole role = UserRole.USER;
+
+  @Nullable @Column private UUID primaryContactId;
 
   @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, mappedBy = GameEntity_.OWNER)
   @ToString.Exclude

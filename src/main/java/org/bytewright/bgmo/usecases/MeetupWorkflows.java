@@ -11,6 +11,7 @@ import org.bytewright.bgmo.domain.model.MeetupEvent;
 import org.bytewright.bgmo.domain.model.MeetupJoinRequest;
 import org.bytewright.bgmo.domain.model.RequestState;
 import org.bytewright.bgmo.domain.model.user.RegisteredUser;
+import org.bytewright.bgmo.domain.service.automation.NotificationManager;
 import org.bytewright.bgmo.domain.service.automation.TimeSource;
 import org.bytewright.bgmo.domain.service.data.MeetupDao;
 import org.bytewright.bgmo.domain.service.data.ModelDao;
@@ -22,6 +23,7 @@ import org.springframework.stereotype.Service;
 @Transactional
 @RequiredArgsConstructor
 public class MeetupWorkflows {
+  private final NotificationManager notificationManager;
   private final ModelDao<MeetupJoinRequest> joinRequestModelDao;
   private final RegisteredUserDao userDao;
   private final MeetupDao meetupDao;
@@ -49,6 +51,7 @@ public class MeetupWorkflows {
             .offeredGames(event.getOfferedGames())
             .build();
     MeetupEvent persisted = meetupDao.createOrUpdate(meetupEvent);
+    notificationManager.addNewEventCreatedTask(persisted.id());
     log.info("Available at: http://localhost:8080/meetup/{}", persisted.id());
     return persisted;
   }
@@ -64,6 +67,7 @@ public class MeetupWorkflows {
       MeetupJoinRequest request = existingRequest.get();
       if (request.getRequestState() == RequestState.CANCELED) {
         transitionToRequested(request);
+        notificationManager.addNewJoinRequestCreatedTask(meetupEvent.id(), request.id());
       } else {
         log.info("User {} tried to join meeting he already has requested to join...", userId);
       }
@@ -80,7 +84,13 @@ public class MeetupWorkflows {
     meetupEvent.getJoinRequests().add(request);
     log.info(
         "Added join request from user {} to event: {}", user.getId(), meetupEvent.logIdentity());
-    meetupDao.createOrUpdate(meetupEvent);
+    UUID requestId =
+        meetupDao.createOrUpdate(meetupEvent).getJoinRequests().stream()
+            .filter(meetupJoinRequest -> user.getId().equals(meetupJoinRequest.getUserId()))
+            .findAny()
+            .map(MeetupJoinRequest::getId)
+            .orElseThrow();
+    notificationManager.addNewJoinRequestCreatedTask(meetupEvent.id(), requestId);
   }
 
   public void requestToJoinAnon(
@@ -94,6 +104,7 @@ public class MeetupWorkflows {
       MeetupJoinRequest request = existingRequest.get();
       if (request.getRequestState() == RequestState.CANCELED) {
         transitionToRequested(request);
+        notificationManager.addNewJoinRequestCreatedTask(meetupEvent.id(), request.id());
       } else {
         log.info(
             "Anon '{}' tried to join meeting he already has requested to join...", displayName);
@@ -110,7 +121,13 @@ public class MeetupWorkflows {
             .build();
     meetupEvent.getJoinRequests().add(request);
     log.info("Added join request from anon user to event: {}", meetupEvent.logIdentity());
-    meetupDao.createOrUpdate(meetupEvent);
+    UUID requestId =
+        meetupDao.createOrUpdate(meetupEvent).getJoinRequests().stream()
+            .filter(meetupJoinRequest -> anonToken.equals(meetupJoinRequest.getAnonToken()))
+            .findAny()
+            .map(MeetupJoinRequest::getId)
+            .orElseThrow();
+    notificationManager.addNewJoinRequestCreatedTask(meetupEvent.id(), requestId);
   }
 
   public MeetupEvent confirmAttendee(UUID meetupId, MeetupJoinRequest joinRequest) {
@@ -124,6 +141,8 @@ public class MeetupWorkflows {
           "Meeting is already full, can't confirm more requests: " + meetupEvent.logIdentity());
     }
     transitionToAccepted(joinRequest);
+    notificationManager.addJoinRequestApprovedTask(
+        meetupEvent.id(), joinRequest.id(), joinRequest.getUserId());
     return meetupDao.findOrThrow(meetupId);
   }
 
