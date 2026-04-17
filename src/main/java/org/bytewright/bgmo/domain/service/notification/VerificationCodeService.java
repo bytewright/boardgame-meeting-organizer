@@ -1,0 +1,32 @@
+package org.bytewright.bgmo.domain.service.notification;
+
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ThreadLocalRandom;
+import lombok.RequiredArgsConstructor;
+import org.bytewright.bgmo.domain.model.user.ContactInfoType;
+import org.bytewright.bgmo.usecases.NotificationWorkflows;
+import org.springframework.stereotype.Service;
+
+@Service
+@RequiredArgsConstructor
+public class VerificationCodeService {
+  private final Map<String, UUID> pendingCodes = new ConcurrentHashMap<>();
+  private final NotificationWorkflows notificationWorkflows;
+
+  public String generateCode(UUID userId) {
+    String code = "BGMO-" + ThreadLocalRandom.current().nextInt(1000, 9999);
+    pendingCodes.put(code, userId);
+    return code;
+  }
+
+  public boolean attemptVerification(String code, ContactInfoType type, String chatId) {
+    UUID userId = pendingCodes.remove(code);
+
+    if (userId != null) {
+      return notificationWorkflows.verifyContactInfo(userId, type, chatId);
+    }
+    return false;
+  }
+}

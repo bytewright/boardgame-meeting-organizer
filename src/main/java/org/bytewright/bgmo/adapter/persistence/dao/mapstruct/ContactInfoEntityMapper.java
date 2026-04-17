@@ -39,7 +39,7 @@ public abstract class ContactInfoEntityMapper
           case ContactInfo.EmailContact emailContact -> emailContact.email();
           case ContactInfo.PhoneContact phoneContact -> phoneContact.phoneNr();
           case ContactInfo.SignalContact signalContact -> signalContact.signalHandle();
-          case ContactInfo.TelegramContact telegramContact -> telegramContact.telegramHandle();
+          case ContactInfo.TelegramContact telegramContact -> telegramContact.chatId();
         };
     return objectMapper.writeValueAsString(data);
   }

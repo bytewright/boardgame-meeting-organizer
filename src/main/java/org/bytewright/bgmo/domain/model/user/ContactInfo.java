@@ -76,7 +76,7 @@ public sealed interface ContactInfo extends HasUUID
   }
 
   @Builder(toBuilder = true)
-  record TelegramContact(UUID id, UUID userId, String telegramHandle, boolean isVerified)
+  record TelegramContact(UUID id, UUID userId, String chatId, boolean isVerified)
       implements ContactInfo {
     @Override
     public ContactInfoType type() {

@@ -19,6 +19,7 @@ public class RegisteredUser implements HasUUID {
   private Instant tsCreation;
   private Instant tsModified;
   private Instant tsLastLogin;
+  // todo add preferredLocale
   @Builder.Default private UserStatus status = UserStatus.PENDING_APPROVAL;
   @Builder.Default private UserRole role = UserRole.USER;
   @Nullable private UUID primaryContactId;

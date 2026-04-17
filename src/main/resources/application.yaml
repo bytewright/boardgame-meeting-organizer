@@ -12,3 +12,11 @@ org:
   bytewright:
     bgmo:
       automation-autostart: false
+bgmo:
+  adapter:
+    bot:
+      telegram:
+        token:
+        username:
+        group-chat-id:
+        group-locale:
