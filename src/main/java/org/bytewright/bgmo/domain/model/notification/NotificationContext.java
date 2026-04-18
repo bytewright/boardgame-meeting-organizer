@@ -1,16 +1,18 @@
 package org.bytewright.bgmo.domain.model.notification;
 
+import jakarta.annotation.Nullable;
+import java.util.List;
 import java.util.Locale;
-import java.util.Map;
+import java.util.UUID;
 import lombok.Builder;
-import org.bytewright.bgmo.domain.model.user.ContactInfoType;
+import lombok.Singular;
 
 @Builder
 public record NotificationContext(
+    NotificationType notificationType,
     String messageKey, // e.g., "notification.meetup.created"
-    Object[] messageArgs,
-    String targetId, // Can be a User's ChatID or the Group ChatID
-    ContactInfoType type,
+    @Singular List<Object> messageArgs,
+    NotificationTargetType notificationTargetType,
     Locale locale,
-    Map<String, String> metadata // For things like meetupId to build buttons
-    ) {}
+    @Nullable UUID meetupId,
+    @Nullable UUID userId) {}

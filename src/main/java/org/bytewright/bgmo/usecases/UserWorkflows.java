@@ -45,12 +45,7 @@ public class UserWorkflows {
                 ContactInfo.SignalContact.builder().signalHandle(s).userId(newUser.getId()).build())
         .ifPresent(contactInfos::add);
     Optional.ofNullable(userDto.getTelegramHandle())
-        .map(
-            s ->
-                ContactInfo.TelegramContact.builder()
-                    .telegramHandle(s)
-                    .userId(newUser.getId())
-                    .build())
+        .map(s -> ContactInfo.TelegramContact.builder().chatId(s).userId(newUser.getId()).build())
         .ifPresent(contactInfos::add);
     Optional.ofNullable(userDto.getEmail())
         .map(s -> ContactInfo.EmailContact.builder().email(s).userId(newUser.getId()).build())
@@ -96,4 +91,8 @@ public class UserWorkflows {
       userDao.createOrUpdate(user);
     }
   }
+
+  public void updateDisplayName(UUID userId, String newDisplayName) {}
+
+  public void changePassword(UUID userId, String newPassword) {}
 }

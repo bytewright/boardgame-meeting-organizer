@@ -58,7 +58,7 @@ public abstract class ContactInfoEntityMapper
           ContactInfo.TelegramContact.builder()
               .id(entity.getId())
               .userId(entity.getUser().id())
-              .telegramHandle(objectMapper.readValue(entity.getJsonData(), String.class))
+              .chatId(objectMapper.readValue(entity.getJsonData(), String.class))
               .build();
       case SIGNAL ->
           ContactInfo.SignalContact.builder()

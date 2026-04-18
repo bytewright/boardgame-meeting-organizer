@@ -8,8 +8,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.bytewright.bgmo.domain.model.user.RegisteredUser;
 import org.bytewright.bgmo.domain.model.user.UserRole;
 import org.bytewright.bgmo.domain.model.user.UserStatus;
-import org.bytewright.bgmo.domain.service.automation.NotificationManager;
 import org.bytewright.bgmo.domain.service.data.RegisteredUserDao;
+import org.bytewright.bgmo.domain.service.notification.NotificationManager;
 import org.springframework.stereotype.Service;
 
 @Slf4j

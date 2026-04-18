@@ -1,10 +1,10 @@
 package org.bytewright.bgmo.adapter.bot.telegram;
 
-import lombok.Getter;
+import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
-@Getter
+@Data
 @Component
 @ConfigurationProperties("bgmo.adapter.bot.telegram")
 public class TelegramAdapterProperties {

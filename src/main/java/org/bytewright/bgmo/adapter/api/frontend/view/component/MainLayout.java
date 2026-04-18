@@ -12,10 +12,7 @@ import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.router.RouterLayout;
 import com.vaadin.flow.router.RouterLink;
 import org.bytewright.bgmo.adapter.api.frontend.SessionAuthenticationService;
-import org.bytewright.bgmo.adapter.api.frontend.view.AdminUserApprovalView;
-import org.bytewright.bgmo.adapter.api.frontend.view.DashboardView;
-import org.bytewright.bgmo.adapter.api.frontend.view.GameLibraryView;
-import org.bytewright.bgmo.adapter.api.frontend.view.LoginView;
+import org.bytewright.bgmo.adapter.api.frontend.view.*;
 import org.bytewright.bgmo.domain.model.user.UserRole;
 import org.bytewright.bgmo.domain.service.data.GameDao;
 import org.bytewright.bgmo.usecases.MeetupWorkflows;
@@ -53,7 +50,9 @@ public class MainLayout extends AppLayout implements RouterLayout {
 
     Button libBtn =
         new Button(
-            "Lib", VaadinIcon.BOOK.create(), e -> UI.getCurrent().navigate(GameLibraryView.class));
+            "Profile",
+            VaadinIcon.HANDS_UP.create(),
+            e -> UI.getCurrent().navigate(ProfileView.class));
     libBtn.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
 
     Button logoutBtn =
