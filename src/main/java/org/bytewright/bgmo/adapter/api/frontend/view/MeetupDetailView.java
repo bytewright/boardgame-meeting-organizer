@@ -143,7 +143,7 @@ public class MeetupDetailView extends VerticalLayout implements BeforeEnterObser
                 ? meetup.getDescription()
                 : getTranslation("meetup.no-desc"));
 
-    Span dateSpan = new Span("📅 " + meetup.getEventDate().format(localeService.getFormatter()));
+    Span dateSpan = new Span("📅 " + meetup.getEventDate().format(localeService.getDateFormatter()));
     Span durationSpan = new Span(getTranslation("meetup.duration", meetup.getDurationHours()));
 
     String slotsText =

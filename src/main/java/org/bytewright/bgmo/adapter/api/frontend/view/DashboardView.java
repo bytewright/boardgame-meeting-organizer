@@ -10,7 +10,6 @@ import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.*;
 import jakarta.annotation.security.PermitAll;
 import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
@@ -106,13 +105,12 @@ public class DashboardView extends VerticalLayout implements BeforeEnterObserver
 
     // ── Row 2: Date ───────────────────────────────────────────────────────────
     // Derive locale from the existing combined formatter so no new LocaleService method is needed.
-    java.util.Locale locale = localeService.getFormatter().getLocale();
-    String dateStr =
-        meetup.getEventDate().format(DateTimeFormatter.ofPattern("EEEE, dd. MMMM yyyy", locale));
+    ZonedDateTime eventDate = meetup.getEventDate();
+    String dateStr = eventDate.format(localeService.getDateFormatter());
     HorizontalLayout dateRow = buildIconRow(VaadinIcon.CALENDAR, dateStr);
 
     // ── Row 3: Time + Duration ────────────────────────────────────────────────
-    String timeStr = meetup.getEventDate().format(DateTimeFormatter.ofPattern("HH:mm", locale));
+    String timeStr = eventDate.format(localeService.getTimeFormatter());
     Span timeSpan = new Span(timeStr + " " + getTranslation("meetup.time.suffix"));
     Span durationSpan = new Span(getTranslation("meetup.duration", meetup.getDurationHours()));
 
