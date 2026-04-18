@@ -1,17 +1,16 @@
 package org.bytewright.bgmo.adapter.api.frontend.view;
 
 import com.vaadin.flow.component.UI;
-import com.vaadin.flow.component.button.Button;
-import com.vaadin.flow.component.button.ButtonVariant;
-import com.vaadin.flow.component.grid.Grid;
+import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
-import com.vaadin.flow.component.notification.Notification;
-import com.vaadin.flow.component.notification.NotificationVariant;
+import com.vaadin.flow.component.icon.Icon;
+import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.*;
 import jakarta.annotation.security.PermitAll;
 import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
@@ -20,10 +19,10 @@ import org.bytewright.bgmo.adapter.api.frontend.SessionAuthenticationService;
 import org.bytewright.bgmo.adapter.api.frontend.service.i18n.LocaleService;
 import org.bytewright.bgmo.adapter.api.frontend.view.component.MainLayout;
 import org.bytewright.bgmo.domain.model.MeetupEvent;
-import org.bytewright.bgmo.domain.model.MeetupJoinRequest;
 import org.bytewright.bgmo.domain.model.RequestState;
 import org.bytewright.bgmo.domain.model.user.RegisteredUser;
 import org.bytewright.bgmo.domain.service.data.MeetupDao;
+import org.bytewright.bgmo.domain.service.data.RegisteredUserDao;
 import org.bytewright.bgmo.usecases.MeetupWorkflows;
 
 @Slf4j
@@ -38,31 +37,34 @@ public class DashboardView extends VerticalLayout implements BeforeEnterObserver
   private final SessionAuthenticationService authService;
   private final MeetupWorkflows meetupWorkflows;
   private final MeetupDao meetupDao;
+  private final RegisteredUserDao registeredUserDao;
   private RegisteredUser currentUser;
 
   public DashboardView(
       LocaleService localeService,
       SessionAuthenticationService authService,
       MeetupWorkflows meetupWorkflows,
-      MeetupDao meetupDao) {
+      MeetupDao meetupDao,
+      RegisteredUserDao registeredUserDao) {
     this.localeService = localeService;
     this.authService = authService;
     this.meetupWorkflows = meetupWorkflows;
     this.meetupDao = meetupDao;
+    this.registeredUserDao = registeredUserDao;
 
     setSizeFull();
     setPadding(true);
     setSpacing(true);
+    getStyle().set("max-width", MainLayout.MAX_DISPLAYPORT_WIDTH).set("margin", "0 auto");
   }
 
   private void buildUI() {
     removeAll();
 
-    // ── Upcoming meetups grid ────────────────────────────────────────────────
     List<MeetupEvent> upcomingMeetups =
         meetupDao.findAll().stream()
             .filter(m -> !m.isCanceled())
-            .filter(m -> m.getEventDate().isAfter(ZonedDateTime.now()))
+            .filter(m -> m.getEventDate().isAfter(ZonedDateTime.now().minusDays(1)))
             .sorted(Comparator.comparing(MeetupEvent::getEventDate))
             .toList();
 
@@ -71,102 +73,124 @@ public class DashboardView extends VerticalLayout implements BeforeEnterObserver
       return;
     }
 
-    Grid<MeetupEvent> grid = new Grid<>(MeetupEvent.class, false);
-    grid.addColumn(MeetupEvent::getTitle)
-        .setHeader(getTranslation("dashboard.grid.title"))
-        .setFlexGrow(2);
-    grid.addColumn(m -> m.getEventDate().format(localeService.getFormatter()))
-        .setHeader(getTranslation("dashboard.grid.date"))
-        .setFlexGrow(0)
-        .setAutoWidth(true);
-    grid.addColumn(m -> getTranslation("meetup.duration", m.getDurationHours()))
-        .setHeader(getTranslation("dashboard.grid.duration"))
-        .setFlexGrow(0)
-        .setAutoWidth(true);
-    grid.addColumn(
-            m ->
-                m.isUnlimitedSlots()
-                    ? getTranslation("meetup.unlimitedSlots")
-                    : getTranslation(
-                        "meetup.slotsFilled",
-                        m.getJoinRequests().stream()
-                            .filter(
-                                meetupJoinRequest ->
-                                    RequestState.ACCEPTED == meetupJoinRequest.getRequestState())
-                            .count(),
-                        m.getJoinSlots()))
-        .setHeader(getTranslation("dashboard.grid.slots"))
-        .setFlexGrow(0)
-        .setAutoWidth(true);
-    grid.addComponentColumn(this::buildRowActions)
-        .setHeader(getTranslation("dashboard.grid.actions"))
-        .setAutoWidth(true);
-    grid.addItemClickListener(
-        event ->
-            UI.getCurrent()
-                .navigate(
-                    MeetupDetailView.class,
-                    new RouteParam("meetupId", event.getItem().getId().toString())));
-    grid.setItems(upcomingMeetups);
-    add(grid);
+    for (MeetupEvent meetup : upcomingMeetups) {
+      add(buildMeetupCard(meetup));
+    }
   }
 
-  private HorizontalLayout buildRowActions(MeetupEvent meetup) {
-    HorizontalLayout actions = new HorizontalLayout();
-    actions.setSpacing(true);
+  private Div buildMeetupCard(MeetupEvent meetup) {
+    Div card = new Div();
+    card.getStyle()
+        .set("border", "2px solid var(--lumo-contrast-20pct)")
+        .set("border-radius", "var(--lumo-border-radius-l)")
+        .set("padding", "var(--lumo-space-m)")
+        .set("cursor", "pointer")
+        .set("width", "100%")
+        .set("box-sizing", "border-box")
+        .set("transition", "background-color 0.15s ease");
 
-    Button detailsBtn =
-        new Button(
-            getTranslation("meetup.details"),
-            e ->
-                UI.getCurrent()
-                    .navigate(
-                        MeetupDetailView.class,
-                        new RouteParam("meetupId", meetup.getId().toString())));
-    detailsBtn.addThemeVariants(ButtonVariant.LUMO_SMALL, ButtonVariant.LUMO_TERTIARY);
-    actions.add(detailsBtn);
+    // Hover highlight using JS — lightweight approach with style toggle
+    card.getElement()
+        .addEventListener(
+            "mouseover", e -> card.getStyle().set("background-color", "var(--lumo-contrast-5pct)"));
+    card.getElement().addEventListener("mouseout", e -> card.getStyle().remove("background-color"));
 
-    boolean isOwnMeetup = meetup.getCreatorId().equals(currentUser.getId());
-    if (!isOwnMeetup) {
-      Optional<MeetupJoinRequest> myRequest =
-          meetup.getJoinRequests().stream()
-              .filter(r -> currentUser.getId().equals(r.getUserId()))
-              .findAny();
-      boolean alreadyRequested = myRequest.isPresent();
-      boolean alreadyConfirmed =
-          myRequest
-              .map(MeetupJoinRequest::getRequestState)
-              .map(state -> RequestState.ACCEPTED == state)
-              .orElse(false);
-      boolean isFull = meetupWorkflows.isFull(meetup);
+    // ── Row 1: Title ─────────────────────────────────────────────────────────
+    Span title = new Span(meetup.getTitle());
+    title
+        .getStyle()
+        .set("font-size", "var(--lumo-font-size-l)")
+        .set("font-weight", "bold")
+        .set("display", "block")
+        .set("margin-bottom", "var(--lumo-space-xs)");
 
-      Button joinBtn =
-          new Button(
-              getTranslation("meetup.join-request"),
-              e -> {
-                meetupWorkflows.requestToJoin(meetup.getId(), currentUser.getId(), null);
-                Notification n =
-                    Notification.show(
-                        getTranslation("meetup.joinSent"), 3000, Notification.Position.TOP_CENTER);
-                n.addThemeVariants(NotificationVariant.LUMO_SUCCESS);
-                buildUI();
-              });
-      joinBtn.addThemeVariants(ButtonVariant.LUMO_SMALL, ButtonVariant.LUMO_SUCCESS);
+    // ── Row 2: Date ───────────────────────────────────────────────────────────
+    // Derive locale from the existing combined formatter so no new LocaleService method is needed.
+    java.util.Locale locale = localeService.getFormatter().getLocale();
+    String dateStr =
+        meetup.getEventDate().format(DateTimeFormatter.ofPattern("EEEE, dd. MMMM yyyy", locale));
+    HorizontalLayout dateRow = buildIconRow(VaadinIcon.CALENDAR, dateStr);
 
-      if (alreadyConfirmed) {
-        joinBtn.setText(getTranslation("meetup.join-short.confirmed"));
-        joinBtn.setEnabled(false);
-      } else if (alreadyRequested) {
-        joinBtn.setText(getTranslation("meetup.join-short.requested"));
-        joinBtn.setEnabled(false);
-      } else if (isFull) {
-        joinBtn.setText(getTranslation("meetup.join-short.full"));
-        joinBtn.setEnabled(false);
-      }
-      actions.add(joinBtn);
-    }
+    // ── Row 3: Time + Duration ────────────────────────────────────────────────
+    String timeStr = meetup.getEventDate().format(DateTimeFormatter.ofPattern("HH:mm", locale));
+    Span timeSpan = new Span(timeStr + " " + getTranslation("meetup.time.suffix"));
+    Span durationSpan = new Span(getTranslation("meetup.duration", meetup.getDurationHours()));
 
-    return actions;
+    Icon clockIcon = VaadinIcon.CLOCK.create();
+    clockIcon.setSize("var(--lumo-icon-size-s)");
+    clockIcon.getStyle().set("color", "var(--lumo-secondary-text-color)");
+
+    Icon timerIcon = VaadinIcon.TIMER.create();
+    timerIcon.setSize("var(--lumo-icon-size-s)");
+    timerIcon.getStyle().set("color", "var(--lumo-secondary-text-color)");
+
+    HorizontalLayout timeRow = new HorizontalLayout(clockIcon, timeSpan, timerIcon, durationSpan);
+    timeRow.setSpacing(true);
+    timeRow.setAlignItems(Alignment.CENTER);
+
+    // ── Row 4: Creator + Slots ────────────────────────────────────────────────
+    String creatorName =
+        registeredUserDao
+            .findById(meetup.getCreatorId())
+            .map(RegisteredUser::getDisplayName)
+            .orElseGet(() -> meetup.getCreatorId().toString());
+
+    String slotsText =
+        meetup.isUnlimitedSlots()
+            ? getTranslation("meetup.unlimitedSlots")
+            : getTranslation(
+                "meetup.slotsFilled",
+                meetup.getJoinRequests().stream()
+                    .filter(r -> RequestState.ACCEPTED == r.getRequestState())
+                    .count(),
+                meetup.getJoinSlots());
+
+    Icon personIcon = VaadinIcon.USER.create();
+    personIcon.setSize("var(--lumo-icon-size-s)");
+    personIcon.getStyle().set("color", "var(--lumo-secondary-text-color)");
+
+    Span creatorSpan = new Span(creatorName);
+
+    Icon slotsIcon = VaadinIcon.TICKET.create();
+    slotsIcon.setSize("var(--lumo-icon-size-s)");
+    slotsIcon.getStyle().set("color", "var(--lumo-secondary-text-color)");
+
+    Span slotsSpan = new Span(slotsText);
+
+    HorizontalLayout bottomRow =
+        new HorizontalLayout(personIcon, creatorSpan, slotsIcon, slotsSpan);
+    bottomRow.setSpacing(true);
+    bottomRow.setAlignItems(Alignment.CENTER);
+
+    // ── Divider between rows ──────────────────────────────────────────────────
+    Div divider = new Div();
+    divider
+        .getStyle()
+        .set("border-top", "1px solid var(--lumo-contrast-10pct)")
+        .set("margin", "var(--lumo-space-xs) 0");
+
+    card.add(title, dateRow, divider, timeRow, bottomRow);
+
+    // ── Navigate to detail on click ───────────────────────────────────────────
+    card.addClickListener(
+        e ->
+            UI.getCurrent()
+                .navigate(
+                    MeetupDetailView.class, new RouteParam("meetupId", meetup.getId().toString())));
+
+    return card;
+  }
+
+  /** Helper: single icon + text in a horizontal row. */
+  private HorizontalLayout buildIconRow(VaadinIcon vaadinIcon, String text) {
+    Icon icon = vaadinIcon.create();
+    icon.setSize("var(--lumo-icon-size-s)");
+    icon.getStyle().set("color", "var(--lumo-secondary-text-color)");
+
+    HorizontalLayout row = new HorizontalLayout(icon, new Span(text));
+    row.setSpacing(true);
+    row.setAlignItems(Alignment.CENTER);
+    return row;
   }
 
   @Override
