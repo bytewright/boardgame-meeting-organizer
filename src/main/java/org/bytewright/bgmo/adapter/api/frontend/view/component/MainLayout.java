@@ -18,6 +18,7 @@ import org.bytewright.bgmo.domain.service.data.GameDao;
 import org.bytewright.bgmo.usecases.MeetupWorkflows;
 
 public class MainLayout extends AppLayout implements RouterLayout {
+  public static final String MAX_DISPLAYPORT_WIDTH = "800px"; // Mobile-first reasonable fixed width
 
   private final SessionAuthenticationService authService;
   private final MeetupWorkflows meetupWorkflows;

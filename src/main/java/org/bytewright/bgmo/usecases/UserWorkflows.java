@@ -11,6 +11,7 @@ import org.bytewright.bgmo.domain.model.user.RegisteredUser;
 import org.bytewright.bgmo.domain.service.automation.TimeSource;
 import org.bytewright.bgmo.domain.service.data.GameDao;
 import org.bytewright.bgmo.domain.service.data.RegisteredUserDao;
+import org.bytewright.bgmo.domain.service.user.PasswordRules;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -101,6 +102,11 @@ public class UserWorkflows {
 
   public void changePassword(UUID userId, String newPassword) {
     RegisteredUser user = userDao.findById(userId).orElseThrow();
+    if (newPassword.length() < PasswordRules.PW_MIN_CHARS
+        || newPassword.length() > PasswordRules.PW_MAX_CHARS) {
+      throw new IllegalArgumentException(
+          "New PW for user %s violates password rules".formatted(userId));
+    }
     String encoded = passwordEncoder.encode(newPassword);
     if (user.getPasswordHash().equals(encoded)) return;
     log.info("User {} changes his password", user.logEntity());

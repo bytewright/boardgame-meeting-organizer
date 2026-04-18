@@ -49,7 +49,7 @@ public class GameLibraryView extends VerticalLayout implements BeforeEnterObserv
     setAlignItems(Alignment.CENTER);
     setPadding(true);
     setSpacing(true);
-    getStyle().set("max-width", "600px").set("margin", "0 auto");
+    getStyle().set("max-width", MainLayout.MAX_DISPLAYPORT_WIDTH).set("margin", "0 auto");
 
     H2 title = new H2(getTranslation("gamelib.title"));
 
