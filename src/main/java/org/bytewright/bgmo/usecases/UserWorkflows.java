@@ -1,9 +1,7 @@
 package org.bytewright.bgmo.usecases;
 
 import jakarta.transaction.Transactional;
-import java.util.Optional;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.bytewright.bgmo.domain.model.Game;
@@ -92,7 +90,48 @@ public class UserWorkflows {
     }
   }
 
-  public void updateDisplayName(UUID userId, String newDisplayName) {}
+  public void changeDisplayName(UUID userId, String newDisplayName) {
+    RegisteredUser user = userDao.findById(userId).orElseThrow();
+    if (user.getDisplayName().equals(newDisplayName)) return;
+    log.info("User {} changes his display name to: {}", user.logEntity(), newDisplayName);
+    user.setDisplayName(newDisplayName);
+    userDao.createOrUpdate(user);
+    // TODO profanity filter
+  }
 
-  public void changePassword(UUID userId, String newPassword) {}
+  public void changePassword(UUID userId, String newPassword) {
+    RegisteredUser user = userDao.findById(userId).orElseThrow();
+    String encoded = passwordEncoder.encode(newPassword);
+    if (user.getPasswordHash().equals(encoded)) return;
+    log.info("User {} changes his password", user.logEntity());
+    user.setPasswordHash(encoded);
+    userDao.createOrUpdate(user);
+    // todo logout of user?
+  }
+
+  public void changeLocale(UUID userId, Locale value) {
+    RegisteredUser user = userDao.findById(userId).orElseThrow();
+    if (Objects.equals(user.getPreferredLocale(), value)) return;
+    log.info("User {} changes his preferred locale to {}", user.logEntity(), value);
+    user.setPreferredLocale(value);
+    userDao.createOrUpdate(user);
+  }
+
+  public void changePrimaryContactInfo(UUID userId, ContactInfo contactInfo) {
+    RegisteredUser user = userDao.findById(userId).orElseThrow();
+    if (Objects.equals(user.getPrimaryContactId(), contactInfo.id())) return;
+    log.info("User {} changes his primary contact info to {}", user.logEntity(), contactInfo.id());
+    user.setPrimaryContactId(contactInfo.id());
+    userDao.createOrUpdate(user);
+  }
+
+  public void removeContact(UUID userId, ContactInfo contactInfo) {
+    RegisteredUser user = userDao.findById(userId).orElseThrow();
+    log.info("User {} removes contact info with id: {}", user.logEntity(), contactInfo.id());
+    user.getContactInfos().remove(contactInfo);
+    if (Objects.equals(user.getPrimaryContactId(), contactInfo.id())) {
+      user.setPrimaryContactId(null);
+    }
+    userDao.createOrUpdate(user);
+  }
 }

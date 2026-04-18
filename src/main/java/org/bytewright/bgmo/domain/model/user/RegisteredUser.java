@@ -3,6 +3,7 @@ package org.bytewright.bgmo.domain.model.user;
 import jakarta.annotation.Nullable;
 import java.time.Instant;
 import java.util.HashSet;
+import java.util.Locale;
 import java.util.Set;
 import java.util.UUID;
 import lombok.Builder;
@@ -19,7 +20,7 @@ public class RegisteredUser implements HasUUID {
   private Instant tsCreation;
   private Instant tsModified;
   private Instant tsLastLogin;
-  // todo add preferredLocale
+  @Nullable private Locale preferredLocale;
   @Builder.Default private UserStatus status = UserStatus.PENDING_APPROVAL;
   @Builder.Default private UserRole role = UserRole.USER;
   @Nullable private UUID primaryContactId;

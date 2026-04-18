@@ -7,9 +7,7 @@ import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.details.Details;
 import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.Span;
-import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.notification.Notification;
-import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.PasswordField;
 import com.vaadin.flow.component.textfield.TextField;
@@ -22,8 +20,9 @@ import java.util.Locale;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.bytewright.bgmo.adapter.api.frontend.SessionAuthenticationService;
+import org.bytewright.bgmo.adapter.api.frontend.view.component.ContactSection;
+import org.bytewright.bgmo.adapter.api.frontend.view.component.GameLibSection;
 import org.bytewright.bgmo.adapter.api.frontend.view.component.MainLayout;
-import org.bytewright.bgmo.domain.model.user.ContactInfoType;
 import org.bytewright.bgmo.domain.model.user.RegisteredUser;
 import org.bytewright.bgmo.domain.service.data.GameDao;
 import org.bytewright.bgmo.domain.service.notification.VerificationCodeService;
@@ -82,6 +81,8 @@ public class ProfileView extends VerticalLayout implements BeforeEnterObserver {
     description.getStyle().set("font-size", "var(--lumo-font-size-s)");
 
     VerticalLayout layout = new VerticalLayout(description, codeField);
+    // TODO Add a "Copy to Clipboard" suffix button to the text field. Mobile users hate manually
+    // highlighting and copying codes.
     return new Details(getTranslation("profile.verification.title"), layout);
   }
 
@@ -100,11 +101,11 @@ public class ProfileView extends VerticalLayout implements BeforeEnterObserver {
         new Button(
             getTranslation("profile.action.save"),
             e -> {
-              userWorkflows.updateDisplayName(currentUser.getId(), nameField.getValue());
+              userWorkflows.changeDisplayName(currentUser.getId(), nameField.getValue());
               if (!pwdField.isEmpty()) {
                 userWorkflows.changePassword(currentUser.getId(), pwdField.getValue());
               }
-              // Logic for locale persistence would go here
+              userWorkflows.changeLocale(currentUser.getId(), localePicker.getValue());
               Notification.show(getTranslation("profile.status.saved"));
             });
     saveBtn.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
@@ -114,55 +115,13 @@ public class ProfileView extends VerticalLayout implements BeforeEnterObserver {
   }
 
   private Component createContactSection() {
-    VerticalLayout list = new VerticalLayout();
-    currentUser
-        .getContactInfos()
-        .forEach(
-            info -> {
-              HorizontalLayout row =
-                  new HorizontalLayout(new Span(info.type().name()), new Span(info.toString()));
-              if (info.id().equals(currentUser.getPrimaryContactId())) {
-                row.add(VaadinIcon.STAR.create());
-              }
-              list.add(row);
-            });
-
-    ComboBox<ContactInfoType> typePicker = new ComboBox<>(getTranslation("profile.contacts.type"));
-    typePicker.setItems(ContactInfoType.values());
-    TextField valueField = new TextField(getTranslation("profile.contacts.value"));
-
-    Button addBtn =
-        new Button(
-            getTranslation("profile.action.add"),
-            e -> {
-              // Mapping logic for ContactInfo creation omitted for brevity
-              Notification.show(getTranslation("profile.status.added"));
-            });
-
-    VerticalLayout layout =
-        new VerticalLayout(list, new HorizontalLayout(typePicker, valueField, addBtn));
-    return new Details(getTranslation("profile.contacts.title"), layout);
+    ContactSection contactSection = new ContactSection(userWorkflows, currentUser);
+    return new Details(getTranslation("profile.contacts.title"), contactSection);
   }
 
   private Component createLibrarySection() {
-    VerticalLayout libContainer = new VerticalLayout();
-    gameDao
-        .findByOwnerId(currentUser.getId())
-        .forEach(
-            game -> {
-              HorizontalLayout row = new HorizontalLayout(new Span(game.getName()));
-              Button removeBtn =
-                  new Button(
-                      VaadinIcon.TRASH.create(),
-                      e -> {
-                        userWorkflows.removeGameFromLibrary(game.getId());
-                        refreshView();
-                      });
-              removeBtn.addThemeVariants(ButtonVariant.LUMO_ERROR, ButtonVariant.LUMO_TERTIARY);
-              row.add(removeBtn);
-              libContainer.add(row);
-            });
-
-    return new Details(getTranslation("profile.library.title"), libContainer);
+    GameLibSection gameLibSection =
+        new GameLibSection(authService, userWorkflows, gameDao, currentUser);
+    return new Details(getTranslation("profile.library.title"), gameLibSection);
   }
 }
