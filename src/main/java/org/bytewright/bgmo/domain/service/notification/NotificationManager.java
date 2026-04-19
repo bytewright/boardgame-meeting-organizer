@@ -9,6 +9,7 @@ import org.bytewright.bgmo.domain.model.notification.NotificationTargetType;
 import org.bytewright.bgmo.domain.model.notification.NotificationType;
 import org.bytewright.bgmo.domain.model.user.ContactInfo;
 import org.bytewright.bgmo.domain.model.user.RegisteredUser;
+import org.bytewright.bgmo.domain.service.UrlGenerator;
 import org.bytewright.bgmo.domain.service.data.MeetupDao;
 import org.bytewright.bgmo.domain.service.data.RegisteredUserDao;
 import org.springframework.stereotype.Service;
@@ -21,6 +22,7 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class NotificationManager {
   private final List<NotificationTaskExecutor> executors;
+  private final UrlGenerator urlGenerator;
   private final RegisteredUserDao userDao;
   private final MeetupDao meetupDao;
 
@@ -31,6 +33,7 @@ public class NotificationManager {
             .notificationType(NotificationType.NEW_EVENT)
             .messageKey("notification.newMeetup")
             .messageArg(meetup.getTitle())
+            .messageArg(urlGenerator.getUrlFor(meetup))
             .notificationTargetType(NotificationTargetType.GROUP)
             .meetupId(meetupId)
             .build();

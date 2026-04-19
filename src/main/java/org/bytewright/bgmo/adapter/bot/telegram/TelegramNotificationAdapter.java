@@ -17,6 +17,7 @@ import org.springframework.context.MessageSource;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+import org.telegram.telegrambots.meta.api.objects.User;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
@@ -98,6 +99,8 @@ public class TelegramNotificationAdapter implements NotificationTaskExecutor, In
   @Override
   public void afterPropertiesSet() throws Exception {
     telegramBot.setMeetUpJoinRequestHandler(this::handleJoinRequestFromChat);
+    User telegramBotMe = telegramBot.getMe();
+    log.info("Telegram bot with username {} is ready", telegramBotMe.getUserName());
   }
 
   private void handleJoinRequestFromChat(UUID meetupId, String telegramChatId) {

@@ -11,6 +11,7 @@ import org.bytewright.bgmo.domain.model.MeetupCreation;
 import org.bytewright.bgmo.domain.model.MeetupEvent;
 import org.bytewright.bgmo.domain.model.user.RegisteredUser;
 import org.bytewright.bgmo.domain.service.automation.TimeSource;
+import org.bytewright.bgmo.domain.service.data.RegisteredUserDao;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.annotation.Profile;
@@ -22,7 +23,8 @@ import org.springframework.stereotype.Component;
 @Profile("!test")
 public class MockDataInitializer implements ApplicationListener<ApplicationReadyEvent> {
   private static final int NUM_TEST_ADMINS = 1;
-  private static final int NUM_TEST_USERS = 10;
+  private static final int NUM_TEST_USERS = 2;
+  private final RegisteredUserDao userDao;
   private final AdminWorkflows adminWorkflows;
   private final UserWorkflows userWorkflows;
   private final MeetupWorkflows meetupWorkflows;
@@ -31,8 +33,6 @@ public class MockDataInitializer implements ApplicationListener<ApplicationReady
   @Override
   public void onApplicationEvent(ApplicationReadyEvent event) {
     List<RegisteredUser> admins = new ArrayList<>();
-    List<RegisteredUser> users = new ArrayList<>();
-    List<MeetupEvent> meetupEvents = new ArrayList<>();
     UUID adminMeetup = null;
     for (int i = 0; i < NUM_TEST_ADMINS; i++) {
       RegisteredUser.Creation user = createAdmin(i);
@@ -51,8 +51,6 @@ public class MockDataInitializer implements ApplicationListener<ApplicationReady
               .durationHours(2)
               .eventDate(timeSource.nowZDT().plus(Duration.ofHours(10)))
               .build();
-      meetupWorkflows.create(
-          creation.toBuilder().eventDate(timeSource.nowZDT().minusHours(1)).build());
       MeetupEvent meetupEvent = meetupWorkflows.create(creation);
       adminMeetup = meetupEvent.getId();
     }
@@ -64,30 +62,16 @@ public class MockDataInitializer implements ApplicationListener<ApplicationReady
         continue;
       }
       adminWorkflows.approveUser(admins.getFirst().getId(), registeredUser.getId());
-      Game game =
-          userWorkflows.addGameToLibrary(
-              registeredUser.getId(),
-              Game.builder().name("Mega Game-" + i).minPlayers(1).maxPlayers(4).build());
-      users.add(registeredUser);
-      MeetupCreation creation =
-          MeetupCreation.builder()
-              .creator(registeredUser)
-              .title("Test event-" + i)
-              .description("For testing purposes")
-              .durationHours(2)
-              .eventDate(timeSource.nowZDT().plus(Duration.ofDays(1 + i * 2)))
-              .offeredGames(List.of(game.id()))
-              .build();
-      meetupWorkflows.create(
-          creation.toBuilder().eventDate(timeSource.nowZDT().minusHours(1)).build());
-      MeetupEvent meetupEvent = meetupWorkflows.create(creation);
-      meetupEvents.add(meetupEvent);
-
       meetupWorkflows.requestToJoin(adminMeetup, registeredUser.getId(), null);
     }
-    MeetupEvent meetupEvent = meetupEvents.getFirst();
-    meetupWorkflows.requestToJoin(meetupEvent.getId(), admins.getFirst().getId(), null);
-    meetupWorkflows.requestToJoinAnon(meetupEvent.getId(), UUID.randomUUID(), "Anon", "noWhere");
+    RegisteredUser adminUser =
+        userDao.findAll().stream()
+            .filter(u -> u.getDisplayName().equals("admin"))
+            .findAny()
+            .orElseThrow();
+    meetupWorkflows.requestToJoin(adminMeetup, adminUser.getId(), null);
+    meetupWorkflows.requestToJoinAnon(adminMeetup, UUID.randomUUID(), "Anon", "noWhere");
+    meetupWorkflows.requestToJoinAnon(adminMeetup, UUID.randomUUID(), "Anon2", "noWhere");
     log.warn("Added {} users and {} admins: {}", NUM_TEST_USERS, NUM_TEST_ADMINS, admins);
   }
 

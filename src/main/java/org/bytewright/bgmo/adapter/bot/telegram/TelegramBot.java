@@ -22,9 +22,10 @@ public class TelegramBot extends TelegramLongPollingBot {
 
   public TelegramBot(
       TelegramAdapterProperties adapterProperties, VerificationCodeService verificationService) {
-    // super(adapterProperties.getBotToken());
+    super(adapterProperties.getBotToken());
     this.adapterProperties = adapterProperties;
     this.verificationService = verificationService;
+    log.info("created bot: {}", adapterProperties);
   }
 
   @Override
@@ -43,6 +44,7 @@ public class TelegramBot extends TelegramLongPollingBot {
 
   private void handleIncomingText(Message message) {
     String text = message.getText();
+    log.info("Received message from {}: {}", message.getFrom(), message);
     if (text.startsWith("BGMO-")) {
       boolean success =
           verificationService.attemptVerification(

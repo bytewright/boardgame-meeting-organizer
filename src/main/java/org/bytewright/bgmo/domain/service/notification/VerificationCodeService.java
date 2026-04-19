@@ -5,10 +5,12 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.bytewright.bgmo.domain.model.user.ContactInfoType;
 import org.bytewright.bgmo.usecases.NotificationWorkflows;
 import org.springframework.stereotype.Service;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class VerificationCodeService {
@@ -23,10 +25,13 @@ public class VerificationCodeService {
 
   public boolean attemptVerification(String code, ContactInfoType type, String chatId) {
     UUID userId = pendingCodes.remove(code);
-
     if (userId != null) {
-      return notificationWorkflows.verifyContactInfo(userId, type, chatId);
+      log.info("Received a correct verification token from user {}", userId);
+      UUID contactId = notificationWorkflows.verifyContactInfo(userId, type, chatId);
+      log.info("Finished verification for contact with id: {}", contactId);
+      return true;
     }
+    log.info("Received unknown verification code for type {}: {}", type, code);
     return false;
   }
 }

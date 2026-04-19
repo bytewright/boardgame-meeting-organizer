@@ -11,15 +11,18 @@ spring:
     change-log: classpath:db/changelog/db.changelog-master.yaml
   messages:
     basename: vaadin-i18n/translations
+  profiles:
+    active: local # Use gitignored other application-local.yaml
 vaadin:
   launch-browser: true
 bgmo:
   adapter:
     bot:
       telegram:
-        token: ${TELEGRAM_BOT_TOKEN:}
-        username: ${TELEGRAM_BOT_USERNAME:}
-        group-chat-id: ${TELEGRAM_BOT_GRP_CHAT_ID:}
+        bot-token: "${TELEGRAM_BOT_TOKEN:}"
+        bot-username: "${TELEGRAM_BOT_USERNAME:}"
+        group-chat-id: "${TELEGRAM_BOT_GRP_CHAT_ID:}"
         group-locale: DE
   core.services:
+    base-url: "http://some-domain.org/"
     automation-autostart: false
