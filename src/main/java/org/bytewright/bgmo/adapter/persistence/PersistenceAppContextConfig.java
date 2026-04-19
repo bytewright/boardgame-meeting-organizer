@@ -21,8 +21,9 @@ public class PersistenceAppContextConfig {
 
   @Bean
   public LocalContainerEntityManagerFactoryBean entityManagerFactory(DataSource dataSource) {
+    // dataSource is defined in application.yaml
     LocalContainerEntityManagerFactoryBean em = new LocalContainerEntityManagerFactoryBean();
-    em.setDataSource(dataSource); // Use the H2 DataSource defined above
+    em.setDataSource(dataSource);
     em.setPackagesToScan(EntityMarker.class.getPackageName());
 
     HibernateJpaVendorAdapter vendorAdapter = new HibernateJpaVendorAdapter();

@@ -2,6 +2,8 @@ package org.bytewright.bgmo.adapter.persistence.migrations;
 
 import java.sql.PreparedStatement;
 import java.time.Instant;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.UUID;
 import liquibase.change.custom.CustomTaskChange;
 import liquibase.database.Database;
@@ -30,13 +32,13 @@ public class AddAdminTask implements CustomTaskChange {
         connection.prepareStatement(
             "INSERT INTO registered_users (id, loginName, displayName, passwordHash, status, role, created_at) "
                 + "VALUES (?,?, ?, ?, ?, ?, ?)")) {
-      ps.setString(1, generateV7().toString());
+      ps.setObject(1, generateV7());
       ps.setString(2, "admin");
       ps.setString(3, "admin");
       ps.setString(4, encodedPw);
       ps.setString(5, "ACTIVE");
       ps.setString(6, "ADMIN");
-      ps.setString(7, Instant.now().toString());
+      ps.setObject(7, OffsetDateTime.ofInstant(Instant.now(), ZoneOffset.UTC));
       ps.executeUpdate();
     } catch (Exception e) {
       throw new CustomChangeException("Could not add admin user", e);

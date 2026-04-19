@@ -4,11 +4,19 @@ spring:
     username: sa
     password: password
     driverClassName: org.h2.Driver
-  jpa:
-    database-platform: org.hibernate.dialect.H2Dialect
+  liquibase:
+    enabled: true
+    change-log: classpath:db/changelog/db.changelog-master.yaml
 vaadin:
-  launch-browser: true
-org:
-  bytewright:
-    bgmo:
-      automation-autostart: false
+  launch-browser: false
+bgmo:
+  adapter:
+    bot:
+      telegram:
+        bot-token: "a long token"
+        bot-username: "some user name"
+        group-chat-id: "-1234567"
+        group-locale: DE
+  core.services:
+    base-url: "http://some-domain.org/"
+    automation-autostart: false

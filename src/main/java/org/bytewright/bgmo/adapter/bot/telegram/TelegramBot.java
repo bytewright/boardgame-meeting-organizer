@@ -9,9 +9,11 @@ import org.bytewright.bgmo.domain.service.notification.VerificationCodeService;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.AnswerCallbackQuery;
+import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.CallbackQuery;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
+import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 @Slf4j
 @Service
@@ -35,6 +37,7 @@ public class TelegramBot extends TelegramLongPollingBot {
 
   @Override
   public void onUpdateReceived(Update update) {
+    log.info("Bot received an update: {}", update);
     if (update.hasMessage() && update.getMessage().hasText()) {
       handleIncomingText(update.getMessage());
     } else if (update.hasCallbackQuery()) {
@@ -50,7 +53,15 @@ public class TelegramBot extends TelegramLongPollingBot {
           verificationService.attemptVerification(
               text, ContactInfoType.TELEGRAM, message.getChatId().toString());
       if (success) {
-        // Reply: "Account linked successfully!"
+        try {
+          execute(
+              SendMessage.builder()
+                  .chatId(message.getChatId())
+                  .text("Account linked successfully!")
+                  .build());
+        } catch (TelegramApiException e) {
+          log.error("Failed to send user verification confirmation!");
+        }
       }
     }
   }

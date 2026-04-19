@@ -1,0 +1,31 @@
+services:
+  db:
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_DB: bgmo_db
+      POSTGRES_USER: dbuser
+      POSTGRES_PASSWORD: dbpassword
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"          # remove this in prod — app talks to db internally
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d bgmo_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+ # app:
+ #   build: .
+ #   environment:
+ #     DB_USER: ${DB_USER}
+ #     DB_PASS: ${DB_PASS}
+ #     SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/bgmo_db
+ #   depends_on:
+ #     db:
+ #       condition: service_healthy   # waits for postgres to be actually ready
+ #   ports:
+ #     - "8080:8080"
+
+volumes:
+  postgres_data:

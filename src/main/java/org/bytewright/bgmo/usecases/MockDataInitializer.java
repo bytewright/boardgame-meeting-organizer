@@ -12,8 +12,6 @@ import org.bytewright.bgmo.domain.model.MeetupEvent;
 import org.bytewright.bgmo.domain.model.user.RegisteredUser;
 import org.bytewright.bgmo.domain.service.automation.TimeSource;
 import org.bytewright.bgmo.domain.service.data.RegisteredUserDao;
-import org.springframework.boot.context.event.ApplicationReadyEvent;
-import org.springframework.context.ApplicationListener;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
@@ -21,7 +19,7 @@ import org.springframework.stereotype.Component;
 @Component
 @RequiredArgsConstructor
 @Profile("!test")
-public class MockDataInitializer implements ApplicationListener<ApplicationReadyEvent> {
+public class MockDataInitializer {
   private static final int NUM_TEST_ADMINS = 1;
   private static final int NUM_TEST_USERS = 2;
   private final RegisteredUserDao userDao;
@@ -30,8 +28,7 @@ public class MockDataInitializer implements ApplicationListener<ApplicationReady
   private final MeetupWorkflows meetupWorkflows;
   private final TimeSource timeSource;
 
-  @Override
-  public void onApplicationEvent(ApplicationReadyEvent event) {
+  public void mockTestData() {
     List<RegisteredUser> admins = new ArrayList<>();
     UUID adminMeetup = null;
     for (int i = 0; i < NUM_TEST_ADMINS; i++) {

@@ -1,11 +1,8 @@
 spring:
   datasource:
-    url: jdbc:h2:mem:testdb;MODE=PostgreSQL
-    username: sa
-    password: password
-    driverClassName: org.h2.Driver
-  jpa:
-    database-platform: org.hibernate.dialect.H2Dialect
+    url: jdbc:postgresql://localhost:5432/bgmo_db
+    username: ${DB_USER}
+    password: ${DB_PASS}
   liquibase:
     enabled: true
     change-log: classpath:db/changelog/db.changelog-master.yaml

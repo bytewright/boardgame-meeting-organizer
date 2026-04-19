@@ -32,9 +32,22 @@ See [Architecture.md](./ARCHITECTURE.md)
 
 - should happen with docker, needs some env vars:
   - APP_ADMIN_PASSWORD = plain text for `admin` account
+  - DB_USER
+  - DB_PASS
   - TELEGRAM_BOT_TOKEN 
   - TELEGRAM_BOT_USERNAME 
   - TELEGRAM_BOT_GRP_CHAT_ID
 - volumes:
   - /app/logs/
   - /app/db/
+
+# ToDos
+- Deadline für anmeldungen als optionales Feld
+- Locale switcher geht nicht/wird nicht angewandt
+- translations de/en angleichen
+- main layout back button - hide on dashboard
+- meetup card formatting, symbole übereinander, slot symbol durch gruppen symbol austauschen
+- Apptitel einheitlich in loginscreen, dashboard und telegram
+- Organizer in detail view & addresse nach join request approve, PLZ schon auf detail page anzeigen
+- Impressum
+- BGG integration

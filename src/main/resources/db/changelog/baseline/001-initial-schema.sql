@@ -1,9 +1,35 @@
+  alter table if exists games 
+       drop constraint if exists FKo59wtadyo5hgfk4vgggpjilfq;
+
+    alter table if exists meetup_joins 
+       drop constraint if exists FKkg7xc4eqhb43jxu3rgjme4cvf;
+
+    alter table if exists meetup_joins 
+       drop constraint if exists FKdv7f4hcu3ix95v7unq122puiq;
+
+    alter table if exists meetup_offered_games 
+       drop constraint if exists FKav4cw0ynymhtfyfq6cdxi5vl9;
+
+    alter table if exists meetup_offered_games 
+       drop constraint if exists FKssykgj46bkw4e2bp858wprpx3;
+
+    alter table if exists meetups 
+       drop constraint if exists FKn27wha3j17v0yiripaoc1me2k;
+
+    alter table if exists user_contact_infos 
+       drop constraint if exists FKp95x5f9uq6yvapwsn643lmkie;
+
     drop table if exists games cascade;
-    drop table if exists meetup_joins cascade; 
-    drop table if exists meetup_offered_games cascade ;
-    drop table if exists meetups cascade ;
-    drop table if exists registered_users cascade ;
-    drop table if exists user_contact_infos cascade ;
+
+    drop table if exists meetup_joins cascade;
+
+    drop table if exists meetup_offered_games cascade;
+
+    drop table if exists meetups cascade;
+
+    drop table if exists registered_users cascade;
+
+    drop table if exists user_contact_infos cascade;
 
     create table games (
         complexity float(53),
@@ -32,7 +58,7 @@
         user_id uuid,
         contactInfo varchar(255),
         displayName varchar(255) not null,
-        requestState enum ('ACCEPTED','CANCELED','DECLINED','OPEN') not null,
+        requestState varchar(255) not null check (requestState in ('OPEN','ACCEPTED','DECLINED','CANCELED')),
         primary key (id)
     );
 
@@ -67,8 +93,8 @@
         loginName varchar(255) not null,
         passwordHash varchar(255) not null,
         preferredLocale varchar(255),
-        role enum ('ADMIN','USER') not null,
-        status enum ('ACTIVE','BANNED','PENDING_APPROVAL') not null,
+        role varchar(255) not null check (role in ('USER','ADMIN')),
+        status varchar(255) not null check (status in ('PENDING_APPROVAL','ACTIVE','BANNED')),
         primary key (id),
         constraint UC_USER_LOGIN_NAME unique (loginName)
     );
@@ -77,7 +103,7 @@
         id uuid not null,
         user_id uuid not null,
         jsonData text not null,
-        type enum ('ADDRESS','EMAIL','PHONE','SIGNAL','TELEGRAM'),
+        type varchar(255) check (type in ('EMAIL','TELEGRAM','SIGNAL','ADDRESS','PHONE')),
         primary key (id)
     );
 
@@ -114,4 +140,4 @@
     alter table if exists user_contact_infos 
        add constraint FKp95x5f9uq6yvapwsn643lmkie 
        foreign key (user_id) 
-       references registered_users;
+       references registered_users
