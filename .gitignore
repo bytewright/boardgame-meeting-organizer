@@ -30,3 +30,4 @@ target/
 !**/src/test/**/target/
 /src/main/frontend/generated/
 /src/main/frontend/index.html
+/src/main/resources/application-local.yaml
