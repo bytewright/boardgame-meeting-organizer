@@ -1,0 +1,6 @@
+databaseChangeLog:
+  - include:
+      file: db/changelog/baseline/001-initial-schema.sql
+  - includeAll:
+      path: migrations/
+      relativeToChangelogFile: true

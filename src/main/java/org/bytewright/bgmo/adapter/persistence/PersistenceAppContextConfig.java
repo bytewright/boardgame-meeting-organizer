@@ -29,7 +29,7 @@ public class PersistenceAppContextConfig {
     em.setJpaVendorAdapter(vendorAdapter);
 
     Properties jpaProperties = new Properties();
-    jpaProperties.setProperty("hibernate.hbm2ddl.auto", "create-drop"); // DDL generation strategy
+    jpaProperties.setProperty("hibernate.hbm2ddl.auto", "none"); // DDL generation strategy
     jpaProperties.setProperty("hibernate.show_sql", "false");
     jpaProperties.setProperty("hibernate.format_sql", "false");
 

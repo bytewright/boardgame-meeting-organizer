@@ -1,8 +1,8 @@
 package org.bytewright.bgmo.domain.service.automation;
 
 import javax.sql.DataSource;
+import org.bytewright.bgmo.domain.service.BgmoProperties;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -25,7 +25,7 @@ public class QuartzSchedulerContextConfig {
   /** Creates the SchedulerFactoryBean that will manage the Quartz scheduler */
   @Bean
   public SchedulerFactoryBean schedulerFactoryBean(
-      @Value("${org.bytewright.bgmo.automation-autostart:true}") boolean isAutostart,
+      BgmoProperties bgmoProperties,
       @Autowired(required = false) DataSource dataSource,
       ApplicationContext applicationContext,
       SpringBeanJobFactory springBeanJobFactory) {
@@ -40,7 +40,7 @@ public class QuartzSchedulerContextConfig {
       schedulerFactory.setDataSource(dataSource);
     }
     schedulerFactory.setWaitForJobsToCompleteOnShutdown(true);
-    schedulerFactory.setAutoStartup(isAutostart);
+    schedulerFactory.setAutoStartup(bgmoProperties.isAutomationAutostart());
     schedulerFactory.setSchedulerName("App-Quartz-Scheduler");
     schedulerFactory.setStartupDelay(10);
     return schedulerFactory;

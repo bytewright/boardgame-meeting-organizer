@@ -27,3 +27,14 @@ See [Architecture.md](./ARCHITECTURE.md)
 - Build with Maven: ./mvnw clean install
 - Run the app: ./mvnw spring-boot:run
 - Access the UI: Open http://localhost:8080 in your browser
+
+# Deployment
+
+- should happen with docker, needs some env vars:
+  - APP_ADMIN_PASSWORD = plain text for `admin` account
+  - TELEGRAM_BOT_TOKEN 
+  - TELEGRAM_BOT_USERNAME 
+  - TELEGRAM_BOT_GRP_CHAT_ID
+- volumes:
+  - /app/logs/
+  - /app/db/

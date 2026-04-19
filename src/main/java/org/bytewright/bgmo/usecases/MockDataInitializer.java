@@ -102,7 +102,7 @@ public class MockDataInitializer implements ApplicationListener<ApplicationReady
   }
 
   private RegisteredUser.Creation createAdmin(int index) {
-    String userName = index == 0 ? "admin" : "admin-%d".formatted(index);
+    String userName = "admin-%d".formatted(index);
     return RegisteredUser.Creation.builder()
         .loginName(userName)
         .displayName(userName)

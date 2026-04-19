@@ -1,6 +1,7 @@
 package org.bytewright.bgmo.domain.model;
 
 import jakarta.annotation.Nullable;
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 import lombok.Builder;
@@ -12,7 +13,9 @@ import org.bytewright.bgmo.domain.model.data.HasUUID;
 public class Game implements HasUUID {
   private UUID id;
   private UUID ownerId;
-
+  private Instant tsCreation;
+  private Instant tsModified;
+  @Nullable private Instant tsDeleted;
   private String name;
   @Nullable private String description;
   private int minPlayers;

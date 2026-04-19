@@ -6,17 +6,20 @@ spring:
     driverClassName: org.h2.Driver
   jpa:
     database-platform: org.hibernate.dialect.H2Dialect
+  liquibase:
+    enabled: true
+    change-log: classpath:db/changelog/db.changelog-master.yaml
+  messages:
+    basename: vaadin-i18n/translations
 vaadin:
   launch-browser: true
-org:
-  bytewright:
-    bgmo:
-      automation-autostart: false
 bgmo:
   adapter:
     bot:
       telegram:
-        token:
-        username:
-        group-chat-id:
-        group-locale:
+        token: ${TELEGRAM_BOT_TOKEN:}
+        username: ${TELEGRAM_BOT_USERNAME:}
+        group-chat-id: ${TELEGRAM_BOT_GRP_CHAT_ID:}
+        group-locale: DE
+  core.services:
+    automation-autostart: false

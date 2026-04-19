@@ -1,15 +1,35 @@
 <configuration>
     <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
-    <include resource="org/springframework/boot/logging/logback/console-appender.xml"/>
 
+    <property name="LOG_FILE" value="./logs/bgmo.log" />
     <springProfile name="!production">
-        <logger name="org.springframework.security" level="DEBUG"/>
+        <property name="LOG_FILE" value="/app/logs/bgmo.log" />
+        <logger name="org.springframework.security" level="INFO"/>
     </springProfile>
 
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>${CONSOLE_LOG_PATTERN}</pattern>
+        </encoder>
+    </appender>
+
+    <appender name="ROLLING-FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_FILE}</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>/app/logs/bgmo-%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+            <maxFileSize>10MB</maxFileSize>
+            <maxHistory>30</maxHistory>
+            <totalSizeCap>1GB</totalSizeCap>
+        </rollingPolicy>
+        <encoder>
+            <pattern>${FILE_LOG_PATTERN}</pattern>
+        </encoder>
+    </appender>
+
     <logger name="org.bytewright" level="debug"/>
-    <logger name="org.atmosphere.cpr.AtmosphereFramework" level="warn"/>
 
     <root level="INFO">
         <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="ROLLING-FILE"/>
     </root>
 </configuration>

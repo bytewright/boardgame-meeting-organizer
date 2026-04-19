@@ -12,5 +12,6 @@ public class BgmoVaadinWebSecurity extends VaadinWebSecurity {
   protected void configure(HttpSecurity http) throws Exception {
     super.configure(http); // Vaadin-specific path handling
     setLoginView(http, LoginView.class, "/");
+    http.formLogin(cfg -> cfg.successForwardUrl("/dashboard"));
   }
 }
