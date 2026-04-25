@@ -32,6 +32,7 @@ See [Architecture.md](./ARCHITECTURE.md)
 
 - should happen with docker, needs some env vars:
   - APP_ADMIN_PASSWORD = plain text for `admin` account
+  - APP_PASSWORD_PEPPER = global password hasher pepper
   - DB_USER
   - DB_PASS
   - TELEGRAM_BOT_TOKEN 
@@ -41,13 +42,20 @@ See [Architecture.md](./ARCHITECTURE.md)
   - /app/logs/
   - /app/db/
 
-# ToDos
+# ToDos - Bugs
 - Deadline für anmeldungen als optionales Feld
 - Locale switcher geht nicht/wird nicht angewandt
 - translations de/en angleichen
 - main layout back button - hide on dashboard
 - meetup card formatting, symbole übereinander, slot symbol durch gruppen symbol austauschen
 - Apptitel einheitlich in loginscreen, dashboard und telegram
-- Organizer in detail view & addresse nach join request approve, PLZ schon auf detail page anzeigen
+
+# ToDos - Features
 - Impressum
+- Security upgrade
+  - Argon2PasswordEncoder
+  - pepper from env var
+  - pw reset flow
+  - rate limiting
 - BGG integration
+- Organizer in detail view & addresse nach join request approve, PLZ schon auf detail page anzeigen

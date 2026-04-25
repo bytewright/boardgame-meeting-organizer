@@ -10,5 +10,6 @@ import org.springframework.stereotype.Component;
 @ConfigurationProperties("bgmo.core.services")
 public class BgmoProperties {
   private boolean automationAutostart;
+  private String securityPwPepper;
   private URI baseUrl;
 }

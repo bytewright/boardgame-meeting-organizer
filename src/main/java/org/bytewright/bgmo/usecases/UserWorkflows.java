@@ -11,8 +11,8 @@ import org.bytewright.bgmo.domain.model.user.RegisteredUser;
 import org.bytewright.bgmo.domain.service.automation.TimeSource;
 import org.bytewright.bgmo.domain.service.data.GameDao;
 import org.bytewright.bgmo.domain.service.data.RegisteredUserDao;
-import org.bytewright.bgmo.domain.service.user.PasswordRules;
-import org.springframework.security.crypto.password.PasswordEncoder;
+import org.bytewright.bgmo.domain.service.security.BgmoUserDetailsService;
+import org.bytewright.bgmo.domain.service.security.PasswordRules;
 import org.springframework.stereotype.Service;
 
 @Slf4j
@@ -20,7 +20,7 @@ import org.springframework.stereotype.Service;
 @Transactional
 @RequiredArgsConstructor
 public class UserWorkflows {
-  private final PasswordEncoder passwordEncoder;
+  private final BgmoUserDetailsService userDetailsService;
   private final RegisteredUserDao userDao;
   private final TimeSource timeSource;
   private final GameDao gameDao;
@@ -35,7 +35,7 @@ public class UserWorkflows {
             RegisteredUser.builder()
                 .displayName(userDto.getDisplayName())
                 .loginName(userDto.getLoginName())
-                .passwordHash(passwordEncoder.encode(userDto.getPassword()))
+                .passwordHash(userDetailsService.hashPw(userDto.getPassword()))
                 .build());
     Set<ContactInfo> contactInfos = newUser.getContactInfos();
     Optional.ofNullable(userDto.getSignalHandle())
@@ -107,12 +107,7 @@ public class UserWorkflows {
       throw new IllegalArgumentException(
           "New PW for user %s violates password rules".formatted(userId));
     }
-    String encoded = passwordEncoder.encode(newPassword);
-    if (user.getPasswordHash().equals(encoded)) return;
-    log.info("User {} changes his password", user.logEntity());
-    user.setPasswordHash(encoded);
-    userDao.createOrUpdate(user);
-    // todo logout of user?
+    userDetailsService.updatePasswordAndPersist(user, newPassword);
   }
 
   public void changeLocale(UUID userId, Locale value) {

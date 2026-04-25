@@ -28,7 +28,7 @@ import org.bytewright.bgmo.adapter.api.frontend.view.component.MainLayout;
 import org.bytewright.bgmo.domain.model.user.RegisteredUser;
 import org.bytewright.bgmo.domain.service.data.GameDao;
 import org.bytewright.bgmo.domain.service.notification.VerificationCodeService;
-import org.bytewright.bgmo.domain.service.user.PasswordRules;
+import org.bytewright.bgmo.domain.service.security.PasswordRules;
 import org.bytewright.bgmo.usecases.UserWorkflows;
 
 @Route(value = "profile", layout = MainLayout.class)

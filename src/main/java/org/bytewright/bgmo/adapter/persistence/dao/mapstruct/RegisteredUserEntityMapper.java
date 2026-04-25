@@ -1,6 +1,7 @@
 package org.bytewright.bgmo.adapter.persistence.dao.mapstruct;
 
 import jakarta.transaction.Transactional;
+import java.util.Optional;
 import java.util.UUID;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -42,5 +43,10 @@ public abstract class RegisteredUserEntityMapper
   @Override
   public boolean hasContactOfType(UUID userId, ContactInfoType contactInfoType) {
     return userRepository.existsByIdAndContactInfos_Type(userId, contactInfoType);
+  }
+
+  @Override
+  public Optional<RegisteredUser> findByLoginName(String loginName) {
+    return userRepository.findByLoginName(loginName).map(this::toDto);
   }
 }

@@ -24,3 +24,4 @@ bgmo:
   core.services:
     base-url: "http://some-domain.org/"
     automation-autostart: false
+    security-pw-pepper: "${APP_PASSWORD_PEPPER:}"

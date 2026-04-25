@@ -10,7 +10,9 @@ import liquibase.database.Database;
 import liquibase.database.jvm.JdbcConnection;
 import liquibase.exception.CustomChangeException;
 import liquibase.resource.ResourceAccessor;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.bytewright.bgmo.domain.service.security.PepperingPasswordEncoder;
+import org.springframework.security.crypto.argon2.Argon2PasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 /** Sample liquibase java migration to add first admin to site. */
 public class AddAdminTask implements CustomTaskChange {
@@ -18,14 +20,21 @@ public class AddAdminTask implements CustomTaskChange {
   @Override
   public void execute(Database database) throws CustomChangeException {
 
-    // 1. Pull the plain text password from the environment
+    // 1. Pull the plain text password and pw pepper from the environment
     String rawPassword = System.getenv("APP_ADMIN_PASSWORD");
 
     if (rawPassword == null || rawPassword.isBlank()) {
       rawPassword = "admin";
     }
+    String appPwPepper = System.getenv("APP_PASSWORD_PEPPER");
 
-    BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
+    if (appPwPepper == null || appPwPepper.isBlank()) {
+      appPwPepper = "bgmo-pepper";
+    }
+
+    PasswordEncoder encoder =
+        new PepperingPasswordEncoder(
+            Argon2PasswordEncoder.defaultsForSpringSecurity_v5_8(), appPwPepper);
     String encodedPw = encoder.encode(rawPassword);
     JdbcConnection connection = (JdbcConnection) database.getConnection();
     try (PreparedStatement ps =
