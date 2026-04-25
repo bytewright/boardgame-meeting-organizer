@@ -53,8 +53,6 @@ See [Architecture.md](./ARCHITECTURE.md)
 # ToDos - Features
 - Impressum
 - Security upgrade
-  - Argon2PasswordEncoder
-  - pepper from env var
   - pw reset flow
   - rate limiting
 - BGG integration
