@@ -51,7 +51,6 @@ See [Architecture.md](./ARCHITECTURE.md)
 
 # ToDos - Features
 - Deadline für anmeldungen als optionales Feld
-- Impressum
 - Security upgrade
   - pw reset flow
   - rate limiting
