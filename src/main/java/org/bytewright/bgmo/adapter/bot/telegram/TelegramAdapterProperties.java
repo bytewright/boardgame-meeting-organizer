@@ -12,4 +12,5 @@ public class TelegramAdapterProperties {
   private String botUsername;
   private String groupChatId;
   private String groupLocale;
+  private boolean enabled;
 }

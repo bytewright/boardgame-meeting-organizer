@@ -13,6 +13,7 @@ bgmo:
   adapter:
     bot:
       telegram:
+        enabled: false
         bot-token: "a long token"
         bot-username: "some user name"
         group-chat-id: "-1234567"

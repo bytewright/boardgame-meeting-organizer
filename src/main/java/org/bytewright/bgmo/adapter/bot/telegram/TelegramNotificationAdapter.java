@@ -13,6 +13,8 @@ import org.bytewright.bgmo.domain.model.user.RegisteredUser;
 import org.bytewright.bgmo.domain.service.data.RegisteredUserDao;
 import org.bytewright.bgmo.domain.service.notification.NotificationTaskExecutor;
 import org.springframework.beans.factory.InitializingBean;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.ApplicationListener;
 import org.springframework.context.MessageSource;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
@@ -27,7 +29,10 @@ import org.telegram.telegrambots.updatesreceivers.DefaultBotSession;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class TelegramNotificationAdapter implements NotificationTaskExecutor, InitializingBean {
+public class TelegramNotificationAdapter
+    implements NotificationTaskExecutor,
+        InitializingBean,
+        ApplicationListener<ApplicationReadyEvent> {
   private final TelegramAdapterProperties adapterProperties;
   private final MessageSource messageSource;
   private final TelegramBot telegramBot;
@@ -52,12 +57,14 @@ public class TelegramNotificationAdapter implements NotificationTaskExecutor, In
         messageSource.getMessage(
             context.messageKey(), context.messageArgs().toArray(new Object[0]), targetLocale);
     String formattedMessage = escapeMarkdown(rawMessage);
-    SendMessage message = new SendMessage();
-    message.setChatId(getChatId(context));
-    message.setText(formattedMessage);
-    message.setParseMode("MarkdownV2");
+    SendMessage message =
+        SendMessage.builder()
+            .chatId(getChatId(context))
+            .text(formattedMessage)
+            .parseMode("MarkdownV2")
+            .build();
 
-    // Example: Adding the "Join" button if a meetupId is present
+    // Adding the "Join" button if a meetupId is present
     if (context.meetupId() != null) {
       var button =
           InlineKeyboardButton.builder()
@@ -99,18 +106,29 @@ public class TelegramNotificationAdapter implements NotificationTaskExecutor, In
   }
 
   @Override
-  public void afterPropertiesSet() throws Exception {
+  public void afterPropertiesSet() {
     telegramBot.setMeetUpJoinRequestHandler(this::handleJoinRequestFromChat);
-
-    TelegramBotsApi botsApi = new TelegramBotsApi(DefaultBotSession.class);
-    botsApi.registerBot(telegramBot);
-    User telegramBotMe = telegramBot.getMe();
-    log.info(
-        "Telegram bot with username '{}' is ready, listening to chat updates...",
-        telegramBotMe.getUserName());
   }
 
   private void handleJoinRequestFromChat(UUID meetupId, String telegramChatId) {
     // todo create request
+  }
+
+  @Override
+  public void onApplicationEvent(ApplicationReadyEvent event) {
+    try {
+      if (!adapterProperties.isEnabled()) {
+        log.warn("Telegram bot is disabled, skipping registering with external service.");
+        return;
+      }
+      TelegramBotsApi botsApi = new TelegramBotsApi(DefaultBotSession.class);
+      botsApi.registerBot(telegramBot);
+      User telegramBotMe = telegramBot.getMe();
+      log.info(
+          "Telegram bot with username '{}' is ready, listening to chat updates...",
+          telegramBotMe.getUserName());
+    } catch (Exception e) {
+      log.error("Telegram bot failed to initialize with error: {}", e.getMessage(), e);
+    }
   }
 }

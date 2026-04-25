@@ -16,6 +16,7 @@ bgmo:
   adapter:
     bot:
       telegram:
+        enabled: true
         bot-token: "${TELEGRAM_BOT_TOKEN:}"
         bot-username: "${TELEGRAM_BOT_USERNAME:}"
         group-chat-id: "${TELEGRAM_BOT_GRP_CHAT_ID:}"
