@@ -1,87 +1,192 @@
 package org.bytewright.bgmo.adapter.api.frontend.view.component;
 
 import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.dialog.Dialog;
+import com.vaadin.flow.component.formlayout.FormLayout;
+import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextField;
+import com.vaadin.flow.data.binder.Binder;
 import java.util.function.Consumer;
+import lombok.Data;
 import org.bytewright.bgmo.domain.model.user.ContactInfo;
 import org.bytewright.bgmo.domain.model.user.ContactInfoType;
+import org.bytewright.bgmo.domain.service.user.ContactInfoValidationService;
 
 public class ContactAddWizard extends Dialog {
-  private final VerticalLayout stepContainer;
-  private final Consumer<ContactInfo> onComplete;
 
-  public ContactAddWizard(Consumer<ContactInfo> onComplete) {
+  private final Consumer<ContactInfo> onComplete;
+  private final ContactInfoValidationService validationService;
+
+  private final FormLayout dynamicFieldsLayout;
+  private final Button saveBtn;
+
+  private Binder<ContactDraft> binder;
+  private ContactDraft currentDraft;
+  private ContactInfoType currentType;
+
+  public ContactAddWizard(
+      Consumer<ContactInfo> onComplete, ContactInfoValidationService validationService) {
     this.onComplete = onComplete;
+    this.validationService = validationService;
+
     setHeaderTitle("Add Contact Information");
 
-    stepContainer = new VerticalLayout();
-    add(stepContainer);
-
-    showStep1();
-
-    getFooter().add(new Button("Cancel", e -> close()));
-  }
-
-  private void showStep1() {
-    stepContainer.removeAll();
-    ComboBox<ContactInfoType> typePicker = new ComboBox<>("Select Type", ContactInfoType.values());
+    ComboBox<ContactInfoType> typePicker = new ComboBox<>("Contact Type", ContactInfoType.values());
     typePicker.setWidthFull();
 
-    Button nextBtn =
-        new Button(
-            "Next",
-            e -> {
-              if (typePicker.getValue() != null) showStep2(typePicker.getValue());
-            });
-    nextBtn.setEnabled(false);
-    typePicker.addValueChangeListener(e -> nextBtn.setEnabled(e.getValue() != null));
+    dynamicFieldsLayout = new FormLayout();
+    dynamicFieldsLayout.setResponsiveSteps(new FormLayout.ResponsiveStep("0", 1));
 
-    stepContainer.add(typePicker, nextBtn);
+    typePicker.addValueChangeListener(e -> buildFormForType(e.getValue()));
+
+    saveBtn = new Button("Save", e -> saveContact());
+    saveBtn.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+    saveBtn.setEnabled(false); // Disabled until valid type is selected
+
+    Button cancelBtn = new Button("Cancel", e -> close());
+
+    VerticalLayout layout = new VerticalLayout(typePicker, dynamicFieldsLayout);
+    layout.setPadding(false);
+    add(layout);
+
+    getFooter().add(cancelBtn, saveBtn);
   }
 
-  private void showStep2(ContactInfoType type) {
-    stepContainer.removeAll();
-    TextField valueField = new TextField("Enter " + type.name());
+  private void buildFormForType(ContactInfoType type) {
+    dynamicFieldsLayout.removeAll();
+    this.currentType = type;
+
+    if (type == null) {
+      saveBtn.setEnabled(false);
+      return;
+    }
+
+    // Reset state
+    this.currentDraft = new ContactDraft();
+    this.binder = new Binder<>(ContactDraft.class);
+    this.binder.addStatusChangeListener(e -> saveBtn.setEnabled(binder.isValid()));
+
+    switch (type) {
+      case EMAIL ->
+          buildSingleFieldForm(
+              "Email Address",
+              VaadinIcon.ENVELOPE,
+              validationService::validateEmail,
+              "Invalid email format");
+      case TELEGRAM ->
+          buildSingleFieldForm(
+              "Telegram Chat ID / Handle",
+              VaadinIcon.PAPERPLANE,
+              validationService::validateTelegram,
+              "Invalid Telegram handle");
+      case SIGNAL ->
+          buildSingleFieldForm(
+              "Signal Handle",
+              VaadinIcon.CHAT,
+              validationService::validateSignal,
+              "Invalid Signal handle");
+      case PHONE ->
+          buildSingleFieldForm(
+              "Phone Number",
+              VaadinIcon.PHONE,
+              validationService::validatePhone,
+              "Invalid phone format");
+      case ADDRESS -> buildAddressForm();
+    }
+
+    binder.setBean(currentDraft);
+    saveBtn.setEnabled(false); // Force re-validation check
+  }
+
+  private void buildSingleFieldForm(
+      String label, VaadinIcon icon, ValidatorFunc validator, String errorMsg) {
+    TextField valueField = new TextField(label);
     valueField.setWidthFull();
+    valueField.setPrefixComponent(icon.create());
 
-    Button finishBtn =
-        new Button(
-            "Finish",
-            e -> {
-              ContactInfo newContactInfo =
-                  switch (type) {
-                    case EMAIL -> {
-                      yield ContactInfo.EmailContact.builder().email(valueField.getValue()).build();
-                    }
-                    case TELEGRAM -> {
-                      yield ContactInfo.TelegramContact.builder()
-                          .chatId(valueField.getValue())
-                          .build();
-                    }
-                    case SIGNAL -> {
-                      yield ContactInfo.SignalContact.builder()
-                          .signalHandle(valueField.getValue())
-                          .build();
-                    }
-                    case ADDRESS -> {
-                      // TODO this makes no sense, the wizard needs much more logic
-                      yield ContactInfo.AddressContact.builder()
-                          .street(valueField.getValue())
-                          .build();
-                    }
-                    case PHONE -> {
-                      yield ContactInfo.PhoneContact.builder()
-                          .phoneNr(valueField.getValue())
-                          .build();
-                    }
-                  };
-              onComplete.accept(newContactInfo);
-              close();
-            });
+    binder
+        .forField(valueField)
+        .asRequired("This field is required")
+        .withValidator(validator::validate, errorMsg)
+        .bind(ContactDraft::getSingleValue, ContactDraft::setSingleValue);
 
-    stepContainer.add(valueField, finishBtn);
+    dynamicFieldsLayout.add(valueField);
+  }
+
+  private void buildAddressForm() {
+    TextField streetField = new TextField("Street & Number");
+    streetField.setPrefixComponent(VaadinIcon.HOME.create());
+
+    TextField zipField = new TextField("ZIP Code");
+    TextField cityField = new TextField("City");
+
+    binder
+        .forField(streetField)
+        .asRequired("Street is required")
+        .bind(ContactDraft::getStreet, ContactDraft::setStreet);
+
+    binder
+        .forField(zipField)
+        .asRequired("ZIP is required")
+        // Example of inline validation if the service handles the whole address at once:
+        .bind(ContactDraft::getZipCode, ContactDraft::setZipCode);
+
+    binder
+        .forField(cityField)
+        .asRequired("City is required")
+        .bind(ContactDraft::getCity, ContactDraft::setCity);
+
+    // If your service validates the whole address combination:
+    binder.withValidator(
+        draft ->
+            validationService.validateAddress(
+                draft.getStreet(), draft.getZipCode(), draft.getCity()),
+        "Address does not appear to be valid");
+
+    dynamicFieldsLayout.add(streetField, zipField, cityField);
+  }
+
+  private void saveContact() {
+    if (binder.validate().isOk()) {
+      ContactInfo newContact =
+          switch (currentType) {
+            case EMAIL ->
+                ContactInfo.EmailContact.builder().email(currentDraft.getSingleValue()).build();
+            case TELEGRAM ->
+                ContactInfo.TelegramContact.builder().chatId(currentDraft.getSingleValue()).build();
+            case SIGNAL ->
+                ContactInfo.SignalContact.builder()
+                    .signalHandle(currentDraft.getSingleValue())
+                    .build();
+            case PHONE ->
+                ContactInfo.PhoneContact.builder().phoneNr(currentDraft.getSingleValue()).build();
+            case ADDRESS ->
+                ContactInfo.AddressContact.builder()
+                    .street(currentDraft.getStreet())
+                    .zipCode(currentDraft.getZipCode())
+                    .city(currentDraft.getCity())
+                    .build();
+          };
+      onComplete.accept(newContact);
+      close();
+    }
+  }
+
+  // Functional interface for our simple validator callbacks
+  @FunctionalInterface
+  private interface ValidatorFunc {
+    boolean validate(String value);
+  }
+
+  // Internal DTO to hold Vaadin Binder state before creating the immutable Record
+  @Data
+  private static class ContactDraft {
+    private String singleValue; // Used for Email, Phone, Telegram, Signal
+    private String street;
+    private String zipCode;
+    private String city;
   }
 }

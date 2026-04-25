@@ -135,4 +135,8 @@ public class UserWorkflows {
     }
     userDao.createOrUpdate(user);
   }
+
+  public RegisteredUser refreshUser(RegisteredUser currentUser) {
+    return userDao.findOrThrow(currentUser.getId());
+  }
 }

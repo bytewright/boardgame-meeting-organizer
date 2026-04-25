@@ -13,18 +13,26 @@ import com.vaadin.flow.component.radiobutton.RadioGroupVariant;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
 import java.util.ArrayList;
 import java.util.List;
+import lombok.extern.slf4j.Slf4j;
 import org.bytewright.bgmo.domain.model.user.ContactInfo;
 import org.bytewright.bgmo.domain.model.user.ContactInfo.*;
 import org.bytewright.bgmo.domain.model.user.RegisteredUser;
+import org.bytewright.bgmo.domain.service.user.ContactInfoValidationService;
 import org.bytewright.bgmo.usecases.UserWorkflows;
 
+@Slf4j
 public class ContactSection extends VerticalLayout {
 
-  private final UserWorkflows userWorkflows;
-  private final RegisteredUser currentUser;
   private final RadioButtonGroup<ContactInfo> favoriteSelector;
+  private final ContactInfoValidationService validationService;
+  private final UserWorkflows userWorkflows;
+  private RegisteredUser currentUser;
 
-  public ContactSection(UserWorkflows userWorkflows, RegisteredUser currentUser) {
+  public ContactSection(
+      ContactInfoValidationService validationService,
+      UserWorkflows userWorkflows,
+      RegisteredUser currentUser) {
+    this.validationService = validationService;
     this.userWorkflows = userWorkflows;
     this.currentUser = currentUser;
 
@@ -54,6 +62,7 @@ public class ContactSection extends VerticalLayout {
   }
 
   private void refreshContacts() {
+    currentUser = userWorkflows.refreshUser(currentUser);
     List<ContactInfo> contacts = new ArrayList<>(currentUser.getContactInfos());
     favoriteSelector.setItems(contacts);
 
@@ -114,8 +123,15 @@ public class ContactSection extends VerticalLayout {
             contactInfo -> {
               userWorkflows.addContactInfo(currentUser.getId(), contactInfo);
               refreshContacts();
-            });
+            },
+            validationService);
     dialog.open();
+    dialog.addOpenedChangeListener(
+        event -> {
+          if (!event.isOpened()) {
+            refreshContacts();
+          }
+        });
   }
 
   private void updatePrimaryContact(ContactInfo contactInfo) {

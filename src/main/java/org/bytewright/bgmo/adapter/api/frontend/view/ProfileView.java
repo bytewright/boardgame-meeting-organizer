@@ -31,6 +31,7 @@ import org.bytewright.bgmo.domain.model.user.RegisteredUser;
 import org.bytewright.bgmo.domain.service.data.GameDao;
 import org.bytewright.bgmo.domain.service.notification.VerificationCodeService;
 import org.bytewright.bgmo.domain.service.security.PasswordRules;
+import org.bytewright.bgmo.domain.service.user.ContactInfoValidationService;
 import org.bytewright.bgmo.usecases.UserWorkflows;
 
 @Route(value = "profile", layout = MainLayout.class)
@@ -39,9 +40,10 @@ import org.bytewright.bgmo.usecases.UserWorkflows;
 @RequiredArgsConstructor
 public class ProfileView extends VerticalLayout implements BeforeEnterObserver {
 
+  private final ContactInfoValidationService validationService;
+  private final VerificationCodeService verificationService;
   private final SessionAuthenticationService authService;
   private final UserWorkflows userWorkflows;
-  private final VerificationCodeService verificationService;
   private final GameDao gameDao;
 
   private final VerticalLayout content = new VerticalLayout();
@@ -174,7 +176,8 @@ public class ProfileView extends VerticalLayout implements BeforeEnterObserver {
   }
 
   private Component createContactSection() {
-    ContactSection contactSection = new ContactSection(userWorkflows, currentUser);
+    ContactSection contactSection =
+        new ContactSection(validationService, userWorkflows, currentUser);
     return wrapInStyledSection(getTranslation("profile.contacts.title"), contactSection);
   }
 
