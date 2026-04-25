@@ -1,5 +1,7 @@
 package org.bytewright.bgmo.adapter.api.frontend.view;
 
+import static org.bytewright.bgmo.domain.service.CoreAppContextConfig.APP_NAME_SHORT;
+
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
@@ -32,7 +34,7 @@ import org.bytewright.bgmo.domain.service.security.PasswordRules;
 import org.bytewright.bgmo.usecases.UserWorkflows;
 
 @Route(value = "profile", layout = MainLayout.class)
-@PageTitle("Profile | BGMO")
+@PageTitle("Profile | " + APP_NAME_SHORT)
 @PermitAll
 @RequiredArgsConstructor
 public class ProfileView extends VerticalLayout implements BeforeEnterObserver {

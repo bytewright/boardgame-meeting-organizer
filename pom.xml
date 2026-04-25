@@ -93,6 +93,11 @@
             <artifactId>liquibase-core</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.liquibase.ext</groupId>
+            <artifactId>liquibase-hibernate6</artifactId>
+             <version>${liquibase.version}</version>
+        </dependency>
+        <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
             <optional>true</optional>
@@ -189,6 +194,22 @@
                         </goals>
                     </execution>
                 </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.liquibase</groupId>
+                <artifactId>liquibase-maven-plugin</artifactId>
+                <version>${liquibase.version}</version>
+                <configuration>
+                    <changeLogFile>src/main/resources/db/changelog/db.changelog-master.yaml</changeLogFile>
+
+                    <url>jdbc:postgresql://localhost:5432/bgmo_db</url>
+                    <username>dbuser</username>
+                    <password>dbpassword</password>
+
+                    <referenceUrl>
+                        hibernate:spring:org.bytewright.bgmo
+                    </referenceUrl>
+                </configuration>
             </plugin>
         </plugins>
     </build>

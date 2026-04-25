@@ -2,21 +2,30 @@ package org.bytewright.bgmo.usecases;
 
 import java.util.Comparator;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.bytewright.bgmo.domain.model.AdapterSettings;
 import org.bytewright.bgmo.domain.model.user.RegisteredUser;
 import org.bytewright.bgmo.domain.model.user.UserRole;
 import org.bytewright.bgmo.domain.model.user.UserStatus;
+import org.bytewright.bgmo.domain.service.AdapterSettingsProvider;
+import org.bytewright.bgmo.domain.service.data.AdapterSettingsDao;
 import org.bytewright.bgmo.domain.service.data.RegisteredUserDao;
 import org.bytewright.bgmo.domain.service.notification.NotificationManager;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.User;
 import org.springframework.stereotype.Service;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class AdminWorkflows {
+  private final Set<AdapterSettingsProvider> adapterSettingsProviders;
   private final NotificationManager notificationManager;
+  private final AdapterSettingsDao adapterSettingsDao;
   private final RegisteredUserDao userDao;
 
   public RegisteredUser approveUser(UUID adminId, UUID userToApprove) {
@@ -33,8 +42,8 @@ public class AdminWorkflows {
     return userDao.createOrUpdate(user);
   }
 
-  public List<RegisteredUser> listNonActive(UUID adminId) {
-    RegisteredUser admin = userDao.findOrThrow(adminId);
+  public List<RegisteredUser> listNonActive() {
+    RegisteredUser admin = findActiveAdmin();
     log.info("Admin '{}' lists all non active users", admin.logEntity());
     return userDao.findAll().stream()
         .filter(registeredUser -> registeredUser.getStatus().isLocked())
@@ -42,10 +51,39 @@ public class AdminWorkflows {
         .toList();
   }
 
+  private RegisteredUser findActiveAdmin() {
+    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    User user = (User) authentication.getPrincipal();
+    UUID userId = UUID.fromString(user.getUsername());
+    RegisteredUser appUser = userDao.findOrThrow(userId);
+    if (appUser.getRole() != UserRole.ADMIN) {
+      throw new IllegalStateException("user is not admin: " + userId);
+    }
+    return appUser;
+  }
+
   public RegisteredUser makeAdmin(UUID userId) {
     RegisteredUser user = userDao.findOrThrow(userId);
     log.info("User '{}' is promoted to role admin!", user.logEntity());
     user.setRole(UserRole.ADMIN);
     return userDao.createOrUpdate(user);
+  }
+
+  public void updateAdapterSettings(AdapterSettings settings, String newJson) {
+    // todo validation through adapter?
+    AdapterSettingsProvider provider =
+        adapterSettingsProviders.stream()
+            .filter(asp -> asp.getAdapterName().equals(settings.getAdapterName()))
+            .findAny()
+            .orElseThrow(
+                () ->
+                    new IllegalArgumentException(
+                        "There is no adapter in app context with name: "
+                            + settings.getAdapterName()));
+    if (!provider.isValidSettingsJson(newJson)) {
+      throw new IllegalArgumentException(
+          "Adapter '%s' rejected new settings as invalid. Check json syntax and content!");
+    }
+    adapterSettingsDao.createOrUpdate(settings.toBuilder().adapterSettings(newJson).build());
   }
 }

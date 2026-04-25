@@ -43,7 +43,6 @@ See [Architecture.md](./ARCHITECTURE.md)
   - /app/db/
 
 # ToDos - Bugs
-- Deadline für anmeldungen als optionales Feld
 - Locale switcher geht nicht/wird nicht angewandt
 - translations de/en angleichen
 - main layout back button - hide on dashboard
@@ -51,6 +50,7 @@ See [Architecture.md](./ARCHITECTURE.md)
 - Apptitel einheitlich in loginscreen, dashboard und telegram
 
 # ToDos - Features
+- Deadline für anmeldungen als optionales Feld
 - Impressum
 - Security upgrade
   - pw reset flow

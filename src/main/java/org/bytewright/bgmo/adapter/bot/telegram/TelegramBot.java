@@ -1,5 +1,7 @@
 package org.bytewright.bgmo.adapter.bot.telegram;
 
+import static org.bytewright.bgmo.domain.service.CoreAppContextConfig.APP_NAME_SHORT;
+
 import java.util.UUID;
 import java.util.function.BiConsumer;
 import lombok.Setter;
@@ -48,7 +50,7 @@ public class TelegramBot extends TelegramLongPollingBot {
   private void handleIncomingText(Message message) {
     String text = message.getText();
     log.info("Received message from {}: {}", message.getFrom(), message);
-    if (text.startsWith("BGMO-")) {
+    if (text.startsWith(APP_NAME_SHORT + "-")) {
       boolean success =
           verificationService.attemptVerification(
               text, ContactInfoType.TELEGRAM, message.getChatId().toString());

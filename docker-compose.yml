@@ -6,11 +6,11 @@ services:
       POSTGRES_USER: dbuser
       POSTGRES_PASSWORD: dbpassword
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql
     ports:
       - "5432:5432"          # remove this in prod — app talks to db internally
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d bgmo_db"]
+      test: ["CMD-SHELL", "pg_isready -U dbuser -d bgmo_db"]
       interval: 5s
       timeout: 5s
       retries: 5

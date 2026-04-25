@@ -1,5 +1,7 @@
 package org.bytewright.bgmo.domain.service.notification;
 
+import static org.bytewright.bgmo.domain.service.CoreAppContextConfig.APP_NAME_SHORT;
+
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -18,7 +20,7 @@ public class VerificationCodeService {
   private final NotificationWorkflows notificationWorkflows;
 
   public String generateCode(UUID userId) {
-    String code = "BGMO-" + ThreadLocalRandom.current().nextInt(1000, 9999);
+    String code = APP_NAME_SHORT + "-" + ThreadLocalRandom.current().nextInt(1000, 9999);
     pendingCodes.put(code, userId);
     return code;
   }

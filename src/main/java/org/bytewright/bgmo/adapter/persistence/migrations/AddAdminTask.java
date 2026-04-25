@@ -1,9 +1,13 @@
 package org.bytewright.bgmo.adapter.persistence.migrations;
 
+import static org.bytewright.bgmo.domain.service.security.SecurityContextConfig.DEFAULT_PW_ENCODER;
+
 import java.sql.PreparedStatement;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 import liquibase.change.custom.CustomTaskChange;
 import liquibase.database.Database;
@@ -12,6 +16,8 @@ import liquibase.exception.CustomChangeException;
 import liquibase.resource.ResourceAccessor;
 import org.bytewright.bgmo.domain.service.security.PepperingPasswordEncoder;
 import org.springframework.security.crypto.argon2.Argon2PasswordEncoder;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.DelegatingPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 /** Sample liquibase java migration to add first admin to site. */
@@ -29,12 +35,15 @@ public class AddAdminTask implements CustomTaskChange {
     String appPwPepper = System.getenv("APP_PASSWORD_PEPPER");
 
     if (appPwPepper == null || appPwPepper.isBlank()) {
-      appPwPepper = "bgmo-pepper";
+      appPwPepper = "";
     }
-
-    PasswordEncoder encoder =
-        new PepperingPasswordEncoder(
-            Argon2PasswordEncoder.defaultsForSpringSecurity_v5_8(), appPwPepper);
+    Map<String, PasswordEncoder> encoders = new HashMap<>();
+    encoders.put("bcrypt", new BCryptPasswordEncoder());
+    encoders.put(DEFAULT_PW_ENCODER, Argon2PasswordEncoder.defaultsForSpringSecurity_v5_8());
+    DelegatingPasswordEncoder delegatingEncoder =
+        new DelegatingPasswordEncoder(DEFAULT_PW_ENCODER, encoders);
+    delegatingEncoder.setDefaultPasswordEncoderForMatches(encoders.get(DEFAULT_PW_ENCODER));
+    PasswordEncoder encoder = new PepperingPasswordEncoder(delegatingEncoder, appPwPepper);
     String encodedPw = encoder.encode(rawPassword);
     JdbcConnection connection = (JdbcConnection) database.getConnection();
     try (PreparedStatement ps =

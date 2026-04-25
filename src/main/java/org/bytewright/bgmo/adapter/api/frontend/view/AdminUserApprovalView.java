@@ -50,7 +50,7 @@ public class AdminUserApprovalView extends VerticalLayout implements BeforeEnter
   }
 
   private void refreshGrid() {
-    grid.setItems(adminWorkflows.listNonActive(currentUser.getId()));
+    grid.setItems(adminWorkflows.listNonActive());
   }
 
   @Override

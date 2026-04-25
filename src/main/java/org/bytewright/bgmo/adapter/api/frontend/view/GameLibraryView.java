@@ -1,5 +1,7 @@
 package org.bytewright.bgmo.adapter.api.frontend.view;
 
+import static org.bytewright.bgmo.domain.service.CoreAppContextConfig.APP_NAME_SHORT;
+
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.details.Details;
@@ -29,7 +31,7 @@ import org.bytewright.bgmo.usecases.UserWorkflows;
 
 @Slf4j
 @Route(value = "library", layout = MainLayout.class)
-@PageTitle("My Game Library | BGMO")
+@PageTitle("My Game Library | " + APP_NAME_SHORT)
 @PermitAll
 public class GameLibraryView extends VerticalLayout implements BeforeEnterObserver {
 

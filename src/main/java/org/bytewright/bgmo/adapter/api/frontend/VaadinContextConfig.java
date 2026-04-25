@@ -1,5 +1,8 @@
 package org.bytewright.bgmo.adapter.api.frontend;
 
+import static org.bytewright.bgmo.domain.service.CoreAppContextConfig.APP_NAME_LONG;
+import static org.bytewright.bgmo.domain.service.CoreAppContextConfig.APP_NAME_SHORT;
+
 import com.vaadin.flow.component.page.AppShellConfigurator;
 import com.vaadin.flow.component.page.Meta;
 import com.vaadin.flow.component.page.Push;
@@ -18,7 +21,7 @@ import org.springframework.context.annotation.Profile;
 @Theme(variant = Lumo.DARK)
 @Push
 @Meta(name = "Author", content = "Bytewright")
-@PWA(name = "Boardgame Meeting Organizer", shortName = "BGMO")
+@PWA(name = APP_NAME_LONG, shortName = APP_NAME_SHORT)
 @Configuration
 @Profile("!test")
 @RequiredArgsConstructor

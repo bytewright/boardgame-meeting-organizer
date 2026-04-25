@@ -83,6 +83,16 @@
         primary key (id)
     );
 
+    create table adapter_settings (
+        adapterSettings jsonb not null,
+        created_at timestamp(6) with time zone not null,
+        modified_at timestamp(6) with time zone,
+        id uuid not null,
+        adapterName varchar(1024) not null,
+        primary key (id),
+        constraint UC_ADAPTER_SETTING_NAME unique (adapterName)
+    );
+
     create table registered_users (
         created_at timestamp(6) with time zone not null,
         last_login timestamp(6) with time zone,

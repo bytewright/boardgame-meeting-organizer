@@ -1,17 +1,23 @@
 package org.bytewright.bgmo.adapter.bot.telegram;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.bytewright.bgmo.domain.model.AdapterSettings;
 import org.bytewright.bgmo.domain.model.notification.NotificationContext;
 import org.bytewright.bgmo.domain.model.notification.NotificationTargetType;
 import org.bytewright.bgmo.domain.model.user.ContactInfo;
 import org.bytewright.bgmo.domain.model.user.ContactInfoType;
 import org.bytewright.bgmo.domain.model.user.RegisteredUser;
+import org.bytewright.bgmo.domain.service.AdapterSettingsProvider;
+import org.bytewright.bgmo.domain.service.data.AdapterSettingsDao;
 import org.bytewright.bgmo.domain.service.data.RegisteredUserDao;
-import org.bytewright.bgmo.domain.service.notification.NotificationTaskExecutor;
+import org.bytewright.bgmo.domain.service.notification.ChatBotNotificationTaskExecutor;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.ApplicationListener;
@@ -30,13 +36,17 @@ import org.telegram.telegrambots.updatesreceivers.DefaultBotSession;
 @Service
 @RequiredArgsConstructor
 public class TelegramNotificationAdapter
-    implements NotificationTaskExecutor,
+    implements ChatBotNotificationTaskExecutor,
+        AdapterSettingsProvider,
         InitializingBean,
         ApplicationListener<ApplicationReadyEvent> {
+  private static final String ADAPTER_NAME = "Telegram-ChatBotNotificationTaskExecutor-integration";
   private final TelegramAdapterProperties adapterProperties;
+  private final AdapterSettingsDao adapterSettingsDao;
   private final MessageSource messageSource;
   private final TelegramBot telegramBot;
   private final RegisteredUserDao userDao;
+  private final ObjectMapper objectMapper;
 
   @Override
   public boolean supports(NotificationContext context) {
@@ -130,5 +140,38 @@ public class TelegramNotificationAdapter
     } catch (Exception e) {
       log.error("Telegram bot failed to initialize with error: {}", e.getMessage(), e);
     }
+  }
+
+  @Override
+  public boolean isEnabled() {
+    TelegramSettings settings = getSettings();
+    return adapterProperties.isEnabled() && settings.isEnabled();
+  }
+
+  @SneakyThrows
+  private TelegramSettings getSettings() {
+    AdapterSettings adapterSettings = adapterSettingsDao.findByAdapterName(getAdapterName());
+    return objectMapper.readValue(adapterSettings.getAdapterSettings(), TelegramSettings.class);
+  }
+
+  @Override
+  public String getDefaultSettings() throws JsonProcessingException {
+    return objectMapper.writeValueAsString(TelegramSettings.builder().build());
+  }
+
+  @Override
+  public String getAdapterName() {
+    return ADAPTER_NAME;
+  }
+
+  @Override
+  public boolean isValidSettingsJson(String jsonData) {
+    try {
+      TelegramSettings telegramSettings = objectMapper.readValue(jsonData, TelegramSettings.class);
+      return telegramSettings != null;
+    } catch (JsonProcessingException e) {
+      log.error("Provided settings are invalid", e);
+    }
+    return false;
   }
 }

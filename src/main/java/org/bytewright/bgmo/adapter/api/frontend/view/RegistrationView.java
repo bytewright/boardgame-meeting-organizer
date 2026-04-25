@@ -1,5 +1,7 @@
 package org.bytewright.bgmo.adapter.api.frontend.view;
 
+import static org.bytewright.bgmo.domain.service.CoreAppContextConfig.APP_NAME_SHORT;
+
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
@@ -21,7 +23,7 @@ import org.bytewright.bgmo.usecases.UserWorkflows;
 import org.springframework.util.StringUtils;
 
 @Route("register")
-@PageTitle("Join BGMO")
+@PageTitle("Join " + APP_NAME_SHORT)
 @AnonymousAllowed
 public class RegistrationView extends VerticalLayout {
 

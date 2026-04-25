@@ -27,6 +27,7 @@ public class SecurityContextConfig {
     encoders.put("bcrypt", new BCryptPasswordEncoder());
     encoders.put(DEFAULT_PW_ENCODER, Argon2PasswordEncoder.defaultsForSpringSecurity_v5_8());
     DelegatingPasswordEncoder encoder = new DelegatingPasswordEncoder(DEFAULT_PW_ENCODER, encoders);
+    encoder.setDefaultPasswordEncoderForMatches(encoders.get(DEFAULT_PW_ENCODER));
     return new PepperingPasswordEncoder(encoder, bgmoProperties.getSecurityPwPepper());
   }
 
