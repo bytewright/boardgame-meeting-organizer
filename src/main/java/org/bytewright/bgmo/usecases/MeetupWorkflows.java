@@ -41,6 +41,7 @@ public class MeetupWorkflows {
             .title(event.getTitle())
             .description(event.getDescription())
             .eventDate(event.getEventDate())
+            .registrationClosing(event.getRegistrationClosingDate())
             .creatorId(event.getCreator().getId())
             .canceled(false)
             .tsCreation(timeSource.now())

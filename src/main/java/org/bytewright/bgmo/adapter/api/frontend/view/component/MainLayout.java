@@ -18,6 +18,7 @@ import com.vaadin.flow.router.AfterNavigationEvent;
 import com.vaadin.flow.router.AfterNavigationObserver;
 import com.vaadin.flow.router.RouterLayout;
 import com.vaadin.flow.router.RouterLink;
+import java.time.Clock;
 import org.bytewright.bgmo.adapter.api.frontend.SessionAuthenticationService;
 import org.bytewright.bgmo.adapter.api.frontend.view.*;
 import org.bytewright.bgmo.domain.model.user.UserRole;
@@ -30,13 +31,18 @@ public class MainLayout extends AppLayout implements RouterLayout, AfterNavigati
   private final SessionAuthenticationService authService;
   private final MeetupWorkflows meetupWorkflows;
   private final GameDao gameDao;
+  private final Clock clock;
   private RouterLink homeLink;
 
   public MainLayout(
-      SessionAuthenticationService authService, MeetupWorkflows meetupWorkflows, GameDao gameDao) {
+      SessionAuthenticationService authService,
+      MeetupWorkflows meetupWorkflows,
+      GameDao gameDao,
+      Clock clock) {
     this.authService = authService;
     this.meetupWorkflows = meetupWorkflows;
     this.gameDao = gameDao;
+    this.clock = clock;
 
     createHeader();
   }
@@ -108,6 +114,7 @@ public class MainLayout extends AppLayout implements RouterLayout, AfterNavigati
               // Note: Since we are in a layout, we might not want to force a refresh
               // of the specific child view unless it implements a refresh interface.
               new MeetupCreateDialog(
+                      clock,
                       user,
                       meetupWorkflows,
                       gameDao,

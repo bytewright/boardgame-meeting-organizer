@@ -12,9 +12,12 @@ import org.bytewright.bgmo.domain.service.automation.TimeSource;
 import org.bytewright.bgmo.domain.service.data.GameDao;
 import org.bytewright.bgmo.domain.service.data.ModelDao;
 import org.bytewright.bgmo.domain.service.data.RegisteredUserDao;
+import org.bytewright.bgmo.domain.service.notification.NotificationManager;
 import org.bytewright.bgmo.domain.service.security.BgmoUserDetailsService;
 import org.bytewright.bgmo.domain.service.security.PasswordRules;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 @Slf4j
 @Service
@@ -23,6 +26,7 @@ import org.springframework.stereotype.Service;
 public class UserWorkflows {
   private final BgmoUserDetailsService userDetailsService;
   private final ModelDao<ContactInfo> contactInfoModelDao;
+  private final NotificationManager notificationManager;
   private final RegisteredUserDao userDao;
   private final TimeSource timeSource;
   private final GameDao gameDao;
@@ -56,6 +60,13 @@ public class UserWorkflows {
     }
     RegisteredUser refetchedUser = userDao.createOrUpdate(newUser);
     log.info("Created user with id {}: {}", refetchedUser.getId(), refetchedUser);
+    TransactionSynchronizationManager.registerSynchronization(
+        new TransactionSynchronization() {
+          @Override
+          public void afterCommit() {
+            notificationManager.addUserRegistrationTask(refetchedUser.getId());
+          }
+        });
     return refetchedUser;
   }
 
@@ -71,9 +82,13 @@ public class UserWorkflows {
   }
 
   public RegisteredUser addContactInfo(UUID userId, ContactInfo contactInfo) {
-    ContactInfo contactInfoWithId = contactInfo.withUserId(userId);
+    ContactInfo contactInfoWithId =
+        contactInfoModelDao.createOrUpdate(contactInfo.withUserId(userId));
     RegisteredUser user = userDao.findOrThrow(userId);
-    user.getContactInfos().add(contactInfoWithId);
+    Set<ContactInfo> contactInfos = user.getContactInfos();
+    if (contactInfos.stream().allMatch(ci -> ci.getId().equals(contactInfoWithId.id()))) {
+      user.setPrimaryContactId(contactInfo.id());
+    }
     return userDao.createOrUpdate(user);
   }
 

@@ -1,10 +1,13 @@
 package org.bytewright.bgmo.adapter.api.frontend.view;
 
-import com.vaadin.flow.component.UI;
+import static org.bytewright.bgmo.domain.service.CoreAppContextConfig.APP_NAME_SHORT;
+
+import com.vaadin.flow.component.Unit;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.html.*;
+import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.NotificationVariant;
@@ -13,12 +16,15 @@ import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.*;
 import com.vaadin.flow.server.VaadinSession;
 import jakarta.annotation.security.PermitAll;
+import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.bytewright.bgmo.adapter.api.frontend.SessionAuthenticationService;
 import org.bytewright.bgmo.adapter.api.frontend.service.i18n.LocaleService;
 import org.bytewright.bgmo.adapter.api.frontend.view.component.AnonJoinDialog;
+import org.bytewright.bgmo.adapter.api.frontend.view.component.GameTimeAndDuration;
+import org.bytewright.bgmo.adapter.api.frontend.view.component.MainLayout;
 import org.bytewright.bgmo.domain.model.Game;
 import org.bytewright.bgmo.domain.model.MeetupEvent;
 import org.bytewright.bgmo.domain.model.MeetupJoinRequest;
@@ -54,8 +60,8 @@ import org.bytewright.bgmo.usecases.MeetupWorkflows;
  * </ul>
  */
 @Slf4j
-@Route("meetup/:meetupId")
-@PageTitle("Meetup Detail | Boardgame Meeting Organizer")
+@Route(value = "meetup/:meetupId", layout = MainLayout.class)
+@PageTitle("Meetup Detail | " + APP_NAME_SHORT)
 @PermitAll
 public class MeetupDetailView extends VerticalLayout implements BeforeEnterObserver {
 
@@ -91,37 +97,13 @@ public class MeetupDetailView extends VerticalLayout implements BeforeEnterObser
     setSizeFull();
     setPadding(true);
     setSpacing(true);
+    getStyle().set("max-width", MainLayout.MAX_DISPLAYPORT_WIDTH).set("margin", "0 auto");
   }
 
   // ── UI construction ───────────────────────────────────────────────────────
 
   private void buildUI() {
     removeAll();
-
-    // ── Back / header row ────────────────────────────────────────────────
-    Button backBtn =
-        new Button(
-            getTranslation("meetup.toDashboard"),
-            e -> UI.getCurrent().navigate(DashboardView.class));
-    backBtn.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
-
-    HorizontalLayout headerRow = new HorizontalLayout(backBtn);
-    if (currentUser != null) {
-      Button logoutBtn =
-          new Button(
-              getTranslation("meetup.logout"),
-              e -> {
-                authService.logout();
-                UI.getCurrent().navigate(LoginView.class);
-              });
-      headerRow.add(logoutBtn);
-    } else {
-      Button loginBtn =
-          new Button(getTranslation("login.title"), e -> UI.getCurrent().navigate(LoginView.class));
-      loginBtn.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
-      headerRow.add(loginBtn);
-    }
-    add(headerRow);
 
     // ── Canceled banner ──────────────────────────────────────────────────
     if (meetup.isCanceled()) {
@@ -137,15 +119,20 @@ public class MeetupDetailView extends VerticalLayout implements BeforeEnterObser
     // ── Event info ───────────────────────────────────────────────────────
     H2 titleHeading = new H2(meetup.getTitle());
 
+    ZonedDateTime eventDate = meetup.getEventDate();
+    String timeStr = eventDate.format(localeService.getTimeFormatter());
+    HorizontalLayout timeRow = new GameTimeAndDuration(timeStr, meetup.getDurationHours());
     Paragraph description =
         new Paragraph(
             meetup.getDescription() != null && !meetup.getDescription().isBlank()
                 ? meetup.getDescription()
                 : getTranslation("meetup.no-desc"));
 
-    Span dateSpan =
-        new Span("📅 " + meetup.getEventDate().format(localeService.getDateFormatter()));
-    Span durationSpan = new Span(getTranslation("meetup.duration", meetup.getDurationHours()));
+    Icon calendarIcon = VaadinIcon.CALENDAR.create();
+    calendarIcon.setSize("var(--lumo-icon-size-s)");
+    calendarIcon.getStyle().set("color", "var(--lumo-secondary-text-color)");
+    Span dateSpan = new Span(eventDate.format(localeService.getDateFormatter()));
+    HorizontalLayout dateRow = new HorizontalLayout(calendarIcon, dateSpan);
 
     String slotsText =
         meetup.isUnlimitedSlots()
@@ -156,10 +143,26 @@ public class MeetupDetailView extends VerticalLayout implements BeforeEnterObser
                     .filter(r -> RequestState.ACCEPTED == r.getRequestState())
                     .count(),
                 meetup.getJoinSlots());
-    Span slotsSpan = new Span("👥 " + slotsText);
 
+    Icon personIcon = VaadinIcon.USER.create();
+    personIcon.setSize("var(--lumo-icon-size-s)");
+    personIcon.getStyle().set("color", "var(--lumo-secondary-text-color)");
+    String creatorName =
+        userDao
+            .findById(meetup.getCreatorId())
+            .map(RegisteredUser::getDisplayName)
+            .orElseGet(() -> meetup.getCreatorId().toString());
+    Span creatorSpan = new Span(creatorName);
+    creatorSpan.setMinWidth(200, Unit.PIXELS);
+    Icon slotsIcon = VaadinIcon.USERS.create();
+    slotsIcon.setSize("var(--lumo-icon-size-s)");
+    slotsIcon.getStyle().set("color", "var(--lumo-secondary-text-color)");
+    Span slotsSpan = new Span(slotsText);
+
+    HorizontalLayout creatorAndSlots =
+        new HorizontalLayout(personIcon, creatorSpan, slotsIcon, slotsSpan);
     VerticalLayout infoSection =
-        new VerticalLayout(titleHeading, description, dateSpan, durationSpan, slotsSpan);
+        new VerticalLayout(titleHeading, dateRow, timeRow, creatorAndSlots, description);
     infoSection.setPadding(false);
     add(infoSection);
     add(new Hr());

@@ -49,6 +49,9 @@ public class MeetupEntity extends AbstractEntity<UUID> implements HasUUID {
   private ZonedDateTime eventDate;
 
   @Column(nullable = false)
+  private ZonedDateTime registrationClosing;
+
+  @Column(nullable = false)
   private int durationHours;
 
   @Column(nullable = false)

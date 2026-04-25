@@ -19,9 +19,8 @@ public class MeetupEvent implements HasUUID {
   private Instant tsModified;
   private String title;
   private String description;
-  // todo game links & game poll
-  // todo rescheduled events/choose-able start dates
   private ZonedDateTime eventDate;
+  private ZonedDateTime registrationClosing;
   private int durationHours;
   private int joinSlots;
   private boolean unlimitedSlots;

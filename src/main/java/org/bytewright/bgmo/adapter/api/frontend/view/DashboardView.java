@@ -16,13 +16,13 @@ import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.bytewright.bgmo.adapter.api.frontend.SessionAuthenticationService;
 import org.bytewright.bgmo.adapter.api.frontend.service.i18n.LocaleService;
+import org.bytewright.bgmo.adapter.api.frontend.view.component.GameTimeAndDuration;
 import org.bytewright.bgmo.adapter.api.frontend.view.component.MainLayout;
 import org.bytewright.bgmo.domain.model.MeetupEvent;
 import org.bytewright.bgmo.domain.model.RequestState;
 import org.bytewright.bgmo.domain.model.user.RegisteredUser;
 import org.bytewright.bgmo.domain.service.data.MeetupDao;
 import org.bytewright.bgmo.domain.service.data.RegisteredUserDao;
-import org.bytewright.bgmo.usecases.MeetupWorkflows;
 
 @Slf4j
 @Route(value = "dashboard", layout = MainLayout.class)
@@ -34,20 +34,16 @@ public class DashboardView extends VerticalLayout implements BeforeEnterObserver
 
   private final LocaleService localeService;
   private final SessionAuthenticationService authService;
-  private final MeetupWorkflows meetupWorkflows;
   private final MeetupDao meetupDao;
   private final RegisteredUserDao registeredUserDao;
-  private RegisteredUser currentUser;
 
   public DashboardView(
       LocaleService localeService,
       SessionAuthenticationService authService,
-      MeetupWorkflows meetupWorkflows,
       MeetupDao meetupDao,
       RegisteredUserDao registeredUserDao) {
     this.localeService = localeService;
     this.authService = authService;
-    this.meetupWorkflows = meetupWorkflows;
     this.meetupDao = meetupDao;
     this.registeredUserDao = registeredUserDao;
 
@@ -111,20 +107,7 @@ public class DashboardView extends VerticalLayout implements BeforeEnterObserver
 
     // ── Row 3: Time + Duration ────────────────────────────────────────────────
     String timeStr = eventDate.format(localeService.getTimeFormatter());
-    Span timeSpan = new Span(timeStr + " " + getTranslation("meetup.time.suffix"));
-    Span durationSpan = new Span(getTranslation("meetup.duration", meetup.getDurationHours()));
-
-    Icon clockIcon = VaadinIcon.CLOCK.create();
-    clockIcon.setSize("var(--lumo-icon-size-s)");
-    clockIcon.getStyle().set("color", "var(--lumo-secondary-text-color)");
-
-    Icon timerIcon = VaadinIcon.TIMER.create();
-    timerIcon.setSize("var(--lumo-icon-size-s)");
-    timerIcon.getStyle().set("color", "var(--lumo-secondary-text-color)");
-
-    HorizontalLayout timeRow = new HorizontalLayout(clockIcon, timeSpan, timerIcon, durationSpan);
-    timeRow.setSpacing(true);
-    timeRow.setAlignItems(Alignment.CENTER);
+    HorizontalLayout timeRow = new GameTimeAndDuration(timeStr, meetup.getDurationHours());
 
     // ── Row 4: Creator + Slots ────────────────────────────────────────────────
     String creatorName =
@@ -149,7 +132,7 @@ public class DashboardView extends VerticalLayout implements BeforeEnterObserver
 
     Span creatorSpan = new Span(creatorName);
 
-    Icon slotsIcon = VaadinIcon.TICKET.create();
+    Icon slotsIcon = VaadinIcon.USERS.create();
     slotsIcon.setSize("var(--lumo-icon-size-s)");
     slotsIcon.getStyle().set("color", "var(--lumo-secondary-text-color)");
 
@@ -199,7 +182,6 @@ public class DashboardView extends VerticalLayout implements BeforeEnterObserver
       event.forwardTo(LoginView.class);
       return;
     }
-    this.currentUser = userOpt.get();
     buildUI();
   }
 }

@@ -29,6 +29,7 @@ class MeetupWorkflowsTest extends IntegrationTest {
                 .title("myEvent")
                 .creator(creator)
                 .eventDate(helper.now())
+                .registrationClosingDate(helper.now())
                 .joinSlots(1)
                 .offeredGames(List.of(gameId))
                 .build());

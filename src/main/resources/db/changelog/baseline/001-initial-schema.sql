@@ -75,6 +75,7 @@
         unlimitedSlots boolean not null,
         created_at timestamp(6) with time zone not null,
         eventDate timestamp(6) with time zone not null,
+        registrationClosing timestamp(6) with time zone not null,
         modified_at timestamp(6) with time zone,
         creator_id uuid not null,
         id uuid not null,

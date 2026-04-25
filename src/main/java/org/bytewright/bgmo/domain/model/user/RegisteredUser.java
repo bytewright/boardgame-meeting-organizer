@@ -8,6 +8,7 @@ import java.util.Set;
 import java.util.UUID;
 import lombok.Builder;
 import lombok.Data;
+import lombok.ToString;
 import org.bytewright.bgmo.domain.model.data.HasUUID;
 
 @Data
@@ -16,7 +17,7 @@ public class RegisteredUser implements HasUUID {
   private UUID id;
   private String displayName;
   private String loginName;
-  private String passwordHash;
+  @ToString.Exclude private String passwordHash;
   private Instant tsCreation;
   private Instant tsModified;
   private Instant tsLastLogin;
@@ -24,7 +25,7 @@ public class RegisteredUser implements HasUUID {
   @Builder.Default private UserStatus status = UserStatus.PENDING_APPROVAL;
   @Builder.Default private UserRole role = UserRole.USER;
   @Nullable private UUID primaryContactId;
-  @Builder.Default private Set<ContactInfo> contactInfos = new HashSet<>();
+  @ToString.Exclude @Builder.Default private Set<ContactInfo> contactInfos = new HashSet<>();
   @Builder.Default private Set<UUID> ownedGames = new HashSet<>();
 
   public String logEntity() {

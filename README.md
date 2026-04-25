@@ -45,12 +45,15 @@ See [Architecture.md](./ARCHITECTURE.md)
 # ToDos - Bugs
 - Locale switcher geht nicht/wird nicht angewandt
 - translations de/en angleichen
-- meetup card formatting, symbole übereinander, slot symbol durch gruppen symbol austauschen
+- meetup card formatting, symbole übereinander
 
 # ToDos - Features
-- Deadline für anmeldungen als optionales Feld
 - Security upgrade
   - pw reset flow
   - rate limiting
 - BGG integration
-- Organizer in detail view & addresse nach join request approve, PLZ schon auf detail page anzeigen
+- addresse sichtbar nach join request approve
+- PLZ schon auf detail page anzeigen
+- Reschedule events
+- Event game poll
+- Spring boot 4.x & vaadin 25 upgrade

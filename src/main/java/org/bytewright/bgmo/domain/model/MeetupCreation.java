@@ -19,6 +19,7 @@ public class MeetupCreation {
   private String title;
   private String description;
   private ZonedDateTime eventDate;
+  private ZonedDateTime registrationClosingDate;
   private int durationHours;
   @Nullable private Integer joinSlots;
   private boolean unlimitedSlots;
