@@ -100,10 +100,12 @@ public class ContactSection extends VerticalLayout {
     content.getStyle().set("color", "var(--lumo-secondary-text-color)");
     details.add(content);
 
+    Button editBtn = new Button(VaadinIcon.PENCIL.create(), e -> openEditContactWizard(info));
+    editBtn.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
+
     Button deleteBtn = new Button(VaadinIcon.TRASH.create(), e -> deleteContact(info));
     deleteBtn.addThemeVariants(ButtonVariant.LUMO_ERROR, ButtonVariant.LUMO_TERTIARY);
-    // TODO add edit functionality - this should best reuse the ContactAddWizard
-    row.add(icon, details, deleteBtn);
+    row.add(icon, details, editBtn, deleteBtn);
     row.expand(details);
     return row;
   }
@@ -142,5 +144,17 @@ public class ContactSection extends VerticalLayout {
     // TODO: Add confirmation dialog to really delete
     userWorkflows.removeContact(currentUser.getId(), info);
     refreshContacts();
+  }
+
+  private void openEditContactWizard(ContactInfo info) {
+    ContactAddWizard dialog =
+        new ContactAddWizard(
+            info,
+            updatedContact -> {
+              userWorkflows.changeContactInfo(currentUser.getId(), updatedContact);
+              refreshContacts();
+            },
+            validationService);
+    dialog.open();
   }
 }

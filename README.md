@@ -45,9 +45,7 @@ See [Architecture.md](./ARCHITECTURE.md)
 # ToDos - Bugs
 - Locale switcher geht nicht/wird nicht angewandt
 - translations de/en angleichen
-- main layout back button - hide on dashboard
 - meetup card formatting, symbole übereinander, slot symbol durch gruppen symbol austauschen
-- Apptitel einheitlich in loginscreen, dashboard und telegram
 
 # ToDos - Features
 - Deadline für anmeldungen als optionales Feld

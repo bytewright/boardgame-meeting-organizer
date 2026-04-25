@@ -10,6 +10,7 @@ import org.bytewright.bgmo.domain.model.user.ContactInfo;
 import org.bytewright.bgmo.domain.model.user.RegisteredUser;
 import org.bytewright.bgmo.domain.service.automation.TimeSource;
 import org.bytewright.bgmo.domain.service.data.GameDao;
+import org.bytewright.bgmo.domain.service.data.ModelDao;
 import org.bytewright.bgmo.domain.service.data.RegisteredUserDao;
 import org.bytewright.bgmo.domain.service.security.BgmoUserDetailsService;
 import org.bytewright.bgmo.domain.service.security.PasswordRules;
@@ -21,6 +22,7 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class UserWorkflows {
   private final BgmoUserDetailsService userDetailsService;
+  private final ModelDao<ContactInfo> contactInfoModelDao;
   private final RegisteredUserDao userDao;
   private final TimeSource timeSource;
   private final GameDao gameDao;
@@ -138,5 +140,14 @@ public class UserWorkflows {
 
   public RegisteredUser refreshUser(RegisteredUser currentUser) {
     return userDao.findOrThrow(currentUser.getId());
+  }
+
+  public void changeContactInfo(UUID userId, ContactInfo updatedContact) {
+    if (updatedContact.id() == null
+        || userDao.findOrThrow(userId).getContactInfos().stream()
+            .noneMatch(contactInfo -> contactInfo.id().equals(updatedContact.id()))) {
+      throw new IllegalArgumentException("Use addContactInfo on new contacts");
+    }
+    contactInfoModelDao.createOrUpdate(updatedContact.withUserId(userId));
   }
 }

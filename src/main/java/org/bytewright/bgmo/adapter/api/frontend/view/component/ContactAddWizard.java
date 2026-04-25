@@ -9,6 +9,7 @@ import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.Binder;
+import java.util.UUID;
 import java.util.function.Consumer;
 import lombok.Data;
 import org.bytewright.bgmo.domain.model.user.ContactInfo;
@@ -22,29 +23,42 @@ public class ContactAddWizard extends Dialog {
 
   private final FormLayout dynamicFieldsLayout;
   private final Button saveBtn;
+  private final ComboBox<ContactInfoType> typePicker;
 
   private Binder<ContactDraft> binder;
   private ContactDraft currentDraft;
   private ContactInfoType currentType;
+  private UUID existingId; // for Edit mode
 
+  // Constructor for ADD mode
   public ContactAddWizard(
       Consumer<ContactInfo> onComplete, ContactInfoValidationService validationService) {
+    this(null, onComplete, validationService);
+  }
+
+  // Constructor for EDIT mode (and shared logic)
+  public ContactAddWizard(
+      ContactInfo existingContact,
+      Consumer<ContactInfo> onComplete,
+      ContactInfoValidationService validationService) {
     this.onComplete = onComplete;
     this.validationService = validationService;
 
-    setHeaderTitle("Add Contact Information");
+    boolean isEditMode = existingContact != null;
+    setHeaderTitle(isEditMode ? "Edit Contact Information" : "Add Contact Information");
 
-    ComboBox<ContactInfoType> typePicker = new ComboBox<>("Contact Type", ContactInfoType.values());
+    typePicker = new ComboBox<>("Contact Type", ContactInfoType.values());
     typePicker.setWidthFull();
 
     dynamicFieldsLayout = new FormLayout();
     dynamicFieldsLayout.setResponsiveSteps(new FormLayout.ResponsiveStep("0", 1));
 
-    typePicker.addValueChangeListener(e -> buildFormForType(e.getValue()));
+    // Pass the existing contact down when the type changes (or is initialized)
+    typePicker.addValueChangeListener(e -> buildFormForType(e.getValue(), existingContact));
 
     saveBtn = new Button("Save", e -> saveContact());
     saveBtn.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-    saveBtn.setEnabled(false); // Disabled until valid type is selected
+    saveBtn.setEnabled(false);
 
     Button cancelBtn = new Button("Cancel", e -> close());
 
@@ -53,9 +67,15 @@ public class ContactAddWizard extends Dialog {
     add(layout);
 
     getFooter().add(cancelBtn, saveBtn);
+
+    if (isEditMode) {
+      this.existingId = existingContact.id();
+      typePicker.setValue(existingContact.type());
+      typePicker.setReadOnly(true); // Prevent changing type while editing
+    }
   }
 
-  private void buildFormForType(ContactInfoType type) {
+  private void buildFormForType(ContactInfoType type, ContactInfo existingContact) {
     dynamicFieldsLayout.removeAll();
     this.currentType = type;
 
@@ -64,10 +84,24 @@ public class ContactAddWizard extends Dialog {
       return;
     }
 
-    // Reset state
     this.currentDraft = new ContactDraft();
     this.binder = new Binder<>(ContactDraft.class);
     this.binder.addStatusChangeListener(e -> saveBtn.setEnabled(binder.isValid()));
+
+    // Pre-fill draft if in edit mode
+    if (existingContact != null && existingContact.type() == type) {
+      switch (existingContact) {
+        case ContactInfo.EmailContact e -> currentDraft.setSingleValue(e.email());
+        case ContactInfo.TelegramContact t -> currentDraft.setSingleValue(t.chatId());
+        case ContactInfo.SignalContact s -> currentDraft.setSingleValue(s.signalHandle());
+        case ContactInfo.PhoneContact p -> currentDraft.setSingleValue(p.phoneNr());
+        case ContactInfo.AddressContact a -> {
+          currentDraft.setStreet(a.street());
+          currentDraft.setZipCode(a.zipCode());
+          currentDraft.setCity(a.city());
+        }
+      }
+    }
 
     switch (type) {
       case EMAIL ->
@@ -98,7 +132,9 @@ public class ContactAddWizard extends Dialog {
     }
 
     binder.setBean(currentDraft);
-    saveBtn.setEnabled(false); // Force re-validation check
+
+    // If we pre-filled valid data, the save button should be active
+    saveBtn.setEnabled(binder.isValid());
   }
 
   private void buildSingleFieldForm(
@@ -154,17 +190,28 @@ public class ContactAddWizard extends Dialog {
       ContactInfo newContact =
           switch (currentType) {
             case EMAIL ->
-                ContactInfo.EmailContact.builder().email(currentDraft.getSingleValue()).build();
+                ContactInfo.EmailContact.builder()
+                    .id(existingId)
+                    .email(currentDraft.getSingleValue())
+                    .build();
             case TELEGRAM ->
-                ContactInfo.TelegramContact.builder().chatId(currentDraft.getSingleValue()).build();
+                ContactInfo.TelegramContact.builder()
+                    .id(existingId)
+                    .chatId(currentDraft.getSingleValue())
+                    .build();
             case SIGNAL ->
                 ContactInfo.SignalContact.builder()
+                    .id(existingId)
                     .signalHandle(currentDraft.getSingleValue())
                     .build();
             case PHONE ->
-                ContactInfo.PhoneContact.builder().phoneNr(currentDraft.getSingleValue()).build();
+                ContactInfo.PhoneContact.builder()
+                    .id(existingId)
+                    .phoneNr(currentDraft.getSingleValue())
+                    .build();
             case ADDRESS ->
                 ContactInfo.AddressContact.builder()
+                    .id(existingId)
                     .street(currentDraft.getStreet())
                     .zipCode(currentDraft.getZipCode())
                     .city(currentDraft.getCity())
@@ -175,13 +222,11 @@ public class ContactAddWizard extends Dialog {
     }
   }
 
-  // Functional interface for our simple validator callbacks
   @FunctionalInterface
   private interface ValidatorFunc {
     boolean validate(String value);
   }
 
-  // Internal DTO to hold Vaadin Binder state before creating the immutable Record
   @Data
   private static class ContactDraft {
     private String singleValue; // Used for Email, Phone, Telegram, Signal
