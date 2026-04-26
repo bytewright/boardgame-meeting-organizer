@@ -1,10 +1,13 @@
 package org.bytewright.bgmo.adapter.api.frontend.view;
 
+import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.html.H2;
+import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
+import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.Route;
@@ -45,8 +48,21 @@ public class AdminUserApprovalView extends VerticalLayout implements BeforeEnter
               return approveBtn;
             })
         .setHeader("Actions");
-
+    grid.setItemDetailsRenderer(new ComponentRenderer<>(this::renderUser));
     add(grid);
+  }
+
+  private Component renderUser(RegisteredUser user) {
+    VerticalLayout layout = new VerticalLayout();
+    layout.setPadding(true);
+    layout.getStyle().set("background-color", "var(--lumo-contrast-5pct)");
+
+    String introText = adminWorkflows.getRegistrationIntroText(user.getId());
+    Paragraph text = new Paragraph(introText);
+    text.getStyle().set("white-space", "pre-wrap"); // Preserves newlines
+
+    layout.add(new H2("Intro text"), text);
+    return layout;
   }
 
   private void refreshGrid() {

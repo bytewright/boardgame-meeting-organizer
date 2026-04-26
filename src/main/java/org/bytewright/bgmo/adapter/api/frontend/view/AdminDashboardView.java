@@ -28,8 +28,6 @@ import org.bytewright.bgmo.usecases.AdminWorkflows;
 public class AdminDashboardView extends VerticalLayout implements BeforeEnterObserver {
   private final SessionAuthenticationService authService;
 
-  private RegisteredUser currentUser;
-
   public AdminDashboardView(
       SessionAuthenticationService authService, AdminWorkflows adminWorkflows) {
     this.authService = authService;
@@ -52,6 +50,12 @@ public class AdminDashboardView extends VerticalLayout implements BeforeEnterObs
             pendingCount > 0 ? pendingCount + " ausstehende Anfrage(n)" : "Keine offenen Anfragen",
             pendingCount > 0,
             () -> UI.getCurrent().navigate(AdminUserApprovalView.class)),
+        navCard(
+            VaadinIcon.USER_CARD,
+            "Nutzerverwaltung",
+            "Nutzer editieren und sperren",
+            false,
+            () -> UI.getCurrent().navigate(AdminUserManagementView.class)),
         navCard(
             VaadinIcon.COG,
             "Site-Einstellungen",
@@ -120,8 +124,6 @@ public class AdminDashboardView extends VerticalLayout implements BeforeEnterObs
     Optional<RegisteredUser> userOpt = authService.getCurrentUser(); //
     if (userOpt.isEmpty()) {
       event.forwardTo(LoginView.class);
-      return;
     }
-    this.currentUser = userOpt.get();
   }
 }

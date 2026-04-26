@@ -14,6 +14,7 @@ import org.bytewright.bgmo.domain.service.AdapterSettingsProvider;
 import org.bytewright.bgmo.domain.service.data.AdapterSettingsDao;
 import org.bytewright.bgmo.domain.service.data.RegisteredUserDao;
 import org.bytewright.bgmo.domain.service.notification.NotificationManager;
+import org.bytewright.bgmo.domain.service.security.BgmoUserDetailsService;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.User;
@@ -24,6 +25,7 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class AdminWorkflows {
   private final Set<AdapterSettingsProvider> adapterSettingsProviders;
+  private final BgmoUserDetailsService userDetailsService;
   private final NotificationManager notificationManager;
   private final AdapterSettingsDao adapterSettingsDao;
   private final RegisteredUserDao userDao;
@@ -69,8 +71,48 @@ public class AdminWorkflows {
     return userDao.createOrUpdate(user);
   }
 
+  public List<RegisteredUser> listAllUsers() {
+    RegisteredUser admin = findActiveAdmin();
+    log.info("Admin '{}' requested full user list", admin.logEntity());
+    return userDao.findAll().stream()
+        .sorted(Comparator.comparing(RegisteredUser::getTsCreation).reversed())
+        .toList();
+  }
+
+  public String getRegistrationIntroText(UUID userId) {
+    return userDao.getRegistrationIntroText(userId).orElse("Kein Text hinterlegt.");
+  }
+
+  public RegisteredUser toggleUserBanStatus(UUID userId) {
+    RegisteredUser admin = findActiveAdmin();
+    RegisteredUser user = userDao.findOrThrow(userId);
+
+    if (user.getStatus() == UserStatus.BANNED) {
+      log.info("Admin '{}' unbanned user {}", admin.logEntity(), user.logEntity());
+      user.setStatus(UserStatus.ACTIVE);
+    } else {
+      log.info("Admin '{}' banned user {}", admin.logEntity(), user.logEntity());
+      user.setStatus(UserStatus.BANNED);
+    }
+    return userDao.createOrUpdate(user);
+  }
+
+  public String generateAndSetTemporaryPassword(UUID userId) {
+    RegisteredUser admin = findActiveAdmin();
+    RegisteredUser user = userDao.findOrThrow(userId);
+
+    // Generate a simple 8-character alphanumeric password
+    String tempPassword = UUID.randomUUID().toString().substring(0, 8);
+
+    log.info(
+        "Admin '{}' generated a temporary password for user {}",
+        admin.logEntity(),
+        user.logEntity());
+    userDetailsService.updatePasswordAndPersist(user, tempPassword);
+    return tempPassword;
+  }
+
   public void updateAdapterSettings(AdapterSettings settings, String newJson) {
-    // todo validation through adapter?
     AdapterSettingsProvider provider =
         adapterSettingsProviders.stream()
             .filter(asp -> asp.getAdapterName().equals(settings.getAdapterName()))
