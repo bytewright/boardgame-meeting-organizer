@@ -6,10 +6,16 @@ Whether you're a heavy-euro enthusiast or a casual party-game fan, BGMO helps yo
 # ✨ Features
 
 - 📚 Library Management: Keep track of your board game collection, including player counts, BGG (BoardGameGeek) IDs, and complexity ratings.
+  - Automatic lookup of details based on provided bgg ids
 - 📅 Meetup Coordination: Create events with specific dates, durations, and player slot limits.
+  - players can see post code so they know in which area the meeting is.
+  - Organizers see who requested to join, can choose people or just roll the dice and choose randomly
 - 🤝 Flexible Signups: Supports registered users and anonymous guests (with GDPR-conscious contact info handling).
 - 🕹️ "On the Table": Organizers can offer specific games from their library for each meetup, so attendees know exactly what to expect.
 - 🌍 Internationalized: Full i18n support for localized gaming communities.
+- User notifications: The app is integrated with chatbots, so once something of interest to a user happens and if they have linked their account to the app, the user will receive a private message by the bot
+  - e.g. new join request for an event where the user is the organizer
+  - e.g. join request approved - the user got one of the slots of an event
 
 # 🛠️ Tech Stack
 
@@ -45,7 +51,9 @@ See [Architecture.md](./ARCHITECTURE.md)
 # ToDos - Bugs
 - Locale switcher geht nicht/wird nicht angewandt
 - translations de/en angleichen
-- meetup card formatting, symbole übereinander
+- player count für spiele benutzt group emoji, solte vaadin icon sein
+- meetup detail footer overlaps
+- meetup not reachable as anon
 
 # ToDos - Features
 - Security upgrade
@@ -57,3 +65,5 @@ See [Architecture.md](./ARCHITECTURE.md)
 - Reschedule events
 - Event game poll
 - Spring boot 4.x & vaadin 25 upgrade
+- acc creation, require linking to telegram or signal during registration
+- acc creation comment "Woher kennst du BGMO - schreib etwas über dich damit du freigeschaltet werden kannst!"

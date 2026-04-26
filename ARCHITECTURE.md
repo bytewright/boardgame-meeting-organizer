@@ -1,41 +1,43 @@
 # Architecture: BGMO
 
 This project follows the Hexagonal Architecture (also known as Ports and Adapters). This pattern decouples the core
-business logic from external concerns like databases, UI frameworks, and messaging bots.
-
-# 📐 Overall Structure
-
-The project is divided into three primary layers: Domain, Use Cases, and Adapters.
+business logic from external concerns like databases, UI frameworks, and messaging bots. The project is thus divided into three primary layers: Domain, Use Cases, and Adapters.
 
 1. The Domain (The Core)
    Located in org.bytewright.bgmo.domain. This is the "inside" of the hexagon.
-
     - Model: Pure business objects like Game, MeetupEvent, and RegisteredUser.
-    - Service (Ports): Interfaces that define how the core needs to interact with the outside world (e.g., ModelDao for
-      data persistence but also AuthenticationService).
+    - Service: Interfaces that define how the core needs to interact with the outside world (e.g., ModelDao for
+      data persistence but also AuthenticationService). Also, this is the place for central services like security handling.
 
 2. Use Cases (Application Layer)
    Located in org.bytewright.bgmo.usecases.
    These are the Interactors. They orchestrate the flow of data to and from the domain entities.
-
+    - AdminWorkflows: User account approval, site wide settings
     - UserWorkflows: Handles library additions and user profile management.
     - MeetupWorkflows: Manages the lifecycle of an event, from creation to attendee confirmation.
 
 3. Adapters (The "Outside")
    Located in org.bytewright.bgmo.adapter. These handle specific parts, the rest of the application does not need to
-   know about. These are only allowed to interact with the domain and app layer, not other adapters.
-
+   know about. These are only allowed to interact with the domain and app layer, not other adapters. 
+   Internally, adapters sometimes mimic the same structure, also containing use cases and adapter specific domain models and services.
     - api.frontend: A Vaadin-based implementation of the web interface. It translates user clicks into calls to the Use
       Cases. Also allows the frontend to be defined in java instead of the usual web tech stack.
+      - Frontend should make heavy use of vaadin i18n integration.
     - persistence: Implementation of the ModelDao ports, handling the actual SQL/database transactions. This works quite
       generic using a base entity and a base mapper from domain model to entities. The mappers are at the same time the
-      DAO impls. THis might seem strange at first but feels quite seamless as its making heavy use of MapStruct.
-    - bot (Planned): Future adapters for Telegram, Signal, and Mail. Because of the hexagonal approach, these can be
+      DAO impls. This might seem strange at first but feels quite seamless as its making heavy use of MapStruct.
+      - An example:
+        - in domain is the model for users.
+        - The ModelDao for this is called `UserDao extends ModelDao<RegisteredUser>`
+        - in persistence is `RegisteredUserEntityMapper extends BaseEntityMapper<RegisteredUser, RegisteredUserEntity> implements RegisteredUserDao`
+          - Has a JpaRepository injected `RegisteredUserRepository extends JpaRepository<RegisteredUserEntity, UUID>, JpaSpecificationExecutor<RegisteredUserEntity>`
+          - Uses mapstruct to implement mapping from entity to domain model, mostly making use of the BaseEntityMapper. This class also contains special lookup methods defined in the domain dao interface, e.g. `findAllByStatus`
+    - bot: Future adapters for Telegram, Signal, and Mail. Because of the hexagonal approach, these can be
       added without changing the core meetup logic.
 
 # 🛠️ Key Design Patterns
 
-- DTOs: Use of MeetupCreation to decouple the UI form data from the persisted MeetupEvent.
+- DTOs: Use of MeetupCreation dto-class to decouple the UI form data from the persisted MeetupEvent.
 - Models contain ids for relations: If a model has a foreign key, it only contains that entities id which must be
   fetched using the Daos. This avoids over-fetching and nicely defines transaction borders.
 - Generics: ModelDao<MODEL_TYPE> provides a consistent, type-safe interface for all CRUD operations. Specific models can
@@ -55,3 +57,8 @@ Interactions with the system usually flow from the frontend through a use case a
 - Use Case: The UI calls MeetupWorkflows.create(creation).
 - Domain Port: The workflow interacts with the MeetupDao interface.
 - Persistence Adapter: The implementation of the DAO saves the data to the database.
+
+# Database
+
+App uses PostgreSQL V18. Some datatypes used in entities might be db specific, e.g. JSONB column type.
+For DB migrations Liquibase is used.

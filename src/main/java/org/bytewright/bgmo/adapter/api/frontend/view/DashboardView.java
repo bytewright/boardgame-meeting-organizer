@@ -1,6 +1,7 @@
 package org.bytewright.bgmo.adapter.api.frontend.view;
 
 import com.vaadin.flow.component.UI;
+import com.vaadin.flow.component.Unit;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
@@ -131,7 +132,7 @@ public class DashboardView extends VerticalLayout implements BeforeEnterObserver
     personIcon.getStyle().set("color", "var(--lumo-secondary-text-color)");
 
     Span creatorSpan = new Span(creatorName);
-
+    creatorSpan.setMinWidth(200, Unit.PIXELS);
     Icon slotsIcon = VaadinIcon.USERS.create();
     slotsIcon.setSize("var(--lumo-icon-size-s)");
     slotsIcon.getStyle().set("color", "var(--lumo-secondary-text-color)");
