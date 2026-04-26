@@ -8,8 +8,6 @@ import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.details.Details;
 import com.vaadin.flow.component.html.H2;
-import com.vaadin.flow.component.html.Span;
-import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.PasswordField;
@@ -38,9 +36,8 @@ import org.bytewright.bgmo.usecases.UserWorkflows;
 @PermitAll
 @RequiredArgsConstructor
 public class ProfileView extends VerticalLayout implements BeforeEnterObserver {
-  private final ComponentFactory componentFactory;
-  private final VerificationCodeService verificationService;
   private final SessionAuthenticationService authService;
+  private final ComponentFactory componentFactory;
   private final UserWorkflows userWorkflows;
 
   private final VerticalLayout content = new VerticalLayout();
@@ -66,36 +63,10 @@ public class ProfileView extends VerticalLayout implements BeforeEnterObserver {
     content.setWidthFull();
 
     add(new H2(getTranslation("profile.title")));
-    add(createVerificationSection());
     add(createAccountSection());
     add(createContactSection());
     add(createLibrarySection());
     add(content);
-  }
-
-  private Component createVerificationSection() {
-    String code = verificationService.generateCode(currentUser.getId());
-
-    TextField codeField = new TextField(getTranslation("profile.verification.code"));
-    codeField.setValue(code);
-    codeField.setReadOnly(true);
-    codeField.setWidthFull();
-
-    // Copy to Clipboard logic
-    Button copyBtn = new Button(VaadinIcon.COPY.create());
-    copyBtn.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
-    copyBtn.addClickListener(
-        e -> {
-          codeField.getElement().executeJs("window.navigator.clipboard.writeText($0)", code);
-          Notification.show(getTranslation("profile.status.copied"));
-        });
-    codeField.setSuffixComponent(copyBtn);
-
-    Span description = new Span(getTranslation("profile.verification.description", "@BGMO_Bot"));
-    description.getStyle().set("font-size", "var(--lumo-font-size-s)");
-
-    VerticalLayout layout = new VerticalLayout(description, codeField);
-    return wrapInStyledSection(getTranslation("profile.verification.title"), layout);
   }
 
   private Component createAccountSection() {
