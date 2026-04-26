@@ -29,6 +29,7 @@ public abstract class ContactInfoEntityMapper
         getEntityManager().getReference(RegisteredUserEntity.class, model.userId()));
     currentEntity.setId(model.getId());
     currentEntity.setJsonData(toJson(model));
+    currentEntity.setVerified(model.isVerified());
   }
 
   @SneakyThrows
@@ -52,18 +53,21 @@ public abstract class ContactInfoEntityMapper
           ContactInfo.EmailContact.builder()
               .id(entity.getId())
               .userId(entity.getUser().id())
+              .isVerified(entity.isVerified())
               .email(objectMapper.readValue(entity.getJsonData(), String.class))
               .build();
       case TELEGRAM ->
           ContactInfo.TelegramContact.builder()
               .id(entity.getId())
               .userId(entity.getUser().id())
+              .isVerified(entity.isVerified())
               .chatId(objectMapper.readValue(entity.getJsonData(), String.class))
               .build();
       case SIGNAL ->
           ContactInfo.SignalContact.builder()
               .id(entity.getId())
               .userId(entity.getUser().id())
+              .isVerified(entity.isVerified())
               .signalHandle(objectMapper.readValue(entity.getJsonData(), String.class))
               .build();
       case PHONE ->

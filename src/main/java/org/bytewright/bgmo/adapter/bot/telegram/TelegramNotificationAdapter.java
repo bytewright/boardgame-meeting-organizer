@@ -148,6 +148,11 @@ public class TelegramNotificationAdapter
     return adapterProperties.isEnabled() && settings.isEnabled();
   }
 
+  @Override
+  public String botChatDisplayName() {
+    return adapterProperties.getBotDisplayName();
+  }
+
   @SneakyThrows
   private TelegramSettings getSettings() {
     AdapterSettings adapterSettings = adapterSettingsDao.findByAdapterName(getAdapterName());

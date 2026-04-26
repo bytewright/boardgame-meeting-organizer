@@ -19,6 +19,7 @@ bgmo:
         enabled: true
         bot-token: "${TELEGRAM_BOT_TOKEN:}"
         bot-username: "${TELEGRAM_BOT_USERNAME:}"
+        bot-display-name: "${TELEGRAM_BOT_DISPLAYNAME:}"
         group-chat-id: "${TELEGRAM_BOT_GRP_CHAT_ID:}"
         group-locale: DE
   core.services:

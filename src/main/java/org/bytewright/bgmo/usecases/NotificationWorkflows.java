@@ -62,11 +62,24 @@ public class NotificationWorkflows {
           userId);
       ContactInfo newContactInfo =
           switch (type) {
-            case EMAIL -> ContactInfo.EmailContact.builder().userId(userId).email(chatId).build();
+            case EMAIL ->
+                ContactInfo.EmailContact.builder()
+                    .userId(userId)
+                    .email(chatId)
+                    .isVerified(true)
+                    .build();
             case TELEGRAM ->
-                ContactInfo.TelegramContact.builder().userId(userId).chatId(chatId).build();
+                ContactInfo.TelegramContact.builder()
+                    .userId(userId)
+                    .chatId(chatId)
+                    .isVerified(true)
+                    .build();
             case SIGNAL ->
-                ContactInfo.SignalContact.builder().userId(userId).signalHandle(chatId).build();
+                ContactInfo.SignalContact.builder()
+                    .userId(userId)
+                    .signalHandle(chatId)
+                    .isVerified(true)
+                    .build();
             default ->
                 throw new NotImplementedException(
                     "Type %s can't be verified! User: %s".formatted(type, userId));

@@ -115,6 +115,7 @@
     create table user_contact_infos (
         id uuid not null,
         user_id uuid not null,
+        verified boolean not null,
         jsonData text not null,
         type varchar(255) check (type in ('EMAIL','TELEGRAM','SIGNAL','ADDRESS','PHONE')),
         primary key (id)

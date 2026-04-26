@@ -10,6 +10,7 @@ import org.springframework.stereotype.Component;
 public class TelegramAdapterProperties {
   private String botToken;
   private String botUsername;
+  private String botDisplayName;
   private String groupChatId;
   private String groupLocale;
   private boolean enabled;

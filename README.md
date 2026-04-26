@@ -43,6 +43,7 @@ See [Architecture.md](./ARCHITECTURE.md)
   - DB_PASS
   - TELEGRAM_BOT_TOKEN 
   - TELEGRAM_BOT_USERNAME 
+  - TELEGRAM_BOT_DISPLAYNAME
   - TELEGRAM_BOT_GRP_CHAT_ID
 - volumes:
   - /app/logs/

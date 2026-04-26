@@ -39,7 +39,7 @@ import org.bytewright.bgmo.usecases.UserWorkflows;
 @PermitAll
 @RequiredArgsConstructor
 public class ProfileView extends VerticalLayout implements BeforeEnterObserver {
-
+  private final ContactSectionFactory contactSectionFactory;
   private final ContactInfoValidationService validationService;
   private final VerificationCodeService verificationService;
   private final SessionAuthenticationService authService;
@@ -176,8 +176,7 @@ public class ProfileView extends VerticalLayout implements BeforeEnterObserver {
   }
 
   private Component createContactSection() {
-    ContactSection contactSection =
-        new ContactSection(validationService, userWorkflows, currentUser);
+    ContactSection contactSection = contactSectionFactory.contactSection(currentUser);
     return wrapInStyledSection(getTranslation("profile.contacts.title"), contactSection);
   }
 
