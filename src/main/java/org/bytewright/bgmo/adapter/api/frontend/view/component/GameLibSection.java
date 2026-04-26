@@ -14,25 +14,18 @@ import com.vaadin.flow.component.textfield.IntegerField;
 import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
 import lombok.Setter;
-import org.bytewright.bgmo.adapter.api.frontend.SessionAuthenticationService;
 import org.bytewright.bgmo.domain.model.Game;
 import org.bytewright.bgmo.domain.model.user.RegisteredUser;
 import org.bytewright.bgmo.domain.service.data.GameDao;
 import org.bytewright.bgmo.usecases.UserWorkflows;
 
 public class GameLibSection extends VerticalLayout {
-  private final SessionAuthenticationService authService;
   private final UserWorkflows userWorkflows;
   private final GameDao gameDao;
   private final VerticalLayout listContainer;
   @Setter private RegisteredUser currentUser;
 
-  public GameLibSection(
-      SessionAuthenticationService authService,
-      UserWorkflows userWorkflows,
-      GameDao gameDao,
-      RegisteredUser currentUser) {
-    this.authService = authService;
+  public GameLibSection(UserWorkflows userWorkflows, GameDao gameDao, RegisteredUser currentUser) {
     this.userWorkflows = userWorkflows;
     this.gameDao = gameDao;
     this.currentUser = currentUser;
@@ -148,17 +141,13 @@ public class GameLibSection extends VerticalLayout {
   }
 
   private void addNewGameRow() {
-    Game newGame =
-        Game.builder() //
-            .minPlayers(1)
-            .maxPlayers(4)
-            .build();
+    // TODO: This should become a Dialog, on click a user should
+    Game newGame = Game.builder().minPlayers(1).maxPlayers(4).build();
     createGameRow(newGame, true);
   }
 
   public void refreshLibrary() {
     listContainer.removeAll();
-    // Assuming GameDao has findByOwnerId as discussed
     gameDao.findByOwnerId(currentUser.getId()).forEach(this::createGameRow);
   }
 }

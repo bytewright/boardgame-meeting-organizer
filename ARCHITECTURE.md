@@ -1,13 +1,15 @@
 # Architecture: BGMO
 
 This project follows the Hexagonal Architecture (also known as Ports and Adapters). This pattern decouples the core
-business logic from external concerns like databases, UI frameworks, and messaging bots. The project is thus divided into three primary layers: Domain, Use Cases, and Adapters.
+business logic from external concerns like databases, UI frameworks, and messaging bots. The project is thus divided
+into three primary layers: Domain, Use Cases, and Adapters.
 
 1. The Domain (The Core)
    Located in org.bytewright.bgmo.domain. This is the "inside" of the hexagon.
     - Model: Pure business objects like Game, MeetupEvent, and RegisteredUser.
     - Service: Interfaces that define how the core needs to interact with the outside world (e.g., ModelDao for
-      data persistence but also AuthenticationService). Also, this is the place for central services like security handling.
+      data persistence but also AuthenticationService). Also, this is the place for central services like security
+      handling.
 
 2. Use Cases (Application Layer)
    Located in org.bytewright.bgmo.usecases.
@@ -18,20 +20,25 @@ business logic from external concerns like databases, UI frameworks, and messagi
 
 3. Adapters (The "Outside")
    Located in org.bytewright.bgmo.adapter. These handle specific parts, the rest of the application does not need to
-   know about. These are only allowed to interact with the domain and app layer, not other adapters. 
-   Internally, adapters sometimes mimic the same structure, also containing use cases and adapter specific domain models and services.
+   know about. These are only allowed to interact with the domain and app layer, not other adapters.
+   Internally, adapters sometimes mimic the same structure, also containing use cases and adapter specific domain models
+   and services.
     - api.frontend: A Vaadin-based implementation of the web interface. It translates user clicks into calls to the Use
       Cases. Also allows the frontend to be defined in java instead of the usual web tech stack.
-      - Frontend should make heavy use of vaadin i18n integration.
+        - Frontend should make heavy use of vaadin i18n integration.
     - persistence: Implementation of the ModelDao ports, handling the actual SQL/database transactions. This works quite
       generic using a base entity and a base mapper from domain model to entities. The mappers are at the same time the
       DAO impls. This might seem strange at first but feels quite seamless as its making heavy use of MapStruct.
-      - An example:
-        - in domain is the model for users.
-        - The ModelDao for this is called `UserDao extends ModelDao<RegisteredUser>`
-        - in persistence is `RegisteredUserEntityMapper extends BaseEntityMapper<RegisteredUser, RegisteredUserEntity> implements RegisteredUserDao`
-          - Has a JpaRepository injected `RegisteredUserRepository extends JpaRepository<RegisteredUserEntity, UUID>, JpaSpecificationExecutor<RegisteredUserEntity>`
-          - Uses mapstruct to implement mapping from entity to domain model, mostly making use of the BaseEntityMapper. This class also contains special lookup methods defined in the domain dao interface, e.g. `findAllByStatus`
+        - An example:
+            - in domain is the model for users.
+            - The ModelDao for this is called `UserDao extends ModelDao<RegisteredUser>`
+            - in persistence is
+              `RegisteredUserEntityMapper extends BaseEntityMapper<RegisteredUser, RegisteredUserEntity> implements RegisteredUserDao`
+                - Has a JpaRepository injected
+                  `RegisteredUserRepository extends JpaRepository<RegisteredUserEntity, UUID>, JpaSpecificationExecutor<RegisteredUserEntity>`
+                - Uses mapstruct to implement mapping from entity to domain model, mostly making use of the
+                  BaseEntityMapper. This class also contains special lookup methods defined in the domain dao interface,
+                  e.g. `findAllByStatus`
     - bot: Future adapters for Telegram, Signal, and Mail. Because of the hexagonal approach, these can be
       added without changing the core meetup logic.
 
@@ -47,6 +54,8 @@ business logic from external concerns like databases, UI frameworks, and messagi
 - Services use constructor injection by using lombok RequiredArgsConstructor annotation
 - Use cases should be the component opening and closing transactions. lookups can be done by just using the appropriate
   dao anywhere but write operations should go through a use case
+- Adapters can store settings in the DB using AdapterSettingsProvider (interface which defines adapter name, settings
+  validator and default settings) and AdapterSettingsDao to retrieve the settings.
 
 # 🔄 Data Flow
 

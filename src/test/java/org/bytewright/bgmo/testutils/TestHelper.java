@@ -24,7 +24,6 @@ public class TestHelper {
             .loginName(uniqueName)
             .displayName(uniqueName)
             .password("somePwHash")
-            .email("%s@mail.com".formatted(uniqueName))
             .build());
   }
 

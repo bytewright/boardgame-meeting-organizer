@@ -20,7 +20,7 @@ public class VerificationCodeService {
   private final Map<String, UUID> pendingCodes = new ConcurrentHashMap<>();
   private final NotificationWorkflows notificationWorkflows;
 
-  /**Circular deps workaround*/
+  /** Circular deps workaround */
   void registerChatBots(Set<ChatBotNotificationTaskExecutor> chatBots) {
     this.chatBots.addAll(chatBots);
   }

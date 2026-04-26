@@ -27,11 +27,10 @@ import org.bytewright.bgmo.adapter.api.frontend.SessionAuthenticationService;
 import org.bytewright.bgmo.adapter.api.frontend.view.component.ContactSection;
 import org.bytewright.bgmo.adapter.api.frontend.view.component.GameLibSection;
 import org.bytewright.bgmo.adapter.api.frontend.view.component.MainLayout;
+import org.bytewright.bgmo.adapter.api.frontend.view.component.factory.ComponentFactory;
 import org.bytewright.bgmo.domain.model.user.RegisteredUser;
-import org.bytewright.bgmo.domain.service.data.GameDao;
 import org.bytewright.bgmo.domain.service.notification.VerificationCodeService;
 import org.bytewright.bgmo.domain.service.security.PasswordRules;
-import org.bytewright.bgmo.domain.service.user.ContactInfoValidationService;
 import org.bytewright.bgmo.usecases.UserWorkflows;
 
 @Route(value = "profile", layout = MainLayout.class)
@@ -39,12 +38,10 @@ import org.bytewright.bgmo.usecases.UserWorkflows;
 @PermitAll
 @RequiredArgsConstructor
 public class ProfileView extends VerticalLayout implements BeforeEnterObserver {
-  private final ContactSectionFactory contactSectionFactory;
-  private final ContactInfoValidationService validationService;
+  private final ComponentFactory componentFactory;
   private final VerificationCodeService verificationService;
   private final SessionAuthenticationService authService;
   private final UserWorkflows userWorkflows;
-  private final GameDao gameDao;
 
   private final VerticalLayout content = new VerticalLayout();
   private RegisteredUser currentUser;
@@ -176,13 +173,12 @@ public class ProfileView extends VerticalLayout implements BeforeEnterObserver {
   }
 
   private Component createContactSection() {
-    ContactSection contactSection = contactSectionFactory.contactSection(currentUser);
+    ContactSection contactSection = componentFactory.contactSection(currentUser);
     return wrapInStyledSection(getTranslation("profile.contacts.title"), contactSection);
   }
 
   private Component createLibrarySection() {
-    GameLibSection gameLibSection =
-        new GameLibSection(authService, userWorkflows, gameDao, currentUser);
+    GameLibSection gameLibSection = componentFactory.gameLibSection(currentUser);
     return wrapInStyledSection(getTranslation("profile.library.title"), gameLibSection);
   }
 

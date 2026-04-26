@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.UUID;
 import lombok.Builder;
 import lombok.Data;
+import lombok.Singular;
 import org.bytewright.bgmo.domain.model.data.HasUUID;
 
 @Data
@@ -35,5 +36,19 @@ public class Game implements HasUUID {
 
   /** User defined, can point to anything - house rules, googlemaps, errata, YouTube tutorial,... */
   private List<String> urls;
-  // ToDo ideas for the future: playstats/play count
+
+  @Data
+  @Builder(toBuilder = true)
+  public static class Creation {
+    private String name;
+    private int minPlayers;
+    private int maxPlayers;
+    @Nullable private String description;
+    @Nullable private Integer optimalPlayers;
+    @Nullable private Integer playTimeMinutesPerPlayer;
+    @Nullable private Long bggId;
+    @Nullable private Double complexity;
+    @Nullable private String artworkLink;
+    @Singular private List<String> urls;
+  }
 }
