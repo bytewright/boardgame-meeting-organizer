@@ -54,6 +54,8 @@ public class MeetupJoinRequest implements HasUUID {
    */
   @Nullable private String contactInfo;
 
+  @Nullable private String comment;
+
   private Instant tsCreation;
   @Builder.Default private RequestState requestState = RequestState.OPEN;
 }

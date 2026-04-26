@@ -25,3 +25,4 @@ bgmo:
     base-url: "http://some-domain.org/"
     automation-autostart: false
     security-pw-pepper: "${APP_PASSWORD_PEPPER:}"
+    profanityFilterListPath: "./src/main/resources/blocklists/de_profanity"

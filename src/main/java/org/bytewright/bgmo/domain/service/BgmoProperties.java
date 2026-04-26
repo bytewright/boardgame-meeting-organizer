@@ -12,4 +12,5 @@ public class BgmoProperties {
   private boolean automationAutostart;
   private String securityPwPepper;
   private URI baseUrl;
+  private String profanityFilterListPath;
 }

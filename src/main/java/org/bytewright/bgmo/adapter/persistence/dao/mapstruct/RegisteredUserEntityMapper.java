@@ -31,6 +31,7 @@ public abstract class RegisteredUserEntityMapper
   private RegisteredUserRepository userRepository;
 
   @Mapping(target = "contactInfos", source = "contactInfos")
+  @Mapping(target = "registrationIntroText", ignore = true)
   @Override
   public abstract void updateEntity(
       @MappingTarget RegisteredUserEntity currentEntity, RegisteredUser model);
@@ -60,5 +61,17 @@ public abstract class RegisteredUserEntityMapper
         .findByRoleAndStatus(role, UserStatus.ACTIVE)
         .map(this::toDto)
         .collect(Collectors.toSet());
+  }
+
+  @Override
+  public void addRegistrationIntroText(UUID userId, String introText) {
+    RegisteredUserEntity userEntity = userRepository.findById(userId).orElseThrow();
+    userEntity.setRegistrationIntroText(introText);
+    userRepository.save(userEntity);
+  }
+
+  @Override
+  public Optional<String> getRegistrationIntroText(UUID userId) {
+    return userRepository.findById(userId).map(RegisteredUserEntity::getRegistrationIntroText);
   }
 }

@@ -56,6 +56,9 @@ public class RegisteredUserEntity extends AbstractEntity<UUID> implements HasUUI
   @Column(name = "last_login")
   private Instant tsLastLogin;
 
+  @Column(columnDefinition = "text")
+  private String registrationIntroText;
+
   @Column private Locale preferredLocale;
 
   @Enumerated(EnumType.STRING)

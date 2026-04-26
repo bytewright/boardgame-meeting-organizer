@@ -78,7 +78,6 @@ public class MockDataInitializer {
         .loginName(userName)
         .displayName(userName)
         .password("admin")
-        .email("%s@some.mail".formatted(userName))
         .build();
   }
 
@@ -88,7 +87,6 @@ public class MockDataInitializer {
         .loginName(userName)
         .displayName(userName)
         .password("admin")
-        .email("%s@admin.mail".formatted(userName))
         .build();
   }
 }

@@ -38,8 +38,9 @@ public class RegisteredUser implements HasUUID {
     private String displayName;
     private String loginName;
     private String password;
-    @Nullable private String email;
-    @Nullable private String signalHandle;
-    @Nullable private String telegramHandle;
+    private Locale preferredLocale;
+    @Nullable private String introHowDidYouHear;
+    @Nullable private String introAboutYourself;
+    @Nullable private String introWhoInvitedYou;
   }
 }

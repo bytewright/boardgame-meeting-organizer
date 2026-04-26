@@ -65,5 +65,3 @@ See [Architecture.md](./ARCHITECTURE.md)
 - Reschedule events
 - Event game poll
 - Spring boot 4.x & vaadin 25 upgrade
-- acc creation, require linking to telegram or signal during registration
-- acc creation comment "Woher kennst du BGMO - schreib etwas über dich damit du freigeschaltet werden kannst!"

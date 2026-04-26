@@ -8,6 +8,7 @@ import org.bytewright.bgmo.domain.model.Game;
 import org.bytewright.bgmo.domain.model.data.HasUUID;
 import org.bytewright.bgmo.domain.model.user.ContactInfo;
 import org.bytewright.bgmo.domain.model.user.RegisteredUser;
+import org.bytewright.bgmo.domain.model.user.ValidationResult;
 import org.bytewright.bgmo.domain.service.automation.TimeSource;
 import org.bytewright.bgmo.domain.service.data.GameDao;
 import org.bytewright.bgmo.domain.service.data.ModelDao;
@@ -15,6 +16,7 @@ import org.bytewright.bgmo.domain.service.data.RegisteredUserDao;
 import org.bytewright.bgmo.domain.service.notification.NotificationManager;
 import org.bytewright.bgmo.domain.service.security.BgmoUserDetailsService;
 import org.bytewright.bgmo.domain.service.security.PasswordRules;
+import org.bytewright.bgmo.domain.service.user.DisplayNameValidationService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
@@ -24,6 +26,7 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 @Transactional
 @RequiredArgsConstructor
 public class UserWorkflows {
+  private final DisplayNameValidationService nameValidationService;
   private final BgmoUserDetailsService userDetailsService;
   private final ModelDao<ContactInfo> contactInfoModelDao;
   private final NotificationManager notificationManager;
@@ -42,24 +45,20 @@ public class UserWorkflows {
                 .displayName(userDto.getDisplayName())
                 .loginName(userDto.getLoginName())
                 .passwordHash(userDetailsService.hashPw(userDto.getPassword()))
+                .preferredLocale(userDto.getPreferredLocale())
                 .build());
-    Set<ContactInfo> contactInfos = newUser.getContactInfos();
-    Optional.ofNullable(userDto.getSignalHandle())
-        .map(
-            s ->
-                ContactInfo.SignalContact.builder().signalHandle(s).userId(newUser.getId()).build())
-        .ifPresent(contactInfos::add);
-    Optional.ofNullable(userDto.getTelegramHandle())
-        .map(s -> ContactInfo.TelegramContact.builder().chatId(s).userId(newUser.getId()).build())
-        .ifPresent(contactInfos::add);
-    Optional.ofNullable(userDto.getEmail())
-        .map(s -> ContactInfo.EmailContact.builder().email(s).userId(newUser.getId()).build())
-        .ifPresent(contactInfos::add);
-    if (contactInfos.isEmpty()) {
-      throw new IllegalArgumentException("Users must provide at least one form of contact info!");
-    }
     RegisteredUser refetchedUser = userDao.createOrUpdate(newUser);
-    log.info("Created user with id {}: {}", refetchedUser.getId(), refetchedUser);
+    String introText =
+        "Q1 '%s':%s%nQ2 '%s':%s%nQ3 '%s':%s"
+            .formatted(
+                "AboutYourself",
+                userDto.getIntroAboutYourself(),
+                "HowDidYouHear",
+                userDto.getIntroHowDidYouHear(),
+                "WhoInvitedYou",
+                userDto.getIntroWhoInvitedYou());
+    userDao.addRegistrationIntroText(refetchedUser.getId(), introText);
+    log.info("Created user with id {}: {}, {}", refetchedUser.getId(), refetchedUser, introText);
     TransactionSynchronizationManager.registerSynchronization(
         new TransactionSynchronization() {
           @Override
@@ -164,5 +163,20 @@ public class UserWorkflows {
       throw new IllegalArgumentException("Use addContactInfo on new contacts");
     }
     contactInfoModelDao.createOrUpdate(updatedContact.withUserId(userId));
+  }
+
+  public boolean validateLoginName(String rawName) {
+    return userDao.findByLoginName(rawName).isEmpty() && validateDisplayName(rawName);
+  }
+
+  public boolean validateDisplayName(String rawName) {
+    ValidationResult validationResult = nameValidationService.validate(rawName);
+    return switch (validationResult) {
+      case ValidationResult.Failed failed -> {
+        log.warn("Name validation service rejected a display name because: {}", failed.reason());
+        yield false;
+      }
+      case ValidationResult.Success ignored -> true;
+    };
   }
 }

@@ -5,22 +5,29 @@ import static org.bytewright.bgmo.domain.service.CoreAppContextConfig.APP_NAME_S
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
-import com.vaadin.flow.component.details.Details;
+import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.html.H1;
+import com.vaadin.flow.component.html.Hr;
+import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.notification.Notification;
+import com.vaadin.flow.component.notification.NotificationVariant;
+import com.vaadin.flow.component.orderedlayout.FlexComponent;
+import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
-import com.vaadin.flow.component.radiobutton.RadioButtonGroup;
 import com.vaadin.flow.component.textfield.PasswordField;
+import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
+import com.vaadin.flow.data.binder.Binder;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
+import com.vaadin.flow.router.RouterLink;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
-import org.bytewright.bgmo.domain.model.user.ContactInfo;
-import org.bytewright.bgmo.domain.model.user.ContactInfoType;
+import java.util.Locale;
+import org.bytewright.bgmo.adapter.api.frontend.view.component.MainLayout;
 import org.bytewright.bgmo.domain.model.user.RegisteredUser;
+import org.bytewright.bgmo.domain.service.security.PasswordRules;
 import org.bytewright.bgmo.usecases.UserWorkflows;
-import org.springframework.util.StringUtils;
 
 @Route("register")
 @PageTitle("Join " + APP_NAME_SHORT)
@@ -28,124 +35,172 @@ import org.springframework.util.StringUtils;
 public class RegistrationView extends VerticalLayout {
 
   private final UserWorkflows userWorkflows;
-  private final VerticalLayout content;
-
-  // Data Holders (to be sent to Workflow at the end)
-  private final RegisteredUser.Creation.CreationBuilder userDto = RegisteredUser.Creation.builder();
-  private ContactInfo primaryContact;
-  private ContactInfo.AddressContact.AddressContactBuilder hostingAddress =
-      ContactInfo.AddressContact.builder();
 
   public RegistrationView(UserWorkflows userWorkflows) {
     this.userWorkflows = userWorkflows;
 
     addClassName("registration-view");
     setAlignItems(Alignment.CENTER);
-    setJustifyContentMode(JustifyContentMode.CENTER);
+    // setJustifyContentMode(JustifyContentMode.CENTER);
+
     setSizeFull();
-
-    content = new VerticalLayout();
-    content.setMaxWidth("450px"); // Mobile-first width
-    content.setPadding(true);
-    content.getStyle().set("box-shadow", "var(--lumo-box-shadow-m)");
-    content.getStyle().set("border-radius", "var(--lumo-border-radius-l)");
-
-    add(new H1("Create Account"), content);
-    showStep(1);
+    setPadding(true);
+    setSpacing(true);
+    getStyle().set("max-width", MainLayout.MAX_DISPLAYPORT_WIDTH).set("margin", "0 auto");
+    add(buildForm());
   }
 
-  private void showStep(int step) {
-    content.removeAll();
-    switch (step) {
-      case 1 -> createAccountStep();
-      case 2 -> contactPreferenceStep();
-      case 3 -> hostingStep();
-    }
-  }
+  private VerticalLayout buildForm() {
+    VerticalLayout card = new VerticalLayout();
+    card.setMaxWidth(MainLayout.MAX_DISPLAYPORT_WIDTH);
+    card.setWidthFull();
+    card.setPadding(true);
+    card.setSpacing(true);
+    card.getStyle()
+        .set("box-shadow", "var(--lumo-box-shadow-m)")
+        .set("border-radius", "var(--lumo-border-radius-l)");
 
-  private void createAccountStep() {
-    TextField login = new TextField("Username");
-    TextField display = new TextField("Display Name");
-    PasswordField pwd = new PasswordField("Password");
+    // --- Header ---
+    HorizontalLayout header = new HorizontalLayout();
+    header.setWidthFull();
+    header.setAlignItems(FlexComponent.Alignment.CENTER);
+    header.setJustifyContentMode(FlexComponent.JustifyContentMode.BETWEEN);
 
-    Button next =
-        new Button(
-            "Next",
-            e -> {
-              userDto
-                  .loginName(login.getValue())
-                  .displayName(display.getValue())
-                  .password(pwd.getValue());
-              showStep(2);
-            });
-    next.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-    next.setWidthFull();
+    H1 title = new H1(getTranslation("register.title"));
+    title.getStyle().set("margin", "0").set("font-size", "var(--lumo-font-size-xxl)");
 
-    content.add(login, display, pwd, next);
-  }
+    ComboBox<Locale> localePicker = new ComboBox<>();
+    localePicker.setItems(Locale.GERMAN, Locale.ENGLISH);
+    localePicker.setValue(getLocale().getLanguage().equals("de") ? Locale.GERMAN : Locale.ENGLISH);
+    localePicker.setItemLabelGenerator(l -> l.equals(Locale.GERMAN) ? "🇩🇪 DE" : "🇬🇧 EN");
+    localePicker.setWidth("100px");
+    localePicker.addValueChangeListener(e -> UI.getCurrent().getSession().setLocale(e.getValue()));
 
-  private void contactPreferenceStep() {
-    Span info = new Span("How should we notify you about meetups?");
-    RadioButtonGroup<ContactInfoType> typePicker = new RadioButtonGroup<>("Primary Channel");
-    typePicker.setItems(ContactInfoType.EMAIL, ContactInfoType.TELEGRAM, ContactInfoType.SIGNAL);
+    header.add(title, localePicker);
 
-    TextField handleField = new TextField("Handle / Address");
-    handleField.setVisible(false);
+    // --- Account Fields ---
+    Binder<RegisteredUser.Creation> binder = new Binder<>();
+    RegisteredUser.Creation.CreationBuilder dto = RegisteredUser.Creation.builder();
 
-    typePicker.addValueChangeListener(
+    TextField loginName = new TextField(getTranslation("register.field.loginName"));
+    loginName.setWidthFull();
+    loginName.setRequired(true);
+    binder
+        .forField(loginName)
+        .asRequired(getTranslation("register.error.required"))
+        .withValidator(v -> v.length() >= 3, getTranslation("register.error.name.tooShort"))
+        .withValidator(
+            userWorkflows::validateLoginName,
+            getTranslation("register.error.loginName.alreadyTaken"))
+        .bind(c -> "", (c, v) -> dto.loginName(v));
+
+    TextField displayName = new TextField(getTranslation("register.field.displayName"));
+    displayName.setWidthFull();
+    displayName.setRequired(true);
+    binder
+        .forField(displayName)
+        .asRequired(getTranslation("register.error.required"))
+        .withValidator(v -> v.length() >= 3, getTranslation("register.error.name.tooShort"))
+        .withValidator(
+            userWorkflows::validateDisplayName,
+            getTranslation("register.error.displayName.invalid")) // profanity filter
+        .bind(c -> "", (c, v) -> dto.displayName(v));
+
+    PasswordField password = new PasswordField(getTranslation("register.field.password"));
+    password.setWidthFull();
+    password.setRequired(true);
+    binder
+        .forField(password)
+        .asRequired(getTranslation("register.error.required"))
+        .withValidator(
+            v -> v.length() >= PasswordRules.PW_MIN_CHARS,
+            getTranslation("register.error.password.tooShort"))
+        .bind(c -> "", (c, v) -> dto.password(v));
+
+    PasswordField passwordConfirm =
+        new PasswordField(getTranslation("register.field.passwordConfirm"));
+    passwordConfirm.setWidthFull();
+    passwordConfirm.setRequired(true);
+    binder
+        .forField(passwordConfirm)
+        .withValidator(
+            v -> v.equals(password.getValue()), getTranslation("register.error.password.mismatch"))
+        .bind(c -> "", (c, v) -> {});
+
+    // --- Divider + intro section ---
+    Hr divider = new Hr();
+
+    Paragraph introHint = new Paragraph(getTranslation("register.intro.hint"));
+    introHint
+        .getStyle()
+        .set("color", "var(--lumo-secondary-text-color)")
+        .set("font-size", "var(--lumo-font-size-s)")
+        .set("margin-top", "0");
+
+    TextArea aboutYourself =
+        buildIntroArea(
+            getTranslation("register.intro.aboutYourself"),
+            getTranslation("register.intro.aboutYourself.hint"));
+    binder.forField(aboutYourself).bind(c -> "", (c, v) -> dto.introAboutYourself(v));
+
+    TextArea howDidYouHear =
+        buildIntroArea(
+            getTranslation("register.intro.howDidYouHear"),
+            getTranslation("register.intro.howDidYouHear.hint"));
+    binder.forField(howDidYouHear).bind(c -> "", (c, v) -> dto.introHowDidYouHear(v));
+
+    TextArea whoInvitedYou =
+        buildIntroArea(
+            getTranslation("register.intro.whoInvitedYou"),
+            getTranslation("register.intro.whoInvitedYou.hint"));
+    binder.forField(whoInvitedYou).bind(c -> "", (c, v) -> dto.introWhoInvitedYou(v));
+
+    // --- Submit ---
+    Button submit = new Button(getTranslation("register.action.submit"));
+    submit.addThemeVariants(ButtonVariant.LUMO_PRIMARY, ButtonVariant.LUMO_LARGE);
+    submit.setWidthFull();
+    submit.addClickListener(
         e -> {
-          handleField.setVisible(true);
-          handleField.setLabel(e.getValue().name() + " Details");
+          if (binder.validate().isOk()) {
+            dto.preferredLocale(localePicker.getValue());
+            userWorkflows.create(dto.build());
+            Notification notification =
+                Notification.show(getTranslation("register.status.submitted"));
+            notification.addThemeVariants(NotificationVariant.LUMO_SUCCESS);
+            UI.getCurrent().navigate(LoginView.class);
+          }
         });
 
-    Button next =
-        new Button(
-            "Almost Done",
-            e -> {
-              // Logic to build the specific record type
-              String val = handleField.getValue();
-              if (typePicker.getValue() == ContactInfoType.EMAIL) userDto.email(val);
-              if (typePicker.getValue() == ContactInfoType.TELEGRAM) userDto.telegramHandle(val);
-              if (typePicker.getValue() == ContactInfoType.SIGNAL) userDto.signalHandle(val);
-              showStep(3);
-            });
-    next.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-    next.setWidthFull();
+    // --- Footer link ---
+    Span loginPrompt = new Span(getTranslation("register.footer.alreadyHaveAccount") + " ");
+    RouterLink loginLink = new RouterLink(getTranslation("register.footer.login"), LoginView.class);
+    HorizontalLayout footer = new HorizontalLayout(loginPrompt, loginLink);
+    footer.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
+    footer.getStyle().set("font-size", "var(--lumo-font-size-s)");
 
-    content.add(info, typePicker, handleField, next);
+    card.add(
+        header,
+        loginName,
+        displayName,
+        password,
+        passwordConfirm,
+        divider,
+        introHint,
+        aboutYourself,
+        howDidYouHear,
+        whoInvitedYou,
+        submit,
+        footer);
+
+    return card;
   }
 
-  private void hostingStep() {
-    Span info = new Span("Optional: Do you plan on hosting game nights?");
-    info.getStyle().set("font-size", "var(--lumo-font-size-s)");
-
-    Details addressDetails = new Details("Add Hosting Address", createAddressForm());
-
-    Button finish =
-        new Button(
-            "Submit Registration",
-            e -> {
-              RegisteredUser user = userWorkflows.create(userDto.build());
-              var address = hostingAddress.build();
-              if (StringUtils.hasText(address.city())
-                  && StringUtils.hasText(address.street())
-                  && StringUtils.hasText(address.zipCode())) {
-                userWorkflows.addContactInfo(user.getId(), address);
-              }
-              Notification.show("Registration submitted! An admin will approve you shortly.");
-              UI.getCurrent().navigate(LoginView.class);
-            });
-    finish.addThemeVariants(ButtonVariant.LUMO_PRIMARY, ButtonVariant.LUMO_SUCCESS);
-    finish.setWidthFull();
-
-    content.add(info, addressDetails, finish);
-  }
-
-  private VerticalLayout createAddressForm() {
-    TextField street =
-        new TextField("Street & Nr", "", event -> hostingAddress.street(event.getValue()));
-    TextField zip = new TextField("Zip", "", event -> hostingAddress.zipCode(event.getValue()));
-    TextField city = new TextField("City", "", event -> hostingAddress.city(event.getValue()));
-    return new VerticalLayout(street, zip, city);
+  private TextArea buildIntroArea(String label, String placeholder) {
+    TextArea area = new TextArea(label);
+    area.setPlaceholder(placeholder);
+    area.setWidthFull();
+    area.setMinHeight("80px");
+    area.setMaxHeight("160px");
+    return area;
   }
 }

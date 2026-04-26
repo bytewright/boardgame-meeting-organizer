@@ -34,6 +34,9 @@ public class MeetupJoinRequestEntity extends AbstractEntity<UUID> {
   @Column(nullable = false)
   private String displayName;
 
+  @Column(columnDefinition = "text")
+  private String comment;
+
   @Column private UUID anonToken;
   @Column private String contactInfo;
 

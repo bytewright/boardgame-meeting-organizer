@@ -13,4 +13,8 @@ public interface RegisteredUserDao extends ModelDao<RegisteredUser> {
   Optional<RegisteredUser> findByLoginName(String loginName);
 
   Set<RegisteredUser> findAllActiveByRole(UserRole role);
+
+  void addRegistrationIntroText(UUID userId, String introText);
+
+  Optional<String> getRegistrationIntroText(UUID userId);
 }
