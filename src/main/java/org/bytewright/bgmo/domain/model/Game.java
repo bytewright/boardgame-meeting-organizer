@@ -2,6 +2,7 @@ package org.bytewright.bgmo.domain.model;
 
 import jakarta.annotation.Nullable;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import lombok.Builder;
@@ -35,7 +36,7 @@ public class Game implements HasUUID {
   @Nullable private String artworkLink;
 
   /** User defined, can point to anything - house rules, googlemaps, errata, YouTube tutorial,... */
-  private List<String> urls;
+  @Builder.Default private List<String> urls = new ArrayList<>();
 
   @Data
   @Builder(toBuilder = true)

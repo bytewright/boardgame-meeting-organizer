@@ -15,6 +15,7 @@ import com.vaadin.flow.component.textfield.TextField;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import org.bytewright.bgmo.adapter.api.frontend.view.component.factory.ComponentFactory;
 import org.bytewright.bgmo.domain.model.user.ContactInfo;
 import org.bytewright.bgmo.domain.model.user.ContactInfoType;
 import org.bytewright.bgmo.domain.model.user.RegisteredUser;
@@ -39,6 +40,7 @@ public class ContactSection extends VerticalLayout {
   private final String signalBotHandle;
 
   public ContactSection(
+      ComponentFactory componentFactory,
       VerificationCodeService verificationService,
       UserWorkflows userWorkflows,
       RegisteredUserDao userDao,

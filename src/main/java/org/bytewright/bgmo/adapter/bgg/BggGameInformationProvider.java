@@ -41,7 +41,7 @@ public class BggGameInformationProvider
     return InputConfig.builder()
         .providerDisplayName(settings.getDisplayName())
         .providerLogoLink(settings.getLogoLink())
-        .inpoutHint(message)
+        .inputHint(message)
         .inputDataValidator(s -> parseUserInput(s).isPresent())
         .build();
   }

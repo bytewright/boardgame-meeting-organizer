@@ -80,6 +80,29 @@ public class UserWorkflows {
     return gameDao.createOrUpdate(game);
   }
 
+  /**
+   * Game obj should have no id. For updating an existing model use {@link
+   * GameDao#createOrUpdate(HasUUID)}
+   */
+  public Game addGameToLibrary(UUID userId, Game.Creation gameDto) {
+    Game newGame =
+        Game.builder()
+            .ownerId(userId)
+            .name(gameDto.getName())
+            .description(gameDto.getDescription())
+            .bggId(gameDto.getBggId())
+            .minPlayers(gameDto.getMinPlayers())
+            .maxPlayers(gameDto.getMaxPlayers())
+            .optimalPlayers(gameDto.getOptimalPlayers())
+            .artworkLink(gameDto.getArtworkLink())
+            .playTimeMinutesPerPlayer(gameDto.getPlayTimeMinutesPerPlayer())
+            .complexity(gameDto.getComplexity())
+            .urls(gameDto.getUrls())
+            .build();
+    log.info("Adding game to user {}: {}", userId, newGame);
+    return gameDao.createOrUpdate(newGame);
+  }
+
   public RegisteredUser addContactInfo(UUID userId, ContactInfo contactInfo) {
     ContactInfo contactInfoWithId =
         contactInfoModelDao.createOrUpdate(contactInfo.withUserId(userId));

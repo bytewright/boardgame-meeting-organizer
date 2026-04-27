@@ -1,7 +1,9 @@
 package org.bytewright.bgmo.adapter.api.frontend.view.component;
 
+import com.vaadin.flow.component.Unit;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
+import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
 import com.vaadin.flow.component.details.Details;
 import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.Image;
@@ -11,25 +13,46 @@ import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.IntegerField;
+import com.vaadin.flow.component.textfield.NumberField;
 import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
-import lombok.Setter;
+import com.vaadin.flow.server.VaadinSession;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Locale;
+import java.util.Set;
+import org.bytewright.bgmo.adapter.api.frontend.view.component.factory.ComponentFactory;
 import org.bytewright.bgmo.domain.model.Game;
 import org.bytewright.bgmo.domain.model.user.RegisteredUser;
+import org.bytewright.bgmo.domain.service.GameInformationProvider;
 import org.bytewright.bgmo.domain.service.data.GameDao;
 import org.bytewright.bgmo.usecases.UserWorkflows;
 
 public class GameLibSection extends VerticalLayout {
+  private final List<GameInformationProvider> sortedProviders;
+  private final ComponentFactory componentFactory;
   private final UserWorkflows userWorkflows;
   private final GameDao gameDao;
   private final VerticalLayout listContainer;
-  @Setter private RegisteredUser currentUser;
+  private final RegisteredUser currentUser;
 
-  public GameLibSection(UserWorkflows userWorkflows, GameDao gameDao, RegisteredUser currentUser) {
+  public GameLibSection(
+      ComponentFactory componentFactory,
+      Set<GameInformationProvider> providerList,
+      UserWorkflows userWorkflows,
+      GameDao gameDao,
+      RegisteredUser currentUser) {
+    this.componentFactory = componentFactory;
     this.userWorkflows = userWorkflows;
     this.gameDao = gameDao;
     this.currentUser = currentUser;
-    // Mobile-first centering and padding
+    Locale userLocale = VaadinSession.getCurrent().getLocale();
+    sortedProviders =
+        providerList.stream()
+            .sorted(
+                Comparator.comparing(
+                    gip -> gip.getInputConfig(userLocale).getProviderDisplayName()))
+            .toList();
     setAlignItems(Alignment.CENTER);
     setPadding(true);
     setSpacing(true);
@@ -91,12 +114,32 @@ public class GameLibSection extends VerticalLayout {
     descField.setValue(game.getDescription() != null ? game.getDescription() : "");
     descField.setWidthFull();
 
+    IntegerField playTimePerPlayer =
+        new IntegerField(getTranslation("gamelib.field.playTimePerPlayer"));
+    playTimePerPlayer.setValue(game.getPlayTimeMinutesPerPlayer());
+    playTimePerPlayer.setWidthFull();
+
+    IntegerField bggId = new IntegerField(getTranslation("gamelib.field.bggId"));
+    bggId.setValue(game.getBggId() != null ? Math.toIntExact(game.getBggId()) : null);
+    bggId.setWidthFull();
+    NumberField complexity = new NumberField(getTranslation("gamelib.field.complexity"));
+    complexity.setStep(0.1);
+    complexity.setMin(1);
+    complexity.setMax(5);
+    complexity.setWidthFull();
+
     HorizontalLayout playersRow = new HorizontalLayout();
     IntegerField minP = new IntegerField(getTranslation("gamelib.field.minPlayers"));
     minP.setValue(game.getMinPlayers());
+    minP.setMaxWidth(125, Unit.PIXELS);
     IntegerField maxP = new IntegerField(getTranslation("gamelib.field.maxPlayers"));
     maxP.setValue(game.getMaxPlayers());
-    playersRow.add(minP, maxP);
+    maxP.setMaxWidth(125, Unit.PIXELS);
+    IntegerField optimalPlayerCount =
+        new IntegerField(getTranslation("gamelib.field.optimalPLayers"));
+    optimalPlayerCount.setValue(game.getOptimalPlayers());
+    optimalPlayerCount.setMaxWidth(125, Unit.PIXELS);
+    playersRow.add(minP, maxP, optimalPlayerCount);
 
     HorizontalLayout actions = new HorizontalLayout();
     Button saveBtn =
@@ -119,16 +162,37 @@ public class GameLibSection extends VerticalLayout {
         new Button(
             getTranslation("gamelib.action.delete"),
             e -> {
-              // TODO: Add confirmation dialog to really delete
               if (game.getId() != null) {
-                userWorkflows.removeGameFromLibrary(game.getId());
+                ConfirmDialog confirm = new ConfirmDialog();
+                confirm.setHeader(getTranslation("gamelib.confirm.delete.title"));
+                confirm.setText(getTranslation("gamelib.confirm.delete.body", game.getName()));
+                confirm.setCancelable(true);
+                confirm.addConfirmListener(
+                    evt -> {
+                      userWorkflows.removeGameFromLibrary(game.getId());
+                      refreshLibrary();
+                    });
+                confirm.open();
               }
-              refreshLibrary();
             });
     deleteBtn.addThemeVariants(ButtonVariant.LUMO_ERROR, ButtonVariant.LUMO_TERTIARY);
-
+    UrlListEditor urlListEditor =
+        new UrlListEditor(
+            game.getUrls(),
+            newString -> game.getUrls().add(newString),
+            forDeletion -> game.getUrls().remove(forDeletion));
+    urlListEditor.setWidthFull();
     actions.add(saveBtn, deleteBtn);
-    editorLayout.add(nameField, artworkField, descField, playersRow, actions);
+    editorLayout.add(
+        nameField,
+        artworkField,
+        descField,
+        playersRow,
+        bggId,
+        playTimePerPlayer,
+        complexity,
+        urlListEditor,
+        actions);
 
     Details row = new Details(summary, editorLayout);
     row.setOpened(rowOpened);
@@ -141,7 +205,12 @@ public class GameLibSection extends VerticalLayout {
   }
 
   private void addNewGameRow() {
-    // TODO: This should become a Dialog, on click a user should
+    // AddGameDialog addGameDialog = componentFactory.addGameDialog();
+    // TODO: This should become a Dialog, on click a user should see a dropdown with "manual entry"
+    // and in addition one for each GameInformationProvider instance in app context.
+    // After the GameInformationProviders did their job, the dialog should open the manual view so
+    // the user can edit the automatically fetched info or add something to the 'description' field.
+    // also it should of course use org.bytewright.bgmo.domain.model.Game.Creation
     Game newGame = Game.builder().minPlayers(1).maxPlayers(4).build();
     createGameRow(newGame, true);
   }

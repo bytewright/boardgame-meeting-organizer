@@ -4,6 +4,7 @@ import java.util.Locale;
 import java.util.Optional;
 import java.util.function.Function;
 import lombok.Builder;
+import lombok.Data;
 import org.bytewright.bgmo.domain.model.Game;
 
 public interface GameInformationProvider {
@@ -15,6 +16,7 @@ public interface GameInformationProvider {
    */
   Optional<Game.Creation> generateGame(String userInput);
 
+  @Data
   @Builder
   class InputConfig {
     /** Shown to users in Dropdown */
@@ -24,7 +26,7 @@ public interface GameInformationProvider {
     private String providerLogoLink;
 
     /** Shown to users before they are prompted for input for generateGame method */
-    private String inpoutHint;
+    private String inputHint;
 
     /** offline check if a given input is parseable/usable */
     private Function<String, Boolean> inputDataValidator;

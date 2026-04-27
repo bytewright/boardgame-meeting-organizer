@@ -27,7 +27,6 @@ import org.bytewright.bgmo.adapter.api.frontend.view.component.GameLibSection;
 import org.bytewright.bgmo.adapter.api.frontend.view.component.MainLayout;
 import org.bytewright.bgmo.adapter.api.frontend.view.component.factory.ComponentFactory;
 import org.bytewright.bgmo.domain.model.user.RegisteredUser;
-import org.bytewright.bgmo.domain.service.notification.VerificationCodeService;
 import org.bytewright.bgmo.domain.service.security.PasswordRules;
 import org.bytewright.bgmo.usecases.UserWorkflows;
 
