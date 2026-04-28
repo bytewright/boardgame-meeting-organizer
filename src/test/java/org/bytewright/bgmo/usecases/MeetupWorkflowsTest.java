@@ -21,7 +21,7 @@ class MeetupWorkflowsTest extends IntegrationTest {
     // ARRANGE
     RegisteredUser creator = helper.user();
     Game game = Game.builder().name("Testgame").build();
-    UUID gameId = userWorkflows.addGameToLibrary(creator.getId(), game).getId();
+    UUID gameId = userWorkflows.updateGameInLibrary(creator.getId(), game).getId();
     RegisteredUser joiner = helper.user();
     MeetupEvent meetupEvent =
         meetupWorkflows.create(

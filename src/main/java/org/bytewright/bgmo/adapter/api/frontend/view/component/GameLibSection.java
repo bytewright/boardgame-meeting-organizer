@@ -16,20 +16,13 @@ import com.vaadin.flow.component.textfield.IntegerField;
 import com.vaadin.flow.component.textfield.NumberField;
 import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
-import com.vaadin.flow.server.VaadinSession;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Locale;
-import java.util.Set;
 import org.bytewright.bgmo.adapter.api.frontend.view.component.factory.ComponentFactory;
 import org.bytewright.bgmo.domain.model.Game;
 import org.bytewright.bgmo.domain.model.user.RegisteredUser;
-import org.bytewright.bgmo.domain.service.GameInformationProvider;
 import org.bytewright.bgmo.domain.service.data.GameDao;
 import org.bytewright.bgmo.usecases.UserWorkflows;
 
 public class GameLibSection extends VerticalLayout {
-  private final List<GameInformationProvider> sortedProviders;
   private final ComponentFactory componentFactory;
   private final UserWorkflows userWorkflows;
   private final GameDao gameDao;
@@ -38,7 +31,6 @@ public class GameLibSection extends VerticalLayout {
 
   public GameLibSection(
       ComponentFactory componentFactory,
-      Set<GameInformationProvider> providerList,
       UserWorkflows userWorkflows,
       GameDao gameDao,
       RegisteredUser currentUser) {
@@ -46,13 +38,6 @@ public class GameLibSection extends VerticalLayout {
     this.userWorkflows = userWorkflows;
     this.gameDao = gameDao;
     this.currentUser = currentUser;
-    Locale userLocale = VaadinSession.getCurrent().getLocale();
-    sortedProviders =
-        providerList.stream()
-            .sorted(
-                Comparator.comparing(
-                    gip -> gip.getInputConfig(userLocale).getProviderDisplayName()))
-            .toList();
     setAlignItems(Alignment.CENTER);
     setPadding(true);
     setSpacing(true);
@@ -79,6 +64,7 @@ public class GameLibSection extends VerticalLayout {
   }
 
   private void createGameRow(Game game, boolean rowOpened) {
+    // ToDo this whole method should use Binders to the game model!
     // --- Summary (The "Row" when collapsed) ---
     HorizontalLayout summary = new HorizontalLayout();
     summary.setAlignItems(Alignment.CENTER);
@@ -152,7 +138,7 @@ public class GameLibSection extends VerticalLayout {
               game.setMinPlayers(minP.getValue() != null ? minP.getValue() : 1);
               game.setMaxPlayers(maxP.getValue() != null ? maxP.getValue() : 1);
               game.setOwnerId(currentUser.getId());
-              userWorkflows.addGameToLibrary(currentUser.getId(), game);
+              userWorkflows.updateGameInLibrary(currentUser.getId(), game);
               Notification.show(getTranslation("gamelib.notif.saved"));
               refreshLibrary();
             });
@@ -205,14 +191,16 @@ public class GameLibSection extends VerticalLayout {
   }
 
   private void addNewGameRow() {
-    // AddGameDialog addGameDialog = componentFactory.addGameDialog();
+    AddGameDialog addGameDialog = componentFactory.addGameDialog(currentUser, this::refreshLibrary);
+    addGameDialog.open();
     // TODO: This should become a Dialog, on click a user should see a dropdown with "manual entry"
     // and in addition one for each GameInformationProvider instance in app context.
     // After the GameInformationProviders did their job, the dialog should open the manual view so
     // the user can edit the automatically fetched info or add something to the 'description' field.
     // also it should of course use org.bytewright.bgmo.domain.model.Game.Creation
-    Game newGame = Game.builder().minPlayers(1).maxPlayers(4).build();
-    createGameRow(newGame, true);
+    // Game newGame = Game.builder().minPlayers(1).maxPlayers(4).build();
+    // createGameRow(newGame, true);
+
   }
 
   public void refreshLibrary() {

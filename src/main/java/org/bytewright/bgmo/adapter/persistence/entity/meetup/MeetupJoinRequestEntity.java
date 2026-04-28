@@ -31,14 +31,16 @@ public class MeetupJoinRequestEntity extends AbstractEntity<UUID> {
   @Column(name = "created_at", nullable = false, updatable = false)
   private Instant tsCreation;
 
-  @Column(nullable = false)
+  @Column(nullable = false, length = 1024)
   private String displayName;
 
   @Column(columnDefinition = "text")
   private String comment;
 
   @Column private UUID anonToken;
-  @Column private String contactInfo;
+
+  @Column(length = 1024)
+  private String contactInfo;
 
   @Enumerated(EnumType.STRING)
   @Column(nullable = false)

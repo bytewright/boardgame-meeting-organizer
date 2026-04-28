@@ -40,10 +40,12 @@ public class MeetupEntity extends AbstractEntity<UUID> implements HasUUID {
   @Nullable
   private Instant tsModified;
 
-  @Column(nullable = false)
+  @Column(nullable = false, length = 2048)
   private String title;
 
-  @Column @Nullable private String description;
+  @Column(columnDefinition = "text")
+  @Nullable
+  private String description;
 
   @Column(nullable = false)
   private ZonedDateTime eventDate;

@@ -1,12 +1,9 @@
 package org.bytewright.bgmo.adapter.persistence.migrations;
 
-import static org.bytewright.bgmo.domain.service.security.SecurityContextConfig.DEFAULT_PW_ENCODER;
-
 import java.sql.PreparedStatement;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 import liquibase.change.custom.CustomTaskChange;
@@ -15,7 +12,6 @@ import liquibase.database.jvm.JdbcConnection;
 import liquibase.exception.CustomChangeException;
 import liquibase.resource.ResourceAccessor;
 import org.bytewright.bgmo.domain.service.security.PepperingPasswordEncoder;
-import org.springframework.security.crypto.argon2.Argon2PasswordEncoder;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.DelegatingPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -25,7 +21,6 @@ public class AddAdminTask implements CustomTaskChange {
 
   @Override
   public void execute(Database database) throws CustomChangeException {
-
     // 1. Pull the plain text password and pw pepper from the environment
     String rawPassword = System.getenv("APP_ADMIN_PASSWORD");
 
@@ -37,12 +32,9 @@ public class AddAdminTask implements CustomTaskChange {
     if (appPwPepper == null || appPwPepper.isBlank()) {
       appPwPepper = "";
     }
-    Map<String, PasswordEncoder> encoders = new HashMap<>();
-    encoders.put("bcrypt", new BCryptPasswordEncoder());
-    encoders.put(DEFAULT_PW_ENCODER, Argon2PasswordEncoder.defaultsForSpringSecurity_v5_8());
-    DelegatingPasswordEncoder delegatingEncoder =
-        new DelegatingPasswordEncoder(DEFAULT_PW_ENCODER, encoders);
-    delegatingEncoder.setDefaultPasswordEncoderForMatches(encoders.get(DEFAULT_PW_ENCODER));
+    Map<String, PasswordEncoder> encoders = Map.of("bcrypt", new BCryptPasswordEncoder());
+    var delegatingEncoder = new DelegatingPasswordEncoder("bcrypt", encoders);
+    delegatingEncoder.setDefaultPasswordEncoderForMatches(encoders.get("bcrypt"));
     PasswordEncoder encoder = new PepperingPasswordEncoder(delegatingEncoder, appPwPepper);
     String encodedPw = encoder.encode(rawPassword);
     JdbcConnection connection = (JdbcConnection) database.getConnection();

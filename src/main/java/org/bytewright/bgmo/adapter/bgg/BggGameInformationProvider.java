@@ -26,7 +26,7 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class BggGameInformationProvider
     implements GameInformationProvider, AdapterSettingsProvider {
-  private static final String ADAPTER_NAME = "Telegram-ChatBotNotificationTaskExecutor-integration";
+  private static final String ADAPTER_NAME = "BggGameInformationProvider-integration";
   private final AdapterSettingsDao adapterSettingsDao;
   private final MessageSource messageSource;
   private final ObjectMapper objectMapper;
@@ -73,15 +73,28 @@ public class BggGameInformationProvider
     Optional<Long> optionalLong = parseUserInput(userInput);
     if (optionalLong.isEmpty()) return Optional.empty();
     long bggId = optionalLong.get();
-
-    log.info("Fetching game information from BGG for id={}", bggId);
-    Optional<String> xmlOpt = bggApiClient.fetchGame(bggId);
-    if (xmlOpt.isEmpty()) {
-      log.warn("Failed to use bgg api to fetch information about {}", bggId);
-      return Optional.empty();
+    if (false) {
+      log.info("Fetching game information from BGG for id={}", bggId);
+      Optional<String> xmlOpt = bggApiClient.fetchGame(bggId);
+      if (xmlOpt.isEmpty()) {
+        log.warn("Failed to use bgg api to fetch information about {}", bggId);
+        return Optional.empty();
+      }
+      Optional<Game.Creation> creation = xmlParser.parseGameCreation(xmlOpt.get(), bggId);
+      log.info(
+          "Finished fetching boardGame info from bgg for id {}: success? {}",
+          bggId,
+          creation.isPresent());
     }
-    Optional<Game.Creation> creation = xmlParser.parseGameCreation(xmlOpt.get(), bggId);
-    return creation;
+    return mockBggCreation(bggId);
+  }
+
+  private Optional<Game.Creation> mockBggCreation(long bggId) {
+    return Optional.of(
+        Game.Creation.builder()
+            .bggId(bggId)
+            .url("https://boardgamegeek.com/boardgame/" + bggId)
+            .build());
   }
 
   @Override

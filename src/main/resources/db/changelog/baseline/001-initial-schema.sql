@@ -57,9 +57,9 @@
         meetup_id uuid not null,
         user_id uuid,
         comment text,
-        contactInfo varchar(255),
-        displayName varchar(255) not null,
-        requestState varchar(255) not null check (requestState in ('OPEN','ACCEPTED','DECLINED','CANCELED')),
+        contactInfo varchar(1024),
+        displayName varchar(1024) not null,
+        requestState varchar(32) not null check (requestState in ('OPEN','ACCEPTED','DECLINED','CANCELED')),
         primary key (id)
     );
 
@@ -80,8 +80,8 @@
         modified_at timestamp(6) with time zone,
         creator_id uuid not null,
         id uuid not null,
-        description varchar(255),
-        title varchar(255) not null,
+        description text,
+        title varchar(2048) not null,
         primary key (id)
     );
 
@@ -102,12 +102,12 @@
         id uuid not null,
         primaryContactId uuid,
         displayName varchar(1024) not null,
-        loginName varchar(255) not null,
-        passwordHash varchar(255) not null,
+        loginName varchar(512) not null,
+        passwordHash varchar(512) not null,
         preferredLocale varchar(255),
         registrationIntroText text,
-        role varchar(255) not null check (role in ('USER','ADMIN')),
-        status varchar(255) not null check (status in ('PENDING_APPROVAL','ACTIVE','BANNED')),
+        role varchar(32) not null check (role in ('USER','ADMIN')),
+        status varchar(32) not null check (status in ('PENDING_APPROVAL','ACTIVE','BANNED')),
         primary key (id),
         constraint UC_USER_LOGIN_NAME unique (loginName)
     );
@@ -116,8 +116,8 @@
         id uuid not null,
         user_id uuid not null,
         verified boolean not null,
-        jsonData text not null,
-        type varchar(255) check (type in ('EMAIL','TELEGRAM','SIGNAL','ADDRESS','PHONE')),
+        jsonData jsonb not null,
+        type varchar(32) check (type in ('EMAIL','TELEGRAM','SIGNAL','ADDRESS','PHONE')),
         primary key (id)
     );
 

@@ -72,11 +72,14 @@ public class UserWorkflows {
   /**
    * Game obj should have no id. For updating an existing model use {@link
    * GameDao#createOrUpdate(HasUUID)}
+   *
+   * @see #addGameToLibrary(UUID, Game.Creation)
    */
-  public Game addGameToLibrary(UUID userId, Game game) {
-    if (game.getId() != null) return game;
-    game.setOwnerId(userId);
-    log.info("Adding game to user {}: {}", userId, game);
+  public Game updateGameInLibrary(UUID userId, Game game) {
+    if (game.getId() == null) {
+      throw new IllegalArgumentException("Must use addGameToLibrary for new games!");
+    }
+    log.info("Updating game of user {}: {}", userId, game.getName());
     return gameDao.createOrUpdate(game);
   }
 

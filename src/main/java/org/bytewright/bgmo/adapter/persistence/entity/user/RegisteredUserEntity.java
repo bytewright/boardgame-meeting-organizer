@@ -36,13 +36,13 @@ public class RegisteredUserEntity extends AbstractEntity<UUID> implements HasUUI
   @Column(nullable = false, updatable = false)
   private UUID id;
 
-  @Column(nullable = false)
+  @Column(nullable = false, length = 512)
   private String loginName;
 
   @Column(nullable = false, length = 1024)
   private String displayName;
 
-  @Column(nullable = false)
+  @Column(nullable = false, length = 512)
   private String passwordHash;
 
   @CreatedDate

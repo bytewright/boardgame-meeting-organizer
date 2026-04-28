@@ -8,6 +8,7 @@ import java.util.UUID;
 import lombok.Builder;
 import lombok.Data;
 import lombok.Singular;
+import lombok.ToString;
 import org.bytewright.bgmo.domain.model.data.HasUUID;
 
 @Data
@@ -19,7 +20,7 @@ public class Game implements HasUUID {
   private Instant tsModified;
   @Nullable private Instant tsDeleted;
   private String name;
-  @Nullable private String description;
+  @ToString.Exclude @Nullable private String description;
   private int minPlayers;
   private int maxPlayers;
   @Nullable private Integer optimalPlayers;
@@ -36,7 +37,7 @@ public class Game implements HasUUID {
   @Nullable private String artworkLink;
 
   /** User defined, can point to anything - house rules, googlemaps, errata, YouTube tutorial,... */
-  @Builder.Default private List<String> urls = new ArrayList<>();
+  @ToString.Exclude @Builder.Default private List<String> urls = new ArrayList<>();
 
   @Data
   @Builder(toBuilder = true)
@@ -44,12 +45,12 @@ public class Game implements HasUUID {
     private String name;
     private int minPlayers;
     private int maxPlayers;
-    @Nullable private String description;
+    @ToString.Exclude @Nullable private String description;
     @Nullable private Integer optimalPlayers;
     @Nullable private Integer playTimeMinutesPerPlayer;
     @Nullable private Long bggId;
     @Nullable private Double complexity;
     @Nullable private String artworkLink;
-    @Singular private List<String> urls;
+    @ToString.Exclude @Singular private List<String> urls;
   }
 }

@@ -1,12 +1,14 @@
 package org.bytewright.bgmo.adapter.api.frontend.view.component.factory;
 
-import java.util.Map;
-import java.util.Set;
+import com.vaadin.flow.server.VaadinSession;
+import java.util.*;
+import java.util.function.BiConsumer;
 import lombok.RequiredArgsConstructor;
 import org.bytewright.bgmo.adapter.api.frontend.service.i18n.LocaleService;
 import org.bytewright.bgmo.adapter.api.frontend.view.component.AddGameDialog;
 import org.bytewright.bgmo.adapter.api.frontend.view.component.ContactSection;
 import org.bytewright.bgmo.adapter.api.frontend.view.component.GameLibSection;
+import org.bytewright.bgmo.domain.model.Game;
 import org.bytewright.bgmo.domain.model.user.ContactInfoType;
 import org.bytewright.bgmo.domain.model.user.RegisteredUser;
 import org.bytewright.bgmo.domain.service.GameInformationProvider;
@@ -33,10 +35,23 @@ public class ComponentFactory {
   }
 
   public GameLibSection gameLibSection(RegisteredUser currentUser) {
-    return new GameLibSection(this, providerList, userWorkflows, gameDao, currentUser);
+    return new GameLibSection(this, userWorkflows, gameDao, currentUser);
   }
 
-  public AddGameDialog addGameDialog() {
-    return new AddGameDialog();
+  public AddGameDialog addGameDialog(RegisteredUser currentUser, Runnable runnable) {
+    Locale userLocale = VaadinSession.getCurrent().getLocale();
+    List<GameInformationProvider> list =
+        providerList.stream()
+            .sorted(
+                Comparator.comparing(
+                    gip -> gip.getInputConfig(userLocale).getProviderDisplayName()))
+            .toList();
+    BiConsumer<RegisteredUser, Game.Creation> saveConsumer =
+        (registeredUser, creation) -> {
+          userWorkflows.addGameToLibrary(registeredUser.getId(), creation);
+          runnable.run();
+        };
+    AddGameDialog addGameDialog = new AddGameDialog(list, currentUser, saveConsumer);
+    return addGameDialog;
   }
 }

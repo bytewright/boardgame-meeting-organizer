@@ -1,6 +1,7 @@
 package org.bytewright.bgmo.usecases;
 
 import jakarta.transaction.Transactional;
+import java.util.HashSet;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
@@ -22,8 +23,12 @@ public class AdapterSettingsWorkflows implements ApplicationListener<ContextRefr
 
   @Override
   public void onApplicationEvent(ContextRefreshedEvent ignored) {
+    Set<String> seenNames = new HashSet<>();
     for (AdapterSettingsProvider provider : adapterSettingsProviders) {
       String adapterName = provider.getAdapterName();
+      if (!seenNames.add(adapterName)) {
+        throw new IllegalStateException("Detected two adapters with same name: " + adapterName);
+      }
       if (!adapterSettingsDao.existsByAdapterName(adapterName)) {
         createDefaultSettings(provider);
       } else {
@@ -53,6 +58,7 @@ public class AdapterSettingsWorkflows implements ApplicationListener<ContextRefr
             .adapterName(provider.getAdapterName())
             .adapterSettings(defaultSettingsJson)
             .build();
+    log.info("Creating default settings in db for adapter: {}", provider.getAdapterName());
     adapterSettingsDao.createOrUpdate(settings);
   }
 }

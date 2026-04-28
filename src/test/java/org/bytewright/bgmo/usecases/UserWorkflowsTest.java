@@ -1,7 +1,6 @@
 package org.bytewright.bgmo.usecases;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.Set;
 import org.bytewright.bgmo.domain.model.Game;
@@ -20,7 +19,7 @@ class UserWorkflowsTest extends IntegrationTest {
     RegisteredUser user = helper.user();
     Game game = Game.builder().name("Testgame").build();
     // ACT
-    Game persisted = userWorkflows.addGameToLibrary(user.getId(), game);
+    Game persisted = userWorkflows.updateGameInLibrary(user.getId(), game);
     // ASSERT
     assertThat(persisted.getId()).isNotNull();
   }

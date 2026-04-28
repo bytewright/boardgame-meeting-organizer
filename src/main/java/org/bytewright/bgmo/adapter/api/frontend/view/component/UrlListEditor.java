@@ -9,10 +9,11 @@ import com.vaadin.flow.component.textfield.TextField;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
+import lombok.Getter;
 
 public class UrlListEditor extends VerticalLayout {
 
-  private final List<String> urls;
+  @Getter private final List<String> urls;
   private final Consumer<String> newValueConsumer;
   private final Consumer<String> deletionConsumer;
   private final VerticalLayout rowsContainer;
@@ -21,7 +22,7 @@ public class UrlListEditor extends VerticalLayout {
       List<String> stringList,
       Consumer<String> newValueConsumer,
       Consumer<String> deletionConsumer) {
-    this.urls = stringList != null ? stringList : new ArrayList<>();
+    this.urls = stringList != null ? new ArrayList<>(stringList) : new ArrayList<>();
     this.newValueConsumer = newValueConsumer;
     this.deletionConsumer = deletionConsumer;
 
@@ -77,7 +78,9 @@ public class UrlListEditor extends VerticalLayout {
 
     deleteBtn.addClickListener(
         e -> {
-          deletionConsumer.accept(urlField.getValue());
+          String valueToDelete = urlField.getValue();
+          deletionConsumer.accept(valueToDelete);
+          urls.remove(valueToDelete);
           refreshRows();
         });
 
@@ -92,8 +95,9 @@ public class UrlListEditor extends VerticalLayout {
 
     addBtn.addClickListener(
         e -> {
-          String newUrl = "";
+          String newUrl = "http://google.com/";
           newValueConsumer.accept(newUrl);
+          urls.add(newUrl);
           refreshRows();
         });
 

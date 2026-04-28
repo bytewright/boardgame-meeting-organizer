@@ -5,7 +5,9 @@ import java.util.UUID;
 import lombok.*;
 import org.bytewright.bgmo.adapter.persistence.entity.AbstractEntity;
 import org.bytewright.bgmo.domain.model.user.ContactInfoType;
+import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.UuidGenerator;
+import org.hibernate.type.SqlTypes;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 @Entity
@@ -29,8 +31,8 @@ public class ContactInfoEntity extends AbstractEntity<UUID> {
   @Enumerated(EnumType.STRING)
   private ContactInfoType type;
 
-  // todo jsonb?
-  @Column(nullable = false, columnDefinition = "text")
+  @Column(nullable = false, columnDefinition = "jsonb")
+  @JdbcTypeCode(SqlTypes.JSON)
   private String jsonData;
 
   @ManyToOne(fetch = FetchType.LAZY, optional = false)

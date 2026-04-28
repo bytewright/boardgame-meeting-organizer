@@ -96,7 +96,7 @@ public class MeetupCreateDialog extends Dialog {
     slotsField.setHelperText(getTranslation("meetup-creation.field.slotsHelper"));
 
     // Slot count field is hidden when unlimited is checked
-    unlimitedSlotsCheck.addValueChangeListener(e -> slotsField.setVisible(!e.getValue()));
+    unlimitedSlotsCheck.addValueChangeListener(e -> slotsField.setEnabled(!e.getValue()));
     // ── Game Selection ──────────────────────────────────────────────────────
     MultiSelectComboBox<Game> gamePicker =
         new MultiSelectComboBox<>(getTranslation("meetup-creation.field.games"));
