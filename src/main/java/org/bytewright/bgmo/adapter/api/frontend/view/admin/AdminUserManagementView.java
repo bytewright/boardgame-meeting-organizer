@@ -1,4 +1,4 @@
-package org.bytewright.bgmo.adapter.api.frontend.view;
+package org.bytewright.bgmo.adapter.api.frontend.view.admin;
 
 import static org.bytewright.bgmo.domain.service.CoreAppContextConfig.APP_NAME_SHORT;
 

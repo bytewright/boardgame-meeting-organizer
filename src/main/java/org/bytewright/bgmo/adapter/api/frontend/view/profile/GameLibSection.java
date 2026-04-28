@@ -1,4 +1,4 @@
-package org.bytewright.bgmo.adapter.api.frontend.view.component;
+package org.bytewright.bgmo.adapter.api.frontend.view.profile;
 
 import com.vaadin.flow.component.Unit;
 import com.vaadin.flow.component.button.Button;
@@ -16,6 +16,7 @@ import com.vaadin.flow.component.textfield.IntegerField;
 import com.vaadin.flow.component.textfield.NumberField;
 import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
+import org.bytewright.bgmo.adapter.api.frontend.view.component.MainLayout;
 import org.bytewright.bgmo.adapter.api.frontend.view.component.factory.ComponentFactory;
 import org.bytewright.bgmo.domain.model.Game;
 import org.bytewright.bgmo.domain.model.user.RegisteredUser;

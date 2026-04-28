@@ -21,7 +21,12 @@ import com.vaadin.flow.router.RouterLink;
 import java.time.Clock;
 import org.bytewright.bgmo.adapter.api.frontend.SessionAuthenticationService;
 import org.bytewright.bgmo.adapter.api.frontend.view.*;
-import org.bytewright.bgmo.domain.model.user.UserRole;
+import org.bytewright.bgmo.adapter.api.frontend.view.admin.AdminDashboardView;
+import org.bytewright.bgmo.adapter.api.frontend.view.legal.DatenschutzView;
+import org.bytewright.bgmo.adapter.api.frontend.view.legal.ImpressumView;
+import org.bytewright.bgmo.adapter.api.frontend.view.legal.TermsOfUseView;
+import org.bytewright.bgmo.adapter.api.frontend.view.meetup.MeetupCreateDialog;
+import org.bytewright.bgmo.adapter.api.frontend.view.profile.ProfileView;
 import org.bytewright.bgmo.domain.service.data.GameDao;
 import org.bytewright.bgmo.usecases.MeetupWorkflows;
 
@@ -81,10 +86,7 @@ public class MainLayout extends AppLayout implements RouterLayout, AfterNavigati
     logoutBtn.addThemeVariants(ButtonVariant.LUMO_TERTIARY, ButtonVariant.LUMO_ERROR);
 
     HorizontalLayout header = new HorizontalLayout(homeLink, logo, libBtn, createBtn, logoutBtn);
-    if (authService
-        .getCurrentUser()
-        .map(registeredUser -> registeredUser.getRole() == UserRole.ADMIN)
-        .orElse(false)) {
+    if (authService.isCurrentUserAdmin()) {
       header.add(adminLink());
     }
     header.setDefaultVerticalComponentAlignment(FlexComponent.Alignment.CENTER);

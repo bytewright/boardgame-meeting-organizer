@@ -1,4 +1,4 @@
-package org.bytewright.bgmo.adapter.api.frontend.view;
+package org.bytewright.bgmo.adapter.api.frontend.view.profile;
 
 import static org.bytewright.bgmo.domain.service.CoreAppContextConfig.APP_NAME_SHORT;
 
@@ -22,8 +22,7 @@ import java.util.Locale;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.bytewright.bgmo.adapter.api.frontend.SessionAuthenticationService;
-import org.bytewright.bgmo.adapter.api.frontend.view.component.ContactSection;
-import org.bytewright.bgmo.adapter.api.frontend.view.component.GameLibSection;
+import org.bytewright.bgmo.adapter.api.frontend.view.LoginView;
 import org.bytewright.bgmo.adapter.api.frontend.view.component.MainLayout;
 import org.bytewright.bgmo.adapter.api.frontend.view.component.factory.ComponentFactory;
 import org.bytewright.bgmo.domain.model.user.RegisteredUser;

@@ -19,6 +19,7 @@ import org.bytewright.bgmo.adapter.api.frontend.SessionAuthenticationService;
 import org.bytewright.bgmo.adapter.api.frontend.service.i18n.LocaleService;
 import org.bytewright.bgmo.adapter.api.frontend.view.component.GameTimeAndDuration;
 import org.bytewright.bgmo.adapter.api.frontend.view.component.MainLayout;
+import org.bytewright.bgmo.adapter.api.frontend.view.meetup.MeetupDetailView;
 import org.bytewright.bgmo.domain.model.MeetupEvent;
 import org.bytewright.bgmo.domain.model.RequestState;
 import org.bytewright.bgmo.domain.model.user.RegisteredUser;

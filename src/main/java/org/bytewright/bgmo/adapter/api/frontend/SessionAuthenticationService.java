@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.bytewright.bgmo.adapter.api.frontend.service.security.BgmoVaadinWebSecurity;
 import org.bytewright.bgmo.domain.model.user.RegisteredUser;
+import org.bytewright.bgmo.domain.model.user.UserRole;
 import org.bytewright.bgmo.domain.service.data.RegisteredUserDao;
 import org.bytewright.bgmo.domain.service.user.CurrentUserAccessor;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
@@ -40,5 +41,11 @@ public class SessionAuthenticationService implements CurrentUserAccessor {
 
   public void passwordReset() {
     log.info("Password reset requested — not yet implemented.");
+  }
+
+  public boolean isCurrentUserAdmin() {
+    return getCurrentUser()
+        .map(registeredUser -> registeredUser.getRole() == UserRole.ADMIN)
+        .orElse(false);
   }
 }

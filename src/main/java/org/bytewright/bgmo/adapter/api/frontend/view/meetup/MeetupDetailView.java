@@ -1,4 +1,4 @@
-package org.bytewright.bgmo.adapter.api.frontend.view;
+package org.bytewright.bgmo.adapter.api.frontend.view.meetup;
 
 import static org.bytewright.bgmo.domain.service.CoreAppContextConfig.APP_NAME_SHORT;
 
@@ -15,14 +15,14 @@ import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.*;
 import com.vaadin.flow.server.VaadinSession;
-import jakarta.annotation.security.PermitAll;
+import com.vaadin.flow.server.auth.AnonymousAllowed;
 import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.bytewright.bgmo.adapter.api.frontend.SessionAuthenticationService;
 import org.bytewright.bgmo.adapter.api.frontend.service.i18n.LocaleService;
-import org.bytewright.bgmo.adapter.api.frontend.view.component.AnonJoinDialog;
+import org.bytewright.bgmo.adapter.api.frontend.view.DashboardView;
 import org.bytewright.bgmo.adapter.api.frontend.view.component.GameTimeAndDuration;
 import org.bytewright.bgmo.adapter.api.frontend.view.component.MainLayout;
 import org.bytewright.bgmo.domain.model.Game;
@@ -62,7 +62,7 @@ import org.bytewright.bgmo.usecases.MeetupWorkflows;
 @Slf4j
 @Route(value = "meetup/:meetupId", layout = MainLayout.class)
 @PageTitle("Meetup Detail | " + APP_NAME_SHORT)
-@PermitAll
+@AnonymousAllowed
 public class MeetupDetailView extends VerticalLayout implements BeforeEnterObserver {
 
   /** VaadinSession attribute key prefix for the anonymous token per meetup. */
@@ -206,7 +206,7 @@ public class MeetupDetailView extends VerticalLayout implements BeforeEnterObser
           .set("border-radius", "8px")
           .set("padding", "var(--lumo-space-s)");
 
-      // Using the artworkLink field we discussed
+      // Using the artworkLink field
       Image img =
           new Image(
               game.getArtworkLink() != null ? game.getArtworkLink() : "images/default-game.png",
@@ -621,6 +621,7 @@ public class MeetupDetailView extends VerticalLayout implements BeforeEnterObser
 
     String meetupIdParam = event.getRouteParameters().get("meetupId").orElse(null);
     if (meetupIdParam == null) {
+      log.info("Opened meetup but without id, forwarding to dashboard...");
       event.forwardTo(DashboardView.class);
       return;
     }

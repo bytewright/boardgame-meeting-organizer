@@ -52,17 +52,17 @@ See [Architecture.md](./ARCHITECTURE.md)
 # ToDos - Bugs
 - Locale switcher geht nicht/wird nicht angewandt
 - translations de/en angleichen
-- player count für spiele benutzt group emoji, solte vaadin icon sein
 - meetup detail footer overlaps
-- meetup not reachable as anon
 
 # ToDos - Features
 - Security upgrade
   - pw reset flow
   - rate limiting
-- BGG integration
-- addresse sichtbar nach join request approve
-- PLZ schon auf detail page anzeigen
-- Reschedule events
-- Event game poll
+- meetup editable
+  - Reschedule events
+- meetup details expanded
+  - Gamecards should include complexity, comment & maybe tags like "worker placement"
+  - PLZ schon auf detail page anzeigen
+  - addresse sichtbar nach join request approve
+  - Event game poll
 - Spring boot 4.x & vaadin 25 upgrade
