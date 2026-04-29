@@ -22,6 +22,7 @@ public class NavCardComponent extends Div {
     ic.setSize("2em");
     ic.getStyle()
         .set("color", highlighted ? "var(--lumo-error-color)" : "var(--lumo-primary-color)");
+    add(ic);
 
     H3 heading = new H3(title);
     heading.getStyle().set("margin", "0");
@@ -35,9 +36,9 @@ public class NavCardComponent extends Div {
     VerticalLayout text = new VerticalLayout(heading, desc);
     text.setPadding(false);
     text.setSpacing(false);
+    add(text);
 
-    Div card = new Div(ic, text);
-    card.getStyle()
+    getStyle()
         .set("display", "flex")
         .set("flex-direction", "column")
         .set("gap", "var(--lumo-space-m)")
@@ -50,10 +51,10 @@ public class NavCardComponent extends Div {
         .set("flex", "1")
         .set("transition", "background-color 0.15s ease");
 
-    card.getElement()
+    getElement()
         .addEventListener(
-            "mouseover", e -> card.getStyle().set("background-color", "var(--lumo-contrast-5pct)"));
-    card.getElement().addEventListener("mouseout", e -> card.getStyle().remove("background-color"));
-    card.addClickListener(e -> onClick.run());
+            "mouseover", e -> getStyle().set("background-color", "var(--lumo-contrast-5pct)"));
+    getElement().addEventListener("mouseout", e -> getStyle().remove("background-color"));
+    addClickListener(e -> onClick.run());
   }
 }

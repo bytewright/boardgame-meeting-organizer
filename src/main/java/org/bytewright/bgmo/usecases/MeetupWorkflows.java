@@ -1,9 +1,9 @@
 package org.bytewright.bgmo.usecases;
 
 import jakarta.transaction.Transactional;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.UUID;
+import java.time.ZonedDateTime;
+import java.util.*;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.bytewright.bgmo.domain.model.MeetupCreation;
@@ -183,5 +183,40 @@ public class MeetupWorkflows {
     }
     request.setRequestState(RequestState.CANCELED);
     joinRequestModelDao.createOrUpdate(request);
+  }
+
+  public void cancelMeetup(UUID meetupId) {
+    MeetupEvent meetup = meetupDao.findOrThrow(meetupId);
+    log.info("Creator wants to cancel meeting: {}", meetup);
+  }
+
+  public void rescheduleEvent(UUID meetupId, ZonedDateTime newDate, ZonedDateTime newRegClose) {
+    MeetupEvent meetup = meetupDao.findOrThrow(meetupId);
+    log.info("Creator wants to reschedule meeting: {}", meetup);
+  }
+
+  public int confirmRemainingSlotsRandom(UUID meetupId) {
+    MeetupEvent meetup = meetupDao.findOrThrow(meetupId);
+    List<MeetupJoinRequest> openRequests =
+        meetup.getJoinRequests().stream()
+            .filter(r -> r.getRequestState() == RequestState.OPEN)
+            .collect(Collectors.toCollection(ArrayList::new));
+
+    if (openRequests.isEmpty()) {
+      return 0;
+    }
+
+    Collections.shuffle(openRequests);
+
+    long accepted =
+        meetup.getJoinRequests().stream()
+            .filter(r -> r.getRequestState() == RequestState.ACCEPTED)
+            .count();
+    int remainingSlots = (int) (meetup.getJoinSlots() - accepted);
+    int slotsFilledAtRandom = Math.min(remainingSlots, openRequests.size());
+    List<MeetupJoinRequest> toConfirm = openRequests.subList(0, slotsFilledAtRandom);
+
+    toConfirm.forEach(r -> confirmAttendee(meetup.getId(), r));
+    return slotsFilledAtRandom;
   }
 }

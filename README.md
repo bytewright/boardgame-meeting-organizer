@@ -58,36 +58,15 @@ See [Architecture.md](./ARCHITECTURE.md)
 
 - Locale switcher geht nicht/wird nicht angewandt
 - translations de/en angleichen
-- meetup detail footer overlaps
 
 # ToDos - Features
 
 - Security upgrade
     - pw reset flow
     - rate limiting
-- meetup editable
+- meetup MeetupEditView
     - Reschedule events
 - meetup details expanded
-    - Gamecards should include complexity, comment & maybe tags like "worker placement"
-    - PLZ schon auf detail page anzeigen
-    - addresse sichtbar nach join request approve
+    - Gamecards could include tags like "worker placement"
     - Event game poll
 - Spring boot 4.x & vaadin 25 upgrade
-
-# Meetup view refatoring
-
-1. Extract MeetupDetailContext + ViewerRole (now with the 6 roles including anon sub-states)
-2. Extract shared components (MeetupInfoHeader, OfferedGamesSection+GameCard, ConfirmedAttendeesSection)
-3. Extract ActionCard from AdminDashboardView as a reusable component
-4. Extract role panels — AnonPanel (with pending/accepted branches), GuestPanel (same), thin OrganizerPanel (card grid
-   only)
-5. Add MeetupAttendeesView — mostly moving existing code from buildOwnerSection()
-6. Address display (zip / full) — just reads from context, already wired
-7. GameCard expand with Vaadin Details
-8. CancelEventDialog + MeetupWorkflows.cancel()
-9. RescheduleDialog + reschedule path in MeetupWorkflows.update()
-10. MeetupEditView + edit path in MeetupWorkflows.update()
-11. Game poll — last, cleanest extension point
-12.
-13. Steps 1–5 are pure refactoring with no visible behavior change, so they can be one PR. Steps 6–8 are small features.
-    Steps 9–10 are the meaty ones that also require backend work.

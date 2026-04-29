@@ -1,4 +1,4 @@
-package org.bytewright.bgmo.adapter.api.frontend.view.meetup;
+package org.bytewright.bgmo.adapter.api.frontend.view.meetup.dialog;
 
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
