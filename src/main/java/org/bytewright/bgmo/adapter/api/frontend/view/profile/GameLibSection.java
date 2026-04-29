@@ -1,5 +1,6 @@
 package org.bytewright.bgmo.adapter.api.frontend.view.profile;
 
+import com.vaadin.flow.component.ClickEvent;
 import com.vaadin.flow.component.Unit;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
@@ -48,7 +49,9 @@ public class GameLibSection extends VerticalLayout {
 
     Button addGameBtn =
         new Button(
-            getTranslation("gamelib.add-new"), VaadinIcon.PLUS.create(), e -> addNewGameRow());
+            getTranslation("gamelib.add-new"),
+            VaadinIcon.PLUS.create(),
+            this::createAddNewGameDialog);
     addGameBtn.addThemeVariants(ButtonVariant.LUMO_PRIMARY, ButtonVariant.LUMO_SUCCESS);
     addGameBtn.setWidthFull();
 
@@ -191,17 +194,9 @@ public class GameLibSection extends VerticalLayout {
     listContainer.add(row);
   }
 
-  private void addNewGameRow() {
+  private void createAddNewGameDialog(ClickEvent<Button> ignore) {
     AddGameDialog addGameDialog = componentFactory.addGameDialog(currentUser, this::refreshLibrary);
     addGameDialog.open();
-    // TODO: This should become a Dialog, on click a user should see a dropdown with "manual entry"
-    // and in addition one for each GameInformationProvider instance in app context.
-    // After the GameInformationProviders did their job, the dialog should open the manual view so
-    // the user can edit the automatically fetched info or add something to the 'description' field.
-    // also it should of course use org.bytewright.bgmo.domain.model.Game.Creation
-    // Game newGame = Game.builder().minPlayers(1).maxPlayers(4).build();
-    // createGameRow(newGame, true);
-
   }
 
   public void refreshLibrary() {
