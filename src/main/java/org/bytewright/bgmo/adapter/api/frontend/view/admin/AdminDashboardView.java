@@ -3,11 +3,7 @@ package org.bytewright.bgmo.adapter.api.frontend.view.admin;
 import static org.bytewright.bgmo.domain.service.CoreAppContextConfig.APP_NAME_SHORT;
 
 import com.vaadin.flow.component.UI;
-import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H1;
-import com.vaadin.flow.component.html.H3;
-import com.vaadin.flow.component.html.Paragraph;
-import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
@@ -20,6 +16,7 @@ import java.util.Optional;
 import org.bytewright.bgmo.adapter.api.frontend.SessionAuthenticationService;
 import org.bytewright.bgmo.adapter.api.frontend.view.LoginView;
 import org.bytewright.bgmo.adapter.api.frontend.view.component.MainLayout;
+import org.bytewright.bgmo.adapter.api.frontend.view.component.NavCardComponent;
 import org.bytewright.bgmo.domain.model.user.RegisteredUser;
 import org.bytewright.bgmo.usecases.AdminWorkflows;
 
@@ -45,84 +42,32 @@ public class AdminDashboardView extends VerticalLayout implements BeforeEnterObs
     cards.setWidthFull();
     cards.setSpacing(true);
     cards.add(
-        navCard(
+        new NavCardComponent(
             VaadinIcon.USER_CHECK,
-            "Nutzer-Freischaltungen",
-            pendingCount > 0 ? pendingCount + " ausstehende Anfrage(n)" : "Keine offenen Anfragen",
+            getTranslation("admin-dashboard.nav.user-approval.title"),
+            pendingCount > 0
+                ? getTranslation("admin-dashboard.nav.user-approval.subtitle", pendingCount)
+                : getTranslation("admin-dashboard.nav.user-approval.subtitle-none"),
             pendingCount > 0,
             () -> UI.getCurrent().navigate(AdminUserApprovalView.class)),
-        navCard(
+        new NavCardComponent(
             VaadinIcon.USER_CARD,
-            "Nutzerverwaltung",
-            "Nutzer editieren und sperren",
+            getTranslation("admin-dashboard.nav.user-mngt.title"),
+            getTranslation("admin-dashboard.nav.user-mngt.subtitle"),
             false,
             () -> UI.getCurrent().navigate(AdminUserManagementView.class)),
-        navCard(
+        new NavCardComponent(
             VaadinIcon.COG,
-            "Site-Einstellungen",
-            "Impressum-Daten und Adapter-Konfigurationen verwalten",
+            getTranslation("admin-dashboard.nav.site-mngt.title"),
+            getTranslation("admin-dashboard.nav.site-mngt.subtitle"),
             false,
             () -> UI.getCurrent().navigate(AdminSiteSettingsView.class)));
-
     add(cards);
-  }
-
-  /**
-   * A clickable card that navigates to a sub-page.
-   *
-   * @param icon icon to display prominently
-   * @param title card heading
-   * @param subtitle secondary description or status line
-   * @param highlighted whether to draw attention (e.g. pending items exist)
-   * @param onClick navigation action
-   */
-  private Div navCard(
-      VaadinIcon icon, String title, String subtitle, boolean highlighted, Runnable onClick) {
-
-    Icon ic = icon.create();
-    ic.setSize("2em");
-    ic.getStyle()
-        .set("color", highlighted ? "var(--lumo-error-color)" : "var(--lumo-primary-color)");
-
-    H3 heading = new H3(title);
-    heading.getStyle().set("margin", "0");
-
-    Paragraph desc = new Paragraph(subtitle);
-    desc.getStyle()
-        .set("margin", "0")
-        .set("font-size", "var(--lumo-font-size-s)")
-        .set("color", highlighted ? "var(--lumo-error-color)" : "var(--lumo-secondary-text-color)");
-
-    VerticalLayout text = new VerticalLayout(heading, desc);
-    text.setPadding(false);
-    text.setSpacing(false);
-
-    Div card = new Div(ic, text);
-    card.getStyle()
-        .set("display", "flex")
-        .set("flex-direction", "column")
-        .set("gap", "var(--lumo-space-m)")
-        .set("padding", "var(--lumo-space-l)")
-        .set(
-            "border",
-            "2px solid " + (highlighted ? "var(--lumo-error-color)" : "var(--lumo-contrast-20pct)"))
-        .set("border-radius", "var(--lumo-border-radius-l)")
-        .set("cursor", "pointer")
-        .set("flex", "1")
-        .set("transition", "background-color 0.15s ease");
-
-    card.getElement()
-        .addEventListener(
-            "mouseover", e -> card.getStyle().set("background-color", "var(--lumo-contrast-5pct)"));
-    card.getElement().addEventListener("mouseout", e -> card.getStyle().remove("background-color"));
-    card.addClickListener(e -> onClick.run());
-
-    return card;
   }
 
   @Override
   public void beforeEnter(BeforeEnterEvent event) {
-    Optional<RegisteredUser> userOpt = authService.getCurrentUser(); //
+    Optional<RegisteredUser> userOpt = authService.getCurrentUser();
     if (userOpt.isEmpty()) {
       event.forwardTo(LoginView.class);
     }
