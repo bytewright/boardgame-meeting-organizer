@@ -12,12 +12,16 @@ import com.vaadin.flow.server.AppShellSettings;
 import com.vaadin.flow.server.PWA;
 import com.vaadin.flow.server.ServiceInitEvent;
 import com.vaadin.flow.server.VaadinServiceInitListener;
-import com.vaadin.flow.theme.Theme;
+import com.vaadin.flow.spring.security.VaadinSecurityConfigurer;
 import com.vaadin.flow.theme.lumo.Lumo;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.bytewright.bgmo.adapter.api.frontend.view.LoginView;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.web.SecurityFilterChain;
 
 @Slf4j
 @StyleSheet(Lumo.STYLESHEET)
@@ -33,7 +37,8 @@ public class VaadinContextConfig implements AppShellConfigurator, VaadinServiceI
 
   @Override
   public void configurePage(AppShellSettings settings) {
-    log.info("Adding error handlers to Vaadin");
+    // todo
+    // settings.addFavIcon();
   }
 
   @Override
@@ -42,5 +47,22 @@ public class VaadinContextConfig implements AppShellConfigurator, VaadinServiceI
         .getSource()
         .addSessionInitListener(
             sessionInitEvent -> sessionInitEvent.getSession().setErrorHandler(globalErrorHandler));
+  }
+
+  @Bean
+  public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    http.authorizeHttpRequests(
+        registry -> {
+          registry.requestMatchers("/assets/**").permitAll();
+        });
+    http.with(
+        VaadinSecurityConfigurer.vaadin(),
+        configurer -> {
+          configurer.loginView(LoginView.class, "/");
+        });
+
+    http.formLogin(cfg -> cfg.successForwardUrl("/dashboard"));
+
+    return http.build();
   }
 }

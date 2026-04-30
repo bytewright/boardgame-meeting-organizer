@@ -33,6 +33,7 @@ public class LoginView extends VerticalLayout implements BeforeEnterObserver {
     LoginForm loginForm = new LoginForm();
     loginForm.setAction("login"); // Vaadin handles this internally if set
     loginForm.addForgotPasswordListener(event -> authService.passwordReset());
+    loginForm.addLoginListener(event -> log.info("Login event! {}", event.getUsername()));
 
     Button registerButton = new Button(getTranslation("login.register"));
     registerButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);

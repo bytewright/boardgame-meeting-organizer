@@ -18,9 +18,8 @@ import com.vaadin.flow.router.AfterNavigationEvent;
 import com.vaadin.flow.router.AfterNavigationObserver;
 import com.vaadin.flow.router.RouterLayout;
 import com.vaadin.flow.router.RouterLink;
-import java.time.Clock;
-
 import com.vaadin.flow.server.auth.AnonymousAllowed;
+import java.time.Clock;
 import org.bytewright.bgmo.adapter.api.frontend.SessionAuthenticationService;
 import org.bytewright.bgmo.adapter.api.frontend.view.*;
 import org.bytewright.bgmo.adapter.api.frontend.view.admin.AdminDashboardView;

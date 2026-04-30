@@ -69,3 +69,4 @@ See [Architecture.md](./ARCHITECTURE.md)
 - meetup details expanded
     - Gamecards could include tags like "worker placement"
     - Event game poll
+- FavIcon
