@@ -1,6 +1,5 @@
 package org.bytewright.bgmo.adapter.persistence.dao.mapstruct;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.transaction.Transactional;
 import lombok.Setter;
 import lombok.SneakyThrows;
@@ -13,6 +12,7 @@ import org.bytewright.bgmo.domain.model.user.ContactInfo;
 import org.bytewright.bgmo.domain.service.data.ModelDao;
 import org.mapstruct.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import tools.jackson.databind.json.JsonMapper;
 
 @Slf4j
 @Transactional
@@ -20,7 +20,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 @Setter(onMethod_ = {@Autowired})
 public abstract class ContactInfoEntityMapper
     extends BaseEntityMapper<ContactInfo, ContactInfoEntity> implements ModelDao<ContactInfo> {
-  private ObjectMapper objectMapper;
+  private JsonMapper objectMapper;
 
   @Override
   public void updateEntity(ContactInfoEntity currentEntity, ContactInfo model) {

@@ -27,7 +27,9 @@ class BggApiClient {
   static final int MAX_RETRIES = 3;
   static final long RETRY_DELAY_MS = 2_000;
 
-  // Field name matches the bean name from BggConfiguration — Spring resolves by name on ambiguity
+  /**
+   * @see BggConfiguration#bggRestClient()
+   */
   private final RestClient bggRestClient;
 
   /**

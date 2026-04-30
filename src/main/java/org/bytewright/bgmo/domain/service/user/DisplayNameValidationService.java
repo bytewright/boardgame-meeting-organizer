@@ -40,6 +40,10 @@ public class DisplayNameValidationService implements InitializingBean {
 
   @Override
   public void afterPropertiesSet() throws Exception {
+    if (bgmoProperties.getProfanityFilterListPath() == null) {
+      log.error("Profanity list app property is not set!");
+      return;
+    }
     Path path = Path.of(bgmoProperties.getProfanityFilterListPath());
     if (!Files.exists(path)) {
       log.error("Can't find File with path: {}", path.toAbsolutePath());

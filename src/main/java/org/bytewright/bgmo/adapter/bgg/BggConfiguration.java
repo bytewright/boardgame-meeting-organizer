@@ -6,6 +6,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.web.client.RestClient;
+import org.springframework.web.util.DefaultUriBuilderFactory;
 
 @Configuration
 public class BggConfiguration {
@@ -18,9 +19,10 @@ public class BggConfiguration {
    * unambiguously when other RestClient beans exist (e.g. Vaadin internals).
    */
   @Bean
-  public RestClient bggRestClient(RestClient.Builder builder) {
-    return builder
-        .baseUrl(bggBaseUrl)
+  public RestClient bggRestClient() {
+    DefaultUriBuilderFactory factory = new DefaultUriBuilderFactory(bggBaseUrl);
+    return RestClient.builder()
+        .uriBuilderFactory(factory)
         .defaultHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_XML_VALUE)
         .build();
   }

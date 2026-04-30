@@ -4,7 +4,6 @@ import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.bytewright.bgmo.adapter.api.frontend.service.security.BgmoVaadinWebSecurity;
 import org.bytewright.bgmo.domain.model.user.RegisteredUser;
 import org.bytewright.bgmo.domain.model.user.UserRole;
 import org.bytewright.bgmo.domain.service.data.RegisteredUserDao;
@@ -18,7 +17,6 @@ import org.springframework.stereotype.Service;
 @Service
 @RequiredArgsConstructor
 public class SessionAuthenticationService implements CurrentUserAccessor {
-  private final BgmoVaadinWebSecurity bgmoVaadinWebSecurity;
   private final RegisteredUserDao registeredUserDao;
 
   @Override
@@ -33,7 +31,7 @@ public class SessionAuthenticationService implements CurrentUserAccessor {
   }
 
   public void logout() {
-    bgmoVaadinWebSecurity.getAuthenticationContext().logout();
+    // bgmoVaadinWebSecurity.getAuthenticationContext().logout();
     // Vaadin's logout should invalidate the session;
     // SecurityContextHolder is cleared automatically
     // UI.getCurrent().getPage().setLocation("/logout");

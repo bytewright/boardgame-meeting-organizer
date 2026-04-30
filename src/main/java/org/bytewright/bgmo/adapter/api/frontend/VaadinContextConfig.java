@@ -3,7 +3,9 @@ package org.bytewright.bgmo.adapter.api.frontend;
 import static org.bytewright.bgmo.domain.service.CoreAppContextConfig.APP_NAME_LONG;
 import static org.bytewright.bgmo.domain.service.CoreAppContextConfig.APP_NAME_SHORT;
 
+import com.vaadin.flow.component.dependency.StyleSheet;
 import com.vaadin.flow.component.page.AppShellConfigurator;
+import com.vaadin.flow.component.page.ColorScheme;
 import com.vaadin.flow.component.page.Meta;
 import com.vaadin.flow.component.page.Push;
 import com.vaadin.flow.server.AppShellSettings;
@@ -18,7 +20,8 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 
 @Slf4j
-@Theme(variant = Lumo.DARK)
+@StyleSheet(Lumo.STYLESHEET)
+@ColorScheme(ColorScheme.Value.DARK)
 @Push
 @Meta(name = "Author", content = "Bytewright")
 @PWA(name = APP_NAME_LONG, shortName = APP_NAME_SHORT)

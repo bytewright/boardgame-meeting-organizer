@@ -34,8 +34,8 @@ public class SecurityContextConfig {
   @Bean
   public DaoAuthenticationProvider authenticationProvider(
       BgmoUserDetailsService userDetailsService, PasswordEncoder passwordEncoder) {
-    DaoAuthenticationProvider provider = new DaoAuthenticationProvider(passwordEncoder);
-    provider.setUserDetailsService(userDetailsService);
+    DaoAuthenticationProvider provider = new DaoAuthenticationProvider(userDetailsService);
+    provider.setPasswordEncoder(passwordEncoder);
     // by setting UserDetailsPasswordService here, the DaoAuthenticationProvider will automatically
     // upgrade pw encodings should DEFAULT_PW_ENCODER ever change on user login
     provider.setUserDetailsPasswordService(userDetailsService);

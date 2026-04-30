@@ -1,7 +1,5 @@
 package org.bytewright.bgmo.adapter.bgg;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.Locale;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
@@ -11,9 +9,12 @@ import org.bytewright.bgmo.domain.model.AdapterSettings;
 import org.bytewright.bgmo.domain.model.Game;
 import org.bytewright.bgmo.domain.service.AdapterSettingsProvider;
 import org.bytewright.bgmo.domain.service.GameInformationProvider;
+import org.bytewright.bgmo.domain.service.JsonMapperFactory;
 import org.bytewright.bgmo.domain.service.data.AdapterSettingsDao;
 import org.springframework.context.MessageSource;
 import org.springframework.stereotype.Component;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.json.JsonMapper;
 
 /**
  * BGG-backed implementation of the {@link GameInformationProvider} port.
@@ -29,7 +30,7 @@ public class BggGameInformationProvider
   private static final String ADAPTER_NAME = "BggGameInformationProvider-integration";
   private final AdapterSettingsDao adapterSettingsDao;
   private final MessageSource messageSource;
-  private final ObjectMapper objectMapper;
+  private final JsonMapper objectMapper = JsonMapperFactory.unRedactedMapper();
   private final BggApiClient bggApiClient;
   private final BggXmlParser xmlParser;
 
@@ -107,7 +108,7 @@ public class BggGameInformationProvider
     try {
       var settings = objectMapper.readValue(jsonData, BggAdapterSettings.class);
       return settings != null;
-    } catch (JsonProcessingException e) {
+    } catch (JacksonException e) {
       log.error("Provided settings are invalid", e);
     }
     return false;

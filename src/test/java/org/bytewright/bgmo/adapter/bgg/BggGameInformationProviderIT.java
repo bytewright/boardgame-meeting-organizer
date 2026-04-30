@@ -5,8 +5,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.util.Optional;
 import org.bytewright.bgmo.domain.model.Game;
 import org.bytewright.bgmo.domain.service.GameInformationProvider;
+import org.bytewright.bgmo.domain.service.data.AdapterSettingsDao;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.MessageSource;
 import org.springframework.context.annotation.Bean;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -154,8 +156,12 @@ class BggGameInformationProviderIT {
 
     @Bean
     GameInformationProvider gameInformationProvider(
-        BggApiClient bggApiClient, BggXmlParser bggXmlParser) {
-      return new BggGameInformationProvider(bggApiClient, bggXmlParser);
+        AdapterSettingsDao adapterSettingsDao,
+        BggApiClient bggApiClient,
+        MessageSource messageSource,
+        BggXmlParser bggXmlParser) {
+      return new BggGameInformationProvider(
+          adapterSettingsDao, messageSource, bggApiClient, bggXmlParser);
     }
   }
 

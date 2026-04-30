@@ -1,7 +1,6 @@
 package org.bytewright.bgmo.adapter.bot.telegram;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
@@ -18,19 +17,20 @@ import org.bytewright.bgmo.domain.service.AdapterSettingsProvider;
 import org.bytewright.bgmo.domain.service.data.AdapterSettingsDao;
 import org.bytewright.bgmo.domain.service.data.RegisteredUserDao;
 import org.bytewright.bgmo.domain.service.notification.ChatBotNotificationTaskExecutor;
+import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.MessageSource;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
-import org.telegram.telegrambots.meta.TelegramBotsApi;
+import org.telegram.telegrambots.longpolling.TelegramBotsLongPollingApplication;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
-import org.telegram.telegrambots.meta.api.objects.User;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardRow;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
-import org.telegram.telegrambots.updatesreceivers.DefaultBotSession;
+import tools.jackson.databind.json.JsonMapper;
 
 @Slf4j
 @Service
@@ -39,6 +39,7 @@ public class TelegramNotificationAdapter
     implements ChatBotNotificationTaskExecutor,
         AdapterSettingsProvider,
         InitializingBean,
+        DisposableBean,
         ApplicationListener<ApplicationReadyEvent> {
   private static final String ADAPTER_NAME = "Telegram-ChatBotNotificationTaskExecutor-integration";
   private final TelegramAdapterProperties adapterProperties;
@@ -46,7 +47,8 @@ public class TelegramNotificationAdapter
   private final MessageSource messageSource;
   private final TelegramBot telegramBot;
   private final RegisteredUserDao userDao;
-  private final ObjectMapper objectMapper;
+  private final JsonMapper objectMapper;
+  private TelegramBotsLongPollingApplication botsApp;
 
   @Override
   public boolean supports(NotificationContext context) {
@@ -81,7 +83,10 @@ public class TelegramNotificationAdapter
               .text("Join Meetup 🎲")
               .callbackData("join:" + context.meetupId())
               .build();
-      message.setReplyMarkup(InlineKeyboardMarkup.builder().keyboardRow(List.of(button)).build());
+      message.setReplyMarkup(
+          InlineKeyboardMarkup.builder()
+              .keyboardRow(new InlineKeyboardRow(List.of(button)))
+              .build());
     }
 
     try {
@@ -118,9 +123,14 @@ public class TelegramNotificationAdapter
   @Override
   public void afterPropertiesSet() {
     telegramBot.setMeetUpJoinRequestHandler(this::handleJoinRequestFromChat);
+    botsApp = new TelegramBotsLongPollingApplication();
   }
 
   private void handleJoinRequestFromChat(UUID meetupId, String telegramChatId) {
+    log.info(
+        "Received a join request from telegram for meetup {} from chatId {}",
+        meetupId,
+        telegramChatId);
     // todo create request
   }
 
@@ -131,12 +141,9 @@ public class TelegramNotificationAdapter
         log.warn("Telegram bot is disabled, skipping registering with external service.");
         return;
       }
-      TelegramBotsApi botsApi = new TelegramBotsApi(DefaultBotSession.class);
-      botsApi.registerBot(telegramBot);
-      User telegramBotMe = telegramBot.getMe();
-      log.info(
-          "Telegram bot with username '{}' is ready, listening to chat updates...",
-          telegramBotMe.getUserName());
+      botsApp.registerBot(adapterProperties.getBotToken(), telegramBot);
+
+      log.info("Telegram bot is ready, listening to chat updates...");
     } catch (Exception e) {
       log.error("Telegram bot failed to initialize with error: {}", e.getMessage(), e);
     }
@@ -174,9 +181,14 @@ public class TelegramNotificationAdapter
     try {
       TelegramSettings telegramSettings = objectMapper.readValue(jsonData, TelegramSettings.class);
       return telegramSettings != null;
-    } catch (JsonProcessingException e) {
+    } catch (tools.jackson.core.JacksonException e) {
       log.error("Provided settings are invalid", e);
     }
     return false;
+  }
+
+  @Override
+  public void destroy() throws Exception {
+    botsApp.close();
   }
 }

@@ -25,8 +25,8 @@ with your group without the "who's bringing what?" messaging chaos.
 
 See [Architecture.md](./ARCHITECTURE.md)
 
-- Backend: Java 21+, Spring Boot 3.4.+ (Update to spring 4.x is planned)
-- Frontend: Vaadin 24 (Web Components & Java-based UI) (Update to Vaadin 25.x is planned)
+- Backend: Java 21+, Spring Boot 4.+
+- Frontend: Vaadin 25 (Web Components & Java-based UI)
 - Persistence: Jakarta Persistence (JPA) / Spring Data / MapStruct
 - Architecture: Hexagonal / Onion-architecture / Ports & Adapters
 
@@ -69,4 +69,3 @@ See [Architecture.md](./ARCHITECTURE.md)
 - meetup details expanded
     - Gamecards could include tags like "worker placement"
     - Event game poll
-- Spring boot 4.x & vaadin 25 upgrade

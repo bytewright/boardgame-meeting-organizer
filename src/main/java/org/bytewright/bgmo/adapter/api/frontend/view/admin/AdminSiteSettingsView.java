@@ -2,8 +2,6 @@ package org.bytewright.bgmo.adapter.api.frontend.view.admin;
 
 import static org.bytewright.bgmo.domain.service.CoreAppContextConfig.APP_NAME_SHORT;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.html.H2;
@@ -27,19 +25,21 @@ import org.bytewright.bgmo.domain.model.user.ContactInfo;
 import org.bytewright.bgmo.domain.service.SiteOperatorInfoService;
 import org.bytewright.bgmo.domain.service.data.AdapterSettingsDao;
 import org.bytewright.bgmo.usecases.AdminWorkflows;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.json.JsonMapper;
 
 @Route(value = "admin/site-settings", layout = MainLayout.class)
 @PageTitle("Site-Einstellungen | " + APP_NAME_SHORT)
 @RolesAllowed("ADMIN")
 public class AdminSiteSettingsView extends VerticalLayout {
 
-  private final ObjectMapper objectMapper;
+  private final JsonMapper objectMapper;
 
   public AdminSiteSettingsView(
       SiteOperatorInfoService operatorInfoService,
       AdapterSettingsDao adapterSettingsDao,
       AdminWorkflows adminWorkflows,
-      ObjectMapper objectMapper) {
+      JsonMapper objectMapper) {
     this.objectMapper = objectMapper;
 
     setMaxWidth(MainLayout.MAX_DISPLAYPORT_WIDTH);
@@ -207,7 +207,7 @@ public class AdminSiteSettingsView extends VerticalLayout {
     try {
       Object parsed = objectMapper.readValue(json, Object.class);
       return objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(parsed);
-    } catch (JsonProcessingException e) {
+    } catch (JacksonException e) {
       return json; // return raw if already malformed
     }
   }
@@ -216,7 +216,7 @@ public class AdminSiteSettingsView extends VerticalLayout {
     try {
       objectMapper.readTree(json);
       return true;
-    } catch (JsonProcessingException e) {
+    } catch (JacksonException e) {
       return false;
     }
   }

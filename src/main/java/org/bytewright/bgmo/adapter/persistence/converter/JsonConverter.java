@@ -1,30 +1,29 @@
 package org.bytewright.bgmo.adapter.persistence.converter;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.Module;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.type.MapType;
 import jakarta.persistence.AttributeConverter;
 import jakarta.persistence.Converter;
-import java.io.IOException;
 import java.util.*;
+import tools.jackson.databind.JacksonModule;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.type.MapType;
 
 @Converter
 public abstract class JsonConverter<KEYTYPE extends Comparable<KEYTYPE>, VALUETYPE>
     implements AttributeConverter<Map<KEYTYPE, VALUETYPE>, String> {
-  protected final ObjectMapper objectMapper;
+  protected final JsonMapper objectMapper;
   protected final MapType mapType;
 
   public JsonConverter() {
-    objectMapper = new ObjectMapper();
-    getCustomModule().ifPresent(objectMapper::registerModule);
+    JsonMapper.Builder builder = JsonMapper.builder().findAndAddModules();
+    getCustomModule().ifPresent(builder::addModule);
+    objectMapper = builder.build();
     this.mapType =
         objectMapper
             .getTypeFactory()
             .constructMapType(LinkedHashMap.class, keyclass(), valueClass());
   }
 
-  protected Optional<Module> getCustomModule() {
+  protected Optional<JacksonModule> getCustomModule() {
     return Optional.empty();
   }
 
@@ -37,18 +36,13 @@ public abstract class JsonConverter<KEYTYPE extends Comparable<KEYTYPE>, VALUETY
     if (attribute == null) {
       return null;
     }
-    try {
-      List<Map.Entry<KEYTYPE, VALUETYPE>> sortedEntries =
-          attribute.entrySet().stream().sorted(Map.Entry.comparingByKey()).toList();
-      LinkedHashMap<KEYTYPE, VALUETYPE> sortedMap = new LinkedHashMap<>();
-      for (Map.Entry<KEYTYPE, VALUETYPE> entry : sortedEntries) {
-        sortedMap.put(entry.getKey(), entry.getValue());
-      }
-      return objectMapper.writeValueAsString(sortedMap);
-    } catch (JsonProcessingException e) {
-      throw new RuntimeException(
-          "Could not convert Map<%s, %s> to JSON string".formatted(keyclass(), valueClass()), e);
+    List<Map.Entry<KEYTYPE, VALUETYPE>> sortedEntries =
+        attribute.entrySet().stream().sorted(Map.Entry.comparingByKey()).toList();
+    LinkedHashMap<KEYTYPE, VALUETYPE> sortedMap = new LinkedHashMap<>();
+    for (Map.Entry<KEYTYPE, VALUETYPE> entry : sortedEntries) {
+      sortedMap.put(entry.getKey(), entry.getValue());
     }
+    return objectMapper.writeValueAsString(sortedMap);
   }
 
   @Override
@@ -56,11 +50,6 @@ public abstract class JsonConverter<KEYTYPE extends Comparable<KEYTYPE>, VALUETY
     if (dbData == null || dbData.trim().isEmpty()) {
       return Collections.emptyMap();
     }
-    try {
-      return objectMapper.<LinkedHashMap<KEYTYPE, VALUETYPE>>readValue(dbData, mapType);
-    } catch (IOException e) {
-      throw new RuntimeException(
-          "Could not convert JSON string to Map<%s, %s>".formatted(keyclass(), valueClass()), e);
-    }
+    return objectMapper.<LinkedHashMap<KEYTYPE, VALUETYPE>>readValue(dbData, mapType);
   }
 }

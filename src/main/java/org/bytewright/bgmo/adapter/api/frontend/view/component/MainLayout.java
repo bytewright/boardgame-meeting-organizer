@@ -19,6 +19,8 @@ import com.vaadin.flow.router.AfterNavigationObserver;
 import com.vaadin.flow.router.RouterLayout;
 import com.vaadin.flow.router.RouterLink;
 import java.time.Clock;
+
+import com.vaadin.flow.server.auth.AnonymousAllowed;
 import org.bytewright.bgmo.adapter.api.frontend.SessionAuthenticationService;
 import org.bytewright.bgmo.adapter.api.frontend.view.*;
 import org.bytewright.bgmo.adapter.api.frontend.view.admin.AdminDashboardView;
@@ -30,6 +32,7 @@ import org.bytewright.bgmo.adapter.api.frontend.view.profile.ProfileView;
 import org.bytewright.bgmo.domain.service.data.GameDao;
 import org.bytewright.bgmo.usecases.MeetupWorkflows;
 
+@AnonymousAllowed
 public class MainLayout extends AppLayout implements RouterLayout, AfterNavigationObserver {
   public static final String MAX_DISPLAYPORT_WIDTH = "800px"; // Mobile-first reasonable fixed width
 
@@ -157,7 +160,6 @@ public class MainLayout extends AppLayout implements RouterLayout, AfterNavigati
 
     wrapper.add(createFooter());
     setContent(wrapper);
-    afterNavigation();
   }
 
   private Component createFooter() {

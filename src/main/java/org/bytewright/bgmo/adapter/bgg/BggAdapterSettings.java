@@ -2,10 +2,12 @@ package org.bytewright.bgmo.adapter.bgg;
 
 import lombok.Builder;
 import lombok.Data;
+import lombok.extern.jackson.Jacksonized;
 
 @Data
 @Builder
+@Jacksonized
 public class BggAdapterSettings {
   @Builder.Default private String displayName = "BoardGameGeek";
-  @Builder.Default private String logoLink = "path-to-logo.png";
+  @Builder.Default private String logoLink = "/images/poweredByBggLogo.webp";
 }

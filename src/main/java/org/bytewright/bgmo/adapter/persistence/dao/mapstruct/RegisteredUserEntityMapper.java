@@ -16,10 +16,7 @@ import org.bytewright.bgmo.domain.model.user.RegisteredUser;
 import org.bytewright.bgmo.domain.model.user.UserRole;
 import org.bytewright.bgmo.domain.model.user.UserStatus;
 import org.bytewright.bgmo.domain.service.data.RegisteredUserDao;
-import org.mapstruct.InheritInverseConfiguration;
-import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
-import org.mapstruct.MappingTarget;
+import org.mapstruct.*;
 import org.springframework.beans.factory.annotation.Autowired;
 
 @Slf4j
@@ -38,6 +35,7 @@ public abstract class RegisteredUserEntityMapper
 
   @InheritInverseConfiguration
   @Override
+  @BeanMapping(ignoreUnmappedSourceProperties = {"registrationIntroText"})
   public abstract RegisteredUser toDto(RegisteredUserEntity entity);
 
   @Override
