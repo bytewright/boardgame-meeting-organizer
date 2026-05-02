@@ -1,0 +1,227 @@
+org.bytewright.bgmo:boardgame-meeting-organizer:jar:0.0.1-SNAPSHOT
++- org.springframework.boot:spring-boot-starter-web:jar:4.0.6:compile
+|  +- org.springframework.boot:spring-boot-starter-jackson:jar:4.0.6:compile
+|  |  \- org.springframework.boot:spring-boot-jackson:jar:4.0.6:compile
+|  +- org.springframework.boot:spring-boot-starter-tomcat:jar:4.0.6:compile
+|  |  +- org.springframework.boot:spring-boot-starter-tomcat-runtime:jar:4.0.6:compile
+|  |  |  +- org.springframework.boot:spring-boot-web-server:jar:4.0.6:compile
+|  |  |  +- org.apache.tomcat.embed:tomcat-embed-core:jar:11.0.21:compile
+|  |  |  +- org.apache.tomcat.embed:tomcat-embed-el:jar:11.0.21:compile
+|  |  |  \- org.apache.tomcat.embed:tomcat-embed-websocket:jar:11.0.21:compile
+|  |  \- org.springframework.boot:spring-boot-tomcat:jar:4.0.6:compile
+|  +- org.springframework.boot:spring-boot-http-converter:jar:4.0.6:compile
+|  |  +- org.springframework.boot:spring-boot:jar:4.0.6:compile
+|  |  |  \- org.springframework:spring-context:jar:7.0.7:compile
+|  |  \- org.springframework:spring-web:jar:7.0.7:compile
+|  |     \- io.micrometer:micrometer-observation:jar:1.16.5:compile
+|  |        \- io.micrometer:micrometer-commons:jar:1.16.5:compile
+|  \- org.springframework.boot:spring-boot-webmvc:jar:4.0.6:compile
+|     +- org.springframework.boot:spring-boot-servlet:jar:4.0.6:compile
+|     \- org.springframework:spring-webmvc:jar:7.0.7:compile
+|        \- org.springframework:spring-expression:jar:7.0.7:compile
++- org.springframework.boot:spring-boot-starter-data-jpa:jar:4.0.6:compile
+|  +- org.springframework.boot:spring-boot-starter:jar:4.0.6:compile
+|  |  +- org.springframework.boot:spring-boot-starter-logging:jar:4.0.6:compile
+|  |  |  +- ch.qos.logback:logback-classic:jar:1.5.32:compile
+|  |  |  |  \- ch.qos.logback:logback-core:jar:1.5.32:compile
+|  |  |  +- org.apache.logging.log4j:log4j-to-slf4j:jar:2.25.4:compile
+|  |  |  |  \- org.apache.logging.log4j:log4j-api:jar:2.25.4:compile
+|  |  |  \- org.slf4j:jul-to-slf4j:jar:2.0.17:compile
+|  |  \- org.springframework.boot:spring-boot-autoconfigure:jar:4.0.6:compile
+|  +- org.springframework.boot:spring-boot-starter-jdbc:jar:4.0.6:compile
+|  |  \- com.zaxxer:HikariCP:jar:7.0.2:compile
+|  +- org.springframework.boot:spring-boot-data-jpa:jar:4.0.6:compile
+|  |  +- org.springframework.boot:spring-boot-data-commons:jar:4.0.6:compile
+|  |  |  +- org.springframework.boot:spring-boot-persistence:jar:4.0.6:compile
+|  |  |  \- org.springframework.data:spring-data-commons:jar:4.0.5:compile
+|  |  +- org.springframework.boot:spring-boot-hibernate:jar:4.0.6:compile
+|  |  |  +- org.springframework.boot:spring-boot-jpa:jar:4.0.6:compile
+|  |  |  \- org.springframework:spring-orm:jar:7.0.7:compile
+|  |  +- org.springframework.data:spring-data-jpa:jar:4.0.5:compile
+|  |  |  \- org.springframework:spring-tx:jar:7.0.7:compile
+|  |  \- org.springframework:spring-aspects:jar:7.0.7:compile
+|  |     \- org.aspectj:aspectjweaver:jar:1.9.25.1:compile
+|  \- org.springframework.boot:spring-boot-jdbc:jar:4.0.6:compile
+|     +- org.springframework.boot:spring-boot-sql:jar:4.0.6:compile
+|     +- org.springframework.boot:spring-boot-transaction:jar:4.0.6:compile
+|     \- org.springframework:spring-jdbc:jar:7.0.7:compile
++- org.springframework.boot:spring-boot-starter-security:jar:4.0.6:compile
+|  +- org.springframework.boot:spring-boot-security:jar:4.0.6:compile
+|  |  +- org.springframework.security:spring-security-config:jar:7.0.5:compile
+|  |  |  \- org.springframework.security:spring-security-core:jar:7.0.5:compile
+|  |  |     \- org.springframework.security:spring-security-crypto:jar:7.0.5:compile
+|  |  \- org.springframework.security:spring-security-web:jar:7.0.5:compile
+|  \- org.springframework:spring-aop:jar:7.0.7:compile
+|     \- org.springframework:spring-beans:jar:7.0.7:compile
++- org.bouncycastle:bcpkix-jdk18on:jar:1.84:compile
+|  \- org.bouncycastle:bcutil-jdk18on:jar:1.84:compile
+|     \- org.bouncycastle:bcprov-jdk18on:jar:1.84:compile
++- org.telegram:telegrambots-longpolling:jar:9.5.0:compile
+|  +- org.telegram:telegrambots-meta:jar:9.5.0:compile
+|  +- com.squareup.okhttp3:okhttp:jar:4.12.0:compile
+|  |  \- com.squareup.okio:okio:jar:3.6.0:compile
+|  |     \- com.squareup.okio:okio-jvm:jar:3.6.0:compile
+|  |        \- org.jetbrains.kotlin:kotlin-stdlib-common:jar:1.9.10:compile
+|  \- org.slf4j:slf4j-api:jar:2.0.17:compile
++- org.telegram:telegrambots-client:jar:9.5.0:compile
+|  \- commons-io:commons-io:jar:2.16.1:compile
++- org.mapstruct:mapstruct:jar:1.6.3:compile
++- org.mapstruct:mapstruct-processor:jar:1.6.3:compile
++- org.springframework.boot:spring-boot-starter-quartz:jar:4.0.6:compile
+|  \- org.springframework.boot:spring-boot-quartz:jar:4.0.6:compile
+|     +- org.quartz-scheduler:quartz:jar:2.5.2:compile
+|     \- org.springframework:spring-context-support:jar:7.0.7:compile
++- com.vaadin:vaadin-spring-boot-starter:jar:25.1.0:compile
+|  +- com.vaadin:vaadin-spring:jar:25.1.0:compile
+|  |  +- com.vaadin:flow-server:jar:25.1.0:compile
+|  |  |  +- tools.jackson.core:jackson-core:jar:3.1.2:compile
+|  |  |  +- org.jsoup:jsoup:jar:1.22.1:compile
+|  |  |  \- com.vaadin.external:gentyref:jar:1.2.0.vaadin1:compile
+|  |  +- com.vaadin:flow-push:jar:25.1.0:compile
+|  |  |  \- com.vaadin.external.atmosphere:atmosphere-runtime:jar:3.0.5.slf4jvaadin1:compile
+|  |  +- com.vaadin:flow-client:jar:25.1.0:compile
+|  |  +- org.springframework:spring-websocket:jar:7.0.7:compile
+|  |  \- org.hibernate.validator:hibernate-validator:jar:9.0.1.Final:compile
+|  +- com.vaadin:vaadin-core:jar:25.1.0:compile
+|  |  \- com.vaadin:vaadin-core-internal:jar:25.1.0:compile
+|  |     +- com.vaadin:flow-lit-template:jar:25.1.0:compile
+|  |     +- com.vaadin:flow-react:jar:25.1.0:compile
+|  |     +- com.vaadin:flow-html-components:jar:25.1.0:compile
+|  |     +- com.vaadin:flow-data:jar:25.1.0:compile
+|  |     +- com.vaadin:flow-dnd:jar:25.1.0:compile
+|  |     +- com.vaadin:vaadin-lumo-theme:jar:25.1.0:compile
+|  |     |  \- com.vaadin:vaadin-icons-flow:jar:25.1.0:compile
+|  |     |     \- com.vaadin:vaadin-flow-components-base:jar:25.1.0:compile
+|  |     +- com.vaadin:vaadin-aura-theme:jar:25.1.0:compile
+|  |     \- com.vaadin:vaadin-core-components:jar:25.1.0:compile
+|  |        +- com.vaadin:vaadin-ai-components-flow:jar:25.1.0:compile
+|  |        |  \- io.projectreactor:reactor-core:jar:3.8.5:compile
+|  |        |     \- org.reactivestreams:reactive-streams:jar:1.0.4:compile
+|  |        +- com.vaadin:vaadin-accordion-flow:jar:25.1.0:compile
+|  |        +- com.vaadin:vaadin-avatar-flow:jar:25.1.0:compile
+|  |        +- com.vaadin:vaadin-badge-flow:jar:25.1.0:compile
+|  |        +- com.vaadin:vaadin-button-flow:jar:25.1.0:compile
+|  |        +- com.vaadin:vaadin-card-flow:jar:25.1.0:compile
+|  |        +- com.vaadin:vaadin-checkbox-flow:jar:25.1.0:compile
+|  |        +- com.vaadin:vaadin-combo-box-flow:jar:25.1.0:compile
+|  |        +- com.vaadin:vaadin-confirm-dialog-flow:jar:25.1.0:compile
+|  |        +- com.vaadin:vaadin-custom-field-flow:jar:25.1.0:compile
+|  |        +- com.vaadin:vaadin-date-picker-flow:jar:25.1.0:compile
+|  |        +- com.vaadin:vaadin-date-time-picker-flow:jar:25.1.0:compile
+|  |        +- com.vaadin:vaadin-details-flow:jar:25.1.0:compile
+|  |        +- com.vaadin:vaadin-time-picker-flow:jar:25.1.0:compile
+|  |        +- com.vaadin:vaadin-select-flow:jar:25.1.0:compile
+|  |        +- com.vaadin:vaadin-side-nav-flow:jar:25.1.0:compile
+|  |        +- com.vaadin:vaadin-dialog-flow:jar:25.1.0:compile
+|  |        +- com.vaadin:vaadin-form-layout-flow:jar:25.1.0:compile
+|  |        +- com.vaadin:vaadin-field-highlighter-flow:jar:25.1.0:compile
+|  |        +- com.vaadin:vaadin-grid-flow:jar:25.1.0:compile
+|  |        +- com.vaadin:vaadin-virtual-list-flow:jar:25.1.0:compile
+|  |        +- com.vaadin:vaadin-list-box-flow:jar:25.1.0:compile
+|  |        +- com.vaadin:vaadin-login-flow:jar:25.1.0:compile
+|  |        +- com.vaadin:vaadin-markdown-flow:jar:25.1.0:compile
+|  |        +- com.vaadin:vaadin-master-detail-layout-flow:jar:25.1.0:compile
+|  |        +- com.vaadin:vaadin-messages-flow:jar:25.1.0:compile
+|  |        +- com.vaadin:vaadin-ordered-layout-flow:jar:25.1.0:compile
+|  |        +- com.vaadin:vaadin-progress-bar-flow:jar:25.1.0:compile
+|  |        +- com.vaadin:vaadin-popover-flow:jar:25.1.0:compile
+|  |        +- com.vaadin:vaadin-radio-button-flow:jar:25.1.0:compile
+|  |        +- com.vaadin:vaadin-renderer-flow:jar:25.1.0:compile
+|  |        +- com.vaadin:vaadin-slider-flow:jar:25.1.0:compile
+|  |        +- com.vaadin:vaadin-split-layout-flow:jar:25.1.0:compile
+|  |        +- com.vaadin:vaadin-tabs-flow:jar:25.1.0:compile
+|  |        +- com.vaadin:vaadin-text-field-flow:jar:25.1.0:compile
+|  |        +- com.vaadin:vaadin-upload-flow:jar:25.1.0:compile
+|  |        +- com.vaadin:vaadin-notification-flow:jar:25.1.0:compile
+|  |        +- com.vaadin:vaadin-app-layout-flow:jar:25.1.0:compile
+|  |        +- com.vaadin:vaadin-context-menu-flow:jar:25.1.0:compile
+|  |        +- com.vaadin:vaadin-menu-bar-flow:jar:25.1.0:compile
+|  |        \- com.vaadin:collaboration-engine:jar:7.0.0:compile
+|  \- org.springframework.boot:spring-boot-starter-webmvc:jar:4.0.6:compile
++- com.vaadin:vaadin-dev:jar:25.1.0:compile (optional)
+|  +- com.vaadin:vaadin-dev-server:jar:25.1.0:compile (optional)
+|  |  +- com.vaadin:flow-build-tools:jar:shaded:25.1.0:compile (optional)
+|  |  |  \- org.ow2.asm:asm:jar:9.9.1:compile
+|  |  +- com.vaadin:license-checker:jar:3.0.1:compile (optional)
+|  |  |  \- com.nimbusds:nimbus-jose-jwt:jar:10.3.1:compile (optional)
+|  |  +- com.vaadin:open:jar:8.5.0.5:compile (optional)
+|  |  +- com.github.javaparser:javaparser-core:jar:3.28.0:compile (optional)
+|  |  \- io.methvin:directory-watcher:jar:0.19.1:compile (optional)
+|  |     \- net.java.dev.jna:jna:jar:5.18.1:compile (optional)
+|  +- com.vaadin:vaadin-dev-bundle:jar:25.1.0:compile (optional)
+|  \- com.vaadin:copilot:jar:25.1.0:compile (optional)
+|     \- com.vaadin:ui-tests:jar:1.1.6:compile (optional)
++- org.hibernate.orm:hibernate-processor:jar:7.0.0.CR1:compile (optional)
+|  +- org.hibernate.orm:hibernate-core:jar:7.2.12.Final:compile
+|  |  +- jakarta.persistence:jakarta.persistence-api:jar:3.2.0:compile
+|  |  +- jakarta.transaction:jakarta.transaction-api:jar:2.0.1:compile
+|  |  +- com.fasterxml:classmate:jar:1.7.3:compile
+|  |  \- jakarta.inject:jakarta.inject-api:jar:2.0.1:runtime
+|  +- org.hibernate.models:hibernate-models:jar:1.0.0.CR1:compile
+|  +- io.smallrye:jandex:jar:3.3.0:compile (optional)
+|  +- jakarta.xml.bind:jakarta.xml.bind-api:jar:4.0.4:compile
+|  |  \- jakarta.activation:jakarta.activation-api:jar:2.1.4:compile
+|  +- org.glassfish.jaxb:jaxb-runtime:jar:4.0.6:compile
+|  |  \- org.glassfish.jaxb:jaxb-core:jar:4.0.6:compile
+|  |     +- org.eclipse.angus:angus-activation:jar:2.0.3:runtime
+|  |     +- org.glassfish.jaxb:txw2:jar:4.0.6:compile
+|  |     \- com.sun.istack:istack-commons-runtime:jar:4.1.2:compile
+|  +- jakarta.validation:jakarta.validation-api:jar:3.1.1:compile
+|  +- jakarta.annotation:jakarta.annotation-api:jar:3.0.0:compile
+|  +- org.antlr:antlr4-runtime:jar:4.13.2:compile
+|  +- net.bytebuddy:byte-buddy:jar:1.17.8:compile
+|  \- org.jboss.logging:jboss-logging:jar:3.6.3.Final:compile
++- org.postgresql:postgresql:jar:42.7.10:runtime
+|  \- org.checkerframework:checker-qual:jar:3.52.0:compile
++- com.h2database:h2:jar:2.4.240:test
++- org.liquibase:liquibase-core:jar:5.0.2:compile
+|  +- org.yaml:snakeyaml:jar:2.5:compile
+|  +- org.apache.commons:commons-collections4:jar:4.5.0:compile
+|  +- org.apache.commons:commons-text:jar:1.15.0:compile
+|  +- com.opencsv:opencsv:jar:5.12.0:compile
+|  +- javax.xml.bind:jaxb-api:jar:2.3.1:compile
+|  \- org.apache.commons:commons-lang3:jar:3.19.0:compile
++- org.projectlombok:lombok:jar:1.18.46:compile (optional)
++- com.vaadin:browserless-test-junit6:jar:1.0.0:test
+|  +- com.vaadin:browserless-test-shared:jar:1.0.0:test
+|  |  +- io.github.classgraph:classgraph:jar:4.8.184:test
+|  |  +- jakarta.servlet:jakarta.servlet-api:jar:6.1.0:test
+|  |  \- tools.jackson.core:jackson-databind:jar:3.1.2:compile
+|  +- org.junit.jupiter:junit-jupiter:jar:6.0.3:test
+|  |  +- org.junit.jupiter:junit-jupiter-api:jar:6.0.3:test
+|  |  +- org.junit.jupiter:junit-jupiter-params:jar:6.0.3:test
+|  |  \- org.junit.jupiter:junit-jupiter-engine:jar:6.0.3:test
+|  +- org.junit.platform:junit-platform-engine:jar:6.0.3:test
+|  |  +- org.opentest4j:opentest4j:jar:1.3.0:test
+|  |  +- org.junit.platform:junit-platform-commons:jar:6.0.3:test
+|  |  +- org.apiguardian:apiguardian-api:jar:1.1.2:test
+|  |  \- org.jspecify:jspecify:jar:1.0.0:compile
+|  +- org.jetbrains.kotlin:kotlin-stdlib-jdk8:jar:2.2.21:compile
+|  |  +- org.jetbrains.kotlin:kotlin-stdlib:jar:2.2.21:compile
+|  |  |  \- org.jetbrains:annotations:jar:13.0:compile
+|  |  \- org.jetbrains.kotlin:kotlin-stdlib-jdk7:jar:2.2.21:compile
+|  \- org.jetbrains.kotlin:kotlin-reflect:jar:2.2.21:test
++- org.springframework.boot:spring-boot-starter-test:jar:4.0.6:test
+|  +- org.springframework.boot:spring-boot-test:jar:4.0.6:test
+|  +- org.springframework.boot:spring-boot-test-autoconfigure:jar:4.0.6:test
+|  +- com.jayway.jsonpath:json-path:jar:2.10.0:test
+|  +- net.minidev:json-smart:jar:2.6.0:test
+|  |  \- net.minidev:accessors-smart:jar:2.6.0:test
+|  +- org.assertj:assertj-core:jar:3.27.7:test
+|  +- org.awaitility:awaitility:jar:4.3.0:test
+|  +- org.hamcrest:hamcrest:jar:3.0:test
+|  +- org.mockito:mockito-core:jar:5.20.0:test
+|  |  +- net.bytebuddy:byte-buddy-agent:jar:1.17.8:test
+|  |  \- org.objenesis:objenesis:jar:3.3:test
+|  +- org.mockito:mockito-junit-jupiter:jar:5.20.0:test
+|  +- org.skyscreamer:jsonassert:jar:1.5.3:test
+|  |  \- com.vaadin.external.google:android-json:jar:0.0.20131108.vaadin1:test
+|  +- org.springframework:spring-core:jar:7.0.7:compile
+|  |  \- commons-logging:commons-logging:jar:1.3.6:compile
+|  +- org.springframework:spring-test:jar:7.0.7:test
+|  \- org.xmlunit:xmlunit-core:jar:2.10.4:test
++- com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:jar:2.21.2:compile
+|  +- com.fasterxml.jackson.core:jackson-databind:jar:2.21.2:compile
+|  \- com.fasterxml.jackson.core:jackson-core:jar:2.21.2:compile
+\- com.fasterxml.jackson.datatype:jackson-datatype-jsr310:jar:2.21.2:compile
+   \- com.fasterxml.jackson.core:jackson-annotations:jar:2.21:compile
