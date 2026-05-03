@@ -61,12 +61,14 @@ See [Architecture.md](./ARCHITECTURE.md)
 - translations de/en angleichen
 - game urls not shown on meetup detail page view
 - game complexity capped at 1 decimal
+- logout shown in main bar even if user is anon
 
 # ToDos - Features
 
 - Security upgrade
     - pw reset flow
     - rate limiting
+- remove back button, make "BGMO" clickable & lead to dashboard
 - meetup MeetupEditView
     - Reschedule events
 - meetup details expanded
