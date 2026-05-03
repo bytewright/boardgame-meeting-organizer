@@ -1,22 +1,30 @@
 # Stage 1: Build
+FROM ghcr.io/jqlang/jq:latest AS jq-stage
 FROM eclipse-temurin:21-jdk-jammy AS build
-WORKDIR /app
-COPY . .
-RUN ./mvnw clean package -DskipTests
+COPY --from=jq-stage /jq /usr/bin/jq
+# Test that jq works after copying
+RUN jq --version
+
+ENV HOME=/app
+RUN mkdir -p $HOME
+WORKDIR $HOME
+COPY . $HOME
+
 
 # Stage 2: Runtime
 FROM eclipse-temurin:21-jre-jammy
 WORKDIR /app
 
-# Create directories for persistent data[cite: 1]
+# Create directories for persistent data
 RUN mkdir logs data
 
-# Copy the jar from build stage[cite: 1]
-# Uses wildcards to handle the version: 0.0.1-SNAPSHOT[cite: 2]
-COPY --from=build /app/target/boardgame-meeting-organizer-*.jar app.jar
+RUN ./mvnw clean package -DskipTests
 
-# Standard Spring Boot port[cite: 1]
+# Copy the jar from build stage
+FROM eclipse-temurin:21-jre-alpine
+COPY --from=build /app/target/*.jar app.jar
+
+# Standard Spring Boot port
 EXPOSE 8080
 
-# Run without hardcoded SQLite string to allow Environment Variable overrides[cite: 4]
-ENTRYPOINT ["java", "-jar", "app.jar"]
+ENTRYPOINT ["java", "-jar", "app.jar", "--spring.profiles.active=prod"]

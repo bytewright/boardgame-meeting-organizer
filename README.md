@@ -42,14 +42,15 @@ See [Architecture.md](./ARCHITECTURE.md)
 # Deployment
 
 - should happen with docker, needs some env vars:
-    - APP_ADMIN_PASSWORD = plain text for `admin` account
-    - APP_PASSWORD_PEPPER = global password hasher pepper
-    - DB_USER
-    - DB_PASS
-    - TELEGRAM_BOT_TOKEN
-    - TELEGRAM_BOT_USERNAME
-    - TELEGRAM_BOT_DISPLAYNAME
-    - TELEGRAM_BOT_GRP_CHAT_ID
+  - APP_BASE_URL
+  - APP_ADMIN_PASSWORD = plain text for `admin` account
+  - APP_PASSWORD_PEPPER = global password hasher pepper
+  - DB_USER
+  - DB_PASS
+  - TELEGRAM_BOT_TOKEN
+  - TELEGRAM_BOT_USERNAME
+  - TELEGRAM_BOT_DISPLAYNAME
+  - TELEGRAM_BOT_GRP_CHAT_ID
 - volumes:
     - /app/logs/
     - /app/db/
@@ -58,6 +59,8 @@ See [Architecture.md](./ARCHITECTURE.md)
 
 - Locale switcher geht nicht/wird nicht angewandt
 - translations de/en angleichen
+- game urls not shown on meetup detail page view
+- game complexity capped at 1 decimal
 
 # ToDos - Features
 
@@ -67,6 +70,11 @@ See [Architecture.md](./ARCHITECTURE.md)
 - meetup MeetupEditView
     - Reschedule events
 - meetup details expanded
-    - Gamecards could include tags like "worker placement"
-    - Event game poll
+  - Add link text for game urls
+  - Gamecards could include tags like "worker placement"
+  - Event game poll
+  - meetup links: use something else than db uuid as identifier
 - FavIcon
+- baseUrl as mini adapter so it's editable in admin site
+- Registration closed date on meetup detail view
+- add github link to impressum

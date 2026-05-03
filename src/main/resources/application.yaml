@@ -12,7 +12,8 @@ spring:
   main:
     banner-mode: "off"
   server:
-    forward-headers-strategy: native
+    # tell spring to use https, resolved by nginx beforehand
+    forward-headers-strategy: framework
 vaadin:
   launch-browser: false
   productionMode: true
