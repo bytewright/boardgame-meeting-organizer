@@ -34,13 +34,18 @@ public class BgmoUserDetailsService implements UserDetailsService, UserDetailsPa
         .build();
   }
 
-  public RegisteredUser updatePasswordAndPersist(RegisteredUser user, String newPassword) {
-    String encodedPw = hashPw(newPassword);
+  public void updatePasswordEncodeFirstAndPersist(RegisteredUser user, String newPassword) {
     if (passwordEncoder.matches(newPassword, user.getPasswordHash())) {
-      return user;
+      log.debug("Update password was called but given PW for user matches old pw, skipping...");
+      return;
     }
+    String encodedPw = hashPw(newPassword);
+    updatePasswordAndPersist(user, encodedPw);
+  }
+
+  public RegisteredUser updatePasswordAndPersist(RegisteredUser user, String newPassword) {
     log.info("User {} changed his password", user.logEntity());
-    user.setPasswordHash(encodedPw);
+    user.setPasswordHash(newPassword);
     return userDao.createOrUpdate(user);
   }
 
@@ -51,6 +56,7 @@ public class BgmoUserDetailsService implements UserDetailsService, UserDetailsPa
   @Override
   public UserDetails updatePassword(UserDetails user, String newPassword) {
     RegisteredUser registeredUser = toRegisteredUser(user);
+    log.info("Updating PW for user {}", registeredUser.logEntity());
     return userDetailsFromRegisteredUserEntity(
         updatePasswordAndPersist(registeredUser, newPassword));
   }

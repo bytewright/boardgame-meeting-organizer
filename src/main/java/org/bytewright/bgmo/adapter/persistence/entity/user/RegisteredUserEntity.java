@@ -42,6 +42,7 @@ public class RegisteredUserEntity extends AbstractEntity<UUID> implements HasUUI
   @Column(nullable = false, length = 1024)
   private String displayName;
 
+  @ToString.Exclude
   @Column(nullable = false, length = 512)
   private String passwordHash;
 

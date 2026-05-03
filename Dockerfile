@@ -8,15 +8,15 @@ RUN ./mvnw clean package -DskipTests
 FROM eclipse-temurin:21-jre-jammy
 WORKDIR /app
 
-# Create directories for persistent data
+# Create directories for persistent data[cite: 1]
 RUN mkdir logs data
 
-# Copy the jar from build stage
+# Copy the jar from build stage[cite: 1]
+# Uses wildcards to handle the version: 0.0.1-SNAPSHOT[cite: 2]
 COPY --from=build /app/target/boardgame-meeting-organizer-*.jar app.jar
 
-# Standard Spring Boot port
+# Standard Spring Boot port[cite: 1]
 EXPOSE 8080
 
-# Run with SQLite location and Log path passed as properties
-ENTRYPOINT ["java", "-jar", "app.jar", \
-            "--spring.datasource.url=jdbc:sqlite:/app/data/bgmo.db"]
+# Run without hardcoded SQLite string to allow Environment Variable overrides[cite: 4]
+ENTRYPOINT ["java", "-jar", "app.jar"]

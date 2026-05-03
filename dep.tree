@@ -151,14 +151,14 @@ org.bytewright.bgmo:boardgame-meeting-organizer:jar:0.0.1-SNAPSHOT
 |  +- com.vaadin:vaadin-dev-bundle:jar:25.1.0:compile (optional)
 |  \- com.vaadin:copilot:jar:25.1.0:compile (optional)
 |     \- com.vaadin:ui-tests:jar:1.1.6:compile (optional)
-+- org.hibernate.orm:hibernate-processor:jar:7.0.0.CR1:compile (optional)
++- org.hibernate.orm:hibernate-processor:jar:7.2.12.Final:compile (optional)
 |  +- org.hibernate.orm:hibernate-core:jar:7.2.12.Final:compile
 |  |  +- jakarta.persistence:jakarta.persistence-api:jar:3.2.0:compile
 |  |  +- jakarta.transaction:jakarta.transaction-api:jar:2.0.1:compile
 |  |  +- com.fasterxml:classmate:jar:1.7.3:compile
 |  |  \- jakarta.inject:jakarta.inject-api:jar:2.0.1:runtime
-|  +- org.hibernate.models:hibernate-models:jar:1.0.0.CR1:compile
-|  +- io.smallrye:jandex:jar:3.3.0:compile (optional)
+|  +- org.hibernate.models:hibernate-models:jar:1.0.1:compile
+|  +- io.smallrye:jandex:jar:3.3.2:compile (optional)
 |  +- jakarta.xml.bind:jakarta.xml.bind-api:jar:4.0.4:compile
 |  |  \- jakarta.activation:jakarta.activation-api:jar:2.1.4:compile
 |  +- org.glassfish.jaxb:jaxb-runtime:jar:4.0.6:compile

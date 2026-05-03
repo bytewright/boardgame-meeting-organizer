@@ -2,16 +2,14 @@ package org.bytewright.bgmo.adapter.api.frontend.view;
 
 import static org.bytewright.bgmo.domain.service.CoreAppContextConfig.APP_NAME_SHORT;
 
+import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.combobox.ComboBox;
-import com.vaadin.flow.component.html.H1;
-import com.vaadin.flow.component.html.Hr;
-import com.vaadin.flow.component.html.Paragraph;
-import com.vaadin.flow.component.html.Span;
-import com.vaadin.flow.component.notification.Notification;
-import com.vaadin.flow.component.notification.NotificationVariant;
+import com.vaadin.flow.component.html.*;
+import com.vaadin.flow.component.icon.Icon;
+import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
@@ -79,7 +77,7 @@ public class RegistrationView extends VerticalLayout {
     header.add(title, localePicker);
 
     // --- Account Fields ---
-    Binder<RegisteredUser.Creation> binder = new Binder<>();
+    Binder<RegisteredUser.Creation.CreationBuilder> binder = new Binder<>();
     RegisteredUser.Creation.CreationBuilder dto = RegisteredUser.Creation.builder();
 
     TextField loginName = new TextField(getTranslation("register.field.loginName"));
@@ -92,7 +90,7 @@ public class RegistrationView extends VerticalLayout {
         .withValidator(
             userWorkflows::validateLoginName,
             getTranslation("register.error.loginName.alreadyTaken"))
-        .bind(c -> "", (c, v) -> dto.loginName(v));
+        .bind(c -> "", RegisteredUser.Creation.CreationBuilder::loginName);
 
     TextField displayName = new TextField(getTranslation("register.field.displayName"));
     displayName.setWidthFull();
@@ -104,7 +102,7 @@ public class RegistrationView extends VerticalLayout {
         .withValidator(
             userWorkflows::validateDisplayName,
             getTranslation("register.error.displayName.invalid")) // profanity filter
-        .bind(c -> "", (c, v) -> dto.displayName(v));
+        .bind(c -> "", RegisteredUser.Creation.CreationBuilder::displayName);
 
     PasswordField password = new PasswordField(getTranslation("register.field.password"));
     password.setWidthFull();
@@ -115,7 +113,7 @@ public class RegistrationView extends VerticalLayout {
         .withValidator(
             v -> v.length() >= PasswordRules.PW_MIN_CHARS,
             getTranslation("register.error.password.tooShort"))
-        .bind(c -> "", (c, v) -> dto.password(v));
+        .bind(c -> "", RegisteredUser.Creation.CreationBuilder::password);
 
     PasswordField passwordConfirm =
         new PasswordField(getTranslation("register.field.passwordConfirm"));
@@ -141,19 +139,25 @@ public class RegistrationView extends VerticalLayout {
         buildIntroArea(
             getTranslation("register.intro.aboutYourself"),
             getTranslation("register.intro.aboutYourself.hint"));
-    binder.forField(aboutYourself).bind(c -> "", (c, v) -> dto.introAboutYourself(v));
+    binder
+        .forField(aboutYourself)
+        .bind(c -> "", RegisteredUser.Creation.CreationBuilder::introAboutYourself);
 
     TextArea howDidYouHear =
         buildIntroArea(
             getTranslation("register.intro.howDidYouHear"),
             getTranslation("register.intro.howDidYouHear.hint"));
-    binder.forField(howDidYouHear).bind(c -> "", (c, v) -> dto.introHowDidYouHear(v));
+    binder
+        .forField(howDidYouHear)
+        .bind(c -> "", RegisteredUser.Creation.CreationBuilder::introHowDidYouHear);
 
     TextArea whoInvitedYou =
         buildIntroArea(
             getTranslation("register.intro.whoInvitedYou"),
             getTranslation("register.intro.whoInvitedYou.hint"));
-    binder.forField(whoInvitedYou).bind(c -> "", (c, v) -> dto.introWhoInvitedYou(v));
+    binder
+        .forField(whoInvitedYou)
+        .bind(c -> "", RegisteredUser.Creation.CreationBuilder::introWhoInvitedYou);
 
     // --- Submit ---
     Button submit = new Button(getTranslation("register.action.submit"));
@@ -161,13 +165,12 @@ public class RegistrationView extends VerticalLayout {
     submit.setWidthFull();
     submit.addClickListener(
         e -> {
-          if (binder.validate().isOk()) {
+          if (binder.writeBeanIfValid(dto)) {
             dto.preferredLocale(localePicker.getValue());
             userWorkflows.create(dto.build());
-            Notification notification =
-                Notification.show(getTranslation("register.status.submitted"));
-            notification.addThemeVariants(NotificationVariant.LUMO_SUCCESS);
-            UI.getCurrent().navigate(LoginView.class);
+
+            card.removeAll();
+            card.add(buildSuccessView());
           }
         });
 
@@ -193,6 +196,32 @@ public class RegistrationView extends VerticalLayout {
         footer);
 
     return card;
+  }
+
+  private Component buildSuccessView() {
+    VerticalLayout content = new VerticalLayout();
+    content.setAlignItems(Alignment.CENTER);
+    content.setSpacing(true);
+    content.setPadding(true);
+    Icon sucessIcon = VaadinIcon.CHECK.create();
+    sucessIcon.setSize("var(--lumo-icon-size-l)");
+    sucessIcon.getStyle().set("color", "var(--lumo-secondary-text-color)");
+
+    H2 successTitle = new H2(getTranslation("register.success.title"));
+    successTitle.getStyle().set("margin", "0");
+    Paragraph message = new Paragraph(getTranslation("register.success.message"));
+    message
+        .getStyle()
+        .set("color", "var(--lumo-secondary-text-color)")
+        .set("text-align", "center")
+        .set("max-width", "420px");
+
+    Button goToLogin = new Button(getTranslation("register.success.action.login"));
+    goToLogin.addThemeVariants(ButtonVariant.LUMO_PRIMARY, ButtonVariant.LUMO_LARGE);
+    goToLogin.addClickListener(e -> UI.getCurrent().navigate(LoginView.class));
+
+    content.add(sucessIcon, successTitle, message, goToLogin);
+    return content;
   }
 
   private TextArea buildIntroArea(String label, String placeholder) {

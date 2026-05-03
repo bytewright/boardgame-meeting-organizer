@@ -1,5 +1,7 @@
 package org.bytewright.bgmo.adapter.api.frontend;
 
+import com.vaadin.flow.component.UI;
+import com.vaadin.flow.server.VaadinSession;
 import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -32,9 +34,9 @@ public class SessionAuthenticationService implements CurrentUserAccessor {
 
   public void logout() {
     // bgmoVaadinWebSecurity.getAuthenticationContext().logout();
-    // Vaadin's logout should invalidate the session;
     // SecurityContextHolder is cleared automatically
-    // UI.getCurrent().getPage().setLocation("/logout");
+    VaadinSession.getCurrent().getSession().invalidate();
+    UI.getCurrent().getPage().setLocation("/dashboard");
   }
 
   public void passwordReset() {

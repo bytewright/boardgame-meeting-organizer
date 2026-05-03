@@ -79,7 +79,9 @@ public class MeetupEntity extends AbstractEntity<UUID> implements HasUUID {
   @ToString.Exclude
   @Builder.Default
   @Setter(AccessLevel.NONE)
-  @OrderBy(MeetupJoinRequestEntity_.TS_CREATION + " ASC")
+  // hibernate 7 is validating this at compile time, apparently before MetaModel is ready.
+  // That's why @OrderBy is using plain text
+  @OrderBy("tsCreation ASC")
   private List<MeetupJoinRequestEntity> joinRequests = new ArrayList<>();
 
   @ManyToMany(fetch = FetchType.LAZY)

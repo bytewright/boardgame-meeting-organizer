@@ -1,5 +1,6 @@
 package org.bytewright.bgmo.domain.service.security;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 /**
@@ -9,6 +10,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
  *
  * <p>Rotate it like a secret if compromised, rotation is hard → requires password reset campaign
  */
+@Slf4j
 public class PepperingPasswordEncoder implements PasswordEncoder {
 
   private final PasswordEncoder delegate;
@@ -31,6 +33,7 @@ public class PepperingPasswordEncoder implements PasswordEncoder {
 
   @Override
   public boolean upgradeEncoding(String encodedPassword) {
+    log.debug("Upgrading encoding of user pw!");
     return delegate.upgradeEncoding(encodedPassword);
   }
 }

@@ -33,3 +33,4 @@ target/
 /src/main/resources/application-local.yaml
 /data/bgmo.db
 /src/main/resources/blocklists/
+/deploy.md

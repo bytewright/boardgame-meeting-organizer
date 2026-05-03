@@ -30,7 +30,6 @@ public class TelegramBot implements LongPollingSingleThreadUpdateConsumer {
       TelegramAdapterProperties adapterProperties, VerificationCodeService verificationService) {
     telegramClient = new OkHttpTelegramClient(adapterProperties.getBotToken());
     this.verificationService = verificationService;
-    log.info("created bot: {}", adapterProperties);
   }
 
   @Override

@@ -13,6 +13,7 @@ import org.bytewright.bgmo.domain.model.user.ValidationResult;
 import org.bytewright.bgmo.domain.service.BgmoProperties;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 @Slf4j
 @Service
@@ -40,17 +41,27 @@ public class DisplayNameValidationService implements InitializingBean {
 
   @Override
   public void afterPropertiesSet() throws Exception {
-    if (bgmoProperties.getProfanityFilterListPath() == null) {
+    if (bgmoProperties.getProfanityFilterListPath() == null
+        || !StringUtils.hasText(bgmoProperties.getProfanityFilterListPath())) {
       log.error("Profanity list app property is not set!");
       return;
     }
+    // todo fix loading from classpath
+    if (true) return;
     Path path = Path.of(bgmoProperties.getProfanityFilterListPath());
     if (!Files.exists(path)) {
       log.error("Can't find File with path: {}", path.toAbsolutePath());
       return;
     }
-    List<String> strings = Files.readAllLines(path);
-    blocklist.addAll(strings);
+    try {
+      List<String> strings = Files.readAllLines(path);
+      blocklist.addAll(strings);
+    } catch (Exception e) {
+      log.error(
+          "Found file with path '{}' but its not readable by application",
+          path.toAbsolutePath(),
+          e);
+    }
   }
 
   /** Normalize: lowercase, leet-decode, strip non-alpha */

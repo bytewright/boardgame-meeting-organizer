@@ -11,6 +11,7 @@ import org.bytewright.bgmo.domain.model.MeetupEvent;
 import org.bytewright.bgmo.domain.model.MeetupJoinRequest;
 import org.bytewright.bgmo.domain.model.RequestState;
 import org.bytewright.bgmo.domain.model.user.RegisteredUser;
+import org.bytewright.bgmo.domain.service.BgmoProperties;
 import org.bytewright.bgmo.domain.service.automation.TimeSource;
 import org.bytewright.bgmo.domain.service.data.MeetupDao;
 import org.bytewright.bgmo.domain.service.data.ModelDao;
@@ -25,6 +26,7 @@ import org.springframework.stereotype.Service;
 public class MeetupWorkflows {
   private final NotificationManager notificationManager;
   private final ModelDao<MeetupJoinRequest> joinRequestModelDao;
+  private final BgmoProperties bgmoProperties;
   private final RegisteredUserDao userDao;
   private final MeetupDao meetupDao;
   private final TimeSource timeSource;
@@ -53,7 +55,7 @@ public class MeetupWorkflows {
             .build();
     MeetupEvent persisted = meetupDao.createOrUpdate(meetupEvent);
     notificationManager.addNewEventCreatedTask(persisted.id());
-    log.info("Available at: http://localhost:8080/meetup/{}", persisted.id());
+    log.info("Available at: {}meetup/{}", bgmoProperties.getBaseUrl(), persisted.id());
     return persisted;
   }
 

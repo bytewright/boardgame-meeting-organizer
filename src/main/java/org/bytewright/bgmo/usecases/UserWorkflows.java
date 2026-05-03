@@ -39,6 +39,7 @@ public class UserWorkflows {
    * RegisteredUserDao#createOrUpdate(HasUUID)}
    */
   public RegisteredUser create(RegisteredUser.Creation userDto) {
+    log.info("New user registered");
     RegisteredUser newUser =
         userDao.createOrUpdate(
             RegisteredUser.builder()
@@ -149,7 +150,7 @@ public class UserWorkflows {
       throw new IllegalArgumentException(
           "New PW for user %s violates password rules".formatted(userId));
     }
-    userDetailsService.updatePasswordAndPersist(user, newPassword);
+    userDetailsService.updatePasswordEncodeFirstAndPersist(user, newPassword);
   }
 
   public void changeLocale(UUID userId, Locale value) {

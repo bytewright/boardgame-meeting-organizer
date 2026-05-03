@@ -9,5 +9,5 @@ import lombok.extern.jackson.Jacksonized;
 @Jacksonized
 public class BggAdapterSettings {
   @Builder.Default private String displayName = "BoardGameGeek";
-  @Builder.Default private String logoLink = "/images/poweredByBggLogo.webp";
+  @Builder.Default private String logoLink = "assets/images/poweredByBggLogo.webp";
 }

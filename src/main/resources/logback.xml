@@ -27,8 +27,9 @@
     </appender>
 
     <logger name="org.bytewright" level="debug"/>
+    <logger name="org.springframework.security.authentication" level="debug"/>
 
-    <root level="INFO">
+    <root level="info">
         <appender-ref ref="CONSOLE"/>
         <appender-ref ref="ROLLING-FILE"/>
     </root>

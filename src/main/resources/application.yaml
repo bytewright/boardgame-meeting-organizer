@@ -1,17 +1,21 @@
 spring:
-  datasource:
-    url: jdbc:postgresql://localhost:5432/bgmo_db
-    username: ${DB_USER}
-    password: ${DB_PASS}
+  #datasource is set by using the spring default env placeholders
+  #datasource:
+  #  url: ${SPRING_DATASOURCE_URL}
+  #  username: ${SPRING_DATASOURCE_USERNAME}
+  #  password: ${SPRING_DATASOURCE_PASSWORD}
   liquibase:
     enabled: true
     change-log: classpath:db/changelog/db.changelog-master.yaml
   messages:
     basename: vaadin-i18n/translations
-  profiles:
-    active: local # Use gitignored other application-local.yaml
+  main:
+    banner-mode: "off"
+  server:
+    forward-headers-strategy: native
 vaadin:
-  launch-browser: true
+  launch-browser: false
+  productionMode: true
 bgmo:
   adapter:
     bot:
@@ -23,7 +27,7 @@ bgmo:
         group-chat-id: "${TELEGRAM_BOT_GRP_CHAT_ID:}"
         group-locale: DE
   core.services:
-    base-url: "http://some-domain.org/"
+    base-url: "${APP_BASE_URL:}"
     automation-autostart: false
     security-pw-pepper: "${APP_PASSWORD_PEPPER:}"
-    profanityFilterListPath: "./src/main/resources/blocklists/de_profanity"
+    profanityFilterListPath: "${APP_PROFANITY_BLOCK_LIST:}"

@@ -108,7 +108,7 @@ public class AdminWorkflows {
         "Admin '{}' generated a temporary password for user {}",
         admin.logEntity(),
         user.logEntity());
-    userDetailsService.updatePasswordAndPersist(user, tempPassword);
+    userDetailsService.updatePasswordEncodeFirstAndPersist(user, tempPassword);
     return tempPassword;
   }
 

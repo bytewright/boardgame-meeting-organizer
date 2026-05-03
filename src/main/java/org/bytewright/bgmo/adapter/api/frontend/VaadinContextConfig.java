@@ -58,7 +58,7 @@ public class VaadinContextConfig implements AppShellConfigurator, VaadinServiceI
     http.with(
         VaadinSecurityConfigurer.vaadin(),
         configurer -> {
-          configurer.loginView(LoginView.class, "/");
+          configurer.loginView(LoginView.class, "/").defaultSuccessUrl("/dashboard", true);
         });
 
     http.formLogin(cfg -> cfg.successForwardUrl("/dashboard"));
