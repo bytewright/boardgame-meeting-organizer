@@ -58,9 +58,7 @@ See [Architecture.md](./ARCHITECTURE.md)
 # ToDos - Bugs
 
 - Locale switcher geht nicht/wird nicht angewandt
-- translations de/en angleichen
 - game urls not shown on meetup detail page view
-- game complexity capped at 1 decimal
 - logout shown in main bar even if user is anon
 
 # ToDos - Features

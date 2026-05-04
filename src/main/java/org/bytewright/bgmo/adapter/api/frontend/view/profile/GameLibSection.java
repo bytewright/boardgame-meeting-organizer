@@ -113,7 +113,7 @@ public class GameLibSection extends VerticalLayout {
     bggId.setValue(game.getBggId() != null ? Math.toIntExact(game.getBggId()) : null);
     bggId.setWidthFull();
     NumberField complexity = new NumberField(getTranslation("gamelib.field.complexity"));
-    complexity.setStep(0.1);
+    complexity.setStep(0.01);
     complexity.setMin(1);
     complexity.setMax(5);
     complexity.setWidthFull();
