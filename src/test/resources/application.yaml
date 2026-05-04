@@ -18,6 +18,10 @@ bgmo:
         bot-username: "some user name"
         group-chat-id: "-1234567"
         group-locale: DE
+    bgg:
+      enabled: true
+      apiToken: "noValue"
+      bggBaseUrl: "https:///some-domain.com/xmlapi2"
   core.services:
     base-url: "http://some-domain.org/"
     automation-autostart: false

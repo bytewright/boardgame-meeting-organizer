@@ -160,8 +160,10 @@ class BggGameInformationProviderIT {
         BggApiClient bggApiClient,
         MessageSource messageSource,
         BggXmlParser bggXmlParser) {
+      BggAdapterProperties properties = new BggAdapterProperties();
+      properties.setEnabled(true);
       return new BggGameInformationProvider(
-          adapterSettingsDao, messageSource, bggApiClient, bggXmlParser);
+          properties, adapterSettingsDao, messageSource, bggApiClient, bggXmlParser);
     }
   }
 

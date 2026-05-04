@@ -27,6 +27,10 @@ bgmo:
         bot-display-name: "${TELEGRAM_BOT_DISPLAYNAME:}"
         group-chat-id: "${TELEGRAM_BOT_GRP_CHAT_ID:}"
         group-locale: DE
+    bgg:
+      enabled: true
+      apiToken: "${BGG_API_TOKEN:}"
+      bggBaseUrl: "https://boardgamegeek.com/xmlapi2"
   core.services:
     base-url: "${APP_BASE_URL:}"
     automation-autostart: false

@@ -28,6 +28,7 @@ import tools.jackson.databind.json.JsonMapper;
 public class BggGameInformationProvider
     implements GameInformationProvider, AdapterSettingsProvider {
   private static final String ADAPTER_NAME = "BggGameInformationProvider-integration";
+  private final BggAdapterProperties bggAdapterProperties;
   private final AdapterSettingsDao adapterSettingsDao;
   private final MessageSource messageSource;
   private final JsonMapper objectMapper = JsonMapperFactory.unRedactedMapper();
@@ -45,6 +46,11 @@ public class BggGameInformationProvider
         .inputHint(message)
         .inputDataValidator(s -> parseUserInput(s).isPresent())
         .build();
+  }
+
+  private boolean isEnabled() {
+    BggAdapterSettings settings = getSettings();
+    return bggAdapterProperties.isEnabled() && settings.isEnabled();
   }
 
   private Optional<Long> parseUserInput(String input) {
@@ -74,20 +80,21 @@ public class BggGameInformationProvider
     Optional<Long> optionalLong = parseUserInput(userInput);
     if (optionalLong.isEmpty()) return Optional.empty();
     long bggId = optionalLong.get();
-    if (false) {
-      log.info("Fetching game information from BGG for id={}", bggId);
-      Optional<String> xmlOpt = bggApiClient.fetchGame(bggId);
-      if (xmlOpt.isEmpty()) {
-        log.warn("Failed to use bgg api to fetch information about {}", bggId);
-        return Optional.empty();
-      }
-      Optional<Game.Creation> creation = xmlParser.parseGameCreation(xmlOpt.get(), bggId);
-      log.info(
-          "Finished fetching boardGame info from bgg for id {}: success? {}",
-          bggId,
-          creation.isPresent());
+    if (!isEnabled()) {
+      return mockBggCreation(bggId);
     }
-    return mockBggCreation(bggId);
+    log.info("Fetching game information from BGG for id={}", bggId);
+    Optional<String> xmlOpt = bggApiClient.fetchGame(bggId);
+    if (xmlOpt.isEmpty()) {
+      log.warn("Failed to use bgg api to fetch information about {}", bggId);
+      return Optional.empty();
+    }
+    Optional<Game.Creation> creation = xmlParser.parseGameCreation(xmlOpt.get(), bggId);
+    log.info(
+        "Finished fetching boardGame info from bgg for id {}: success? {}",
+        bggId,
+        creation.isPresent());
+    return creation;
   }
 
   private Optional<Game.Creation> mockBggCreation(long bggId) {

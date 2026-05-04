@@ -51,6 +51,7 @@ See [Architecture.md](./ARCHITECTURE.md)
   - TELEGRAM_BOT_USERNAME
   - TELEGRAM_BOT_DISPLAYNAME
   - TELEGRAM_BOT_GRP_CHAT_ID
+  - BGG_API_TOKEN
 - volumes:
     - /app/logs/
     - /app/db/
