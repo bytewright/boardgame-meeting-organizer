@@ -64,6 +64,10 @@ public class TelegramNotificationAdapter
   @Override
   @Async
   public void execute(NotificationContext context) {
+    if (!isEnabled()) {
+      log.info("Telegram integration is disabled, skipping execution of: {}", context.messageKey());
+      return;
+    }
     Locale targetLocale = context.locale() != null ? context.locale() : Locale.GERMAN;
     String rawMessage =
         messageSource.getMessage(
@@ -137,7 +141,7 @@ public class TelegramNotificationAdapter
   @Override
   public void onApplicationEvent(ApplicationReadyEvent event) {
     try {
-      if (!adapterProperties.isEnabled()) {
+      if (!isEnabled()) {
         log.warn("Telegram bot is disabled, skipping registering with external service.");
         return;
       }
@@ -160,7 +164,6 @@ public class TelegramNotificationAdapter
     return adapterProperties.getBotDisplayName();
   }
 
-  @SneakyThrows
   private TelegramSettings getSettings() {
     AdapterSettings adapterSettings = adapterSettingsDao.findByAdapterName(getAdapterName());
     return objectMapper.readValue(adapterSettings.getAdapterSettings(), TelegramSettings.class);

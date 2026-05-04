@@ -169,7 +169,7 @@ public class AdminSiteSettingsView extends VerticalLayout {
 
     Button resetBtn =
         new Button(
-            "Zurücksetzen",
+            "Änderungen zurücksetzen",
             VaadinIcon.REFRESH.create(),
             e -> {
               jsonArea.setValue(prettyPrint(settings.getAdapterSettings()));
