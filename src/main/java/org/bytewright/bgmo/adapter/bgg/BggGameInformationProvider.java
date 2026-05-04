@@ -101,7 +101,7 @@ public class BggGameInformationProvider
     return Optional.of(
         Game.Creation.builder()
             .bggId(bggId)
-            .url("https://boardgamegeek.com/boardgame/" + bggId)
+            .url(new Game.UserLink("https://boardgamegeek.com/boardgame/" + bggId, "BGG link"))
             .build());
   }
 

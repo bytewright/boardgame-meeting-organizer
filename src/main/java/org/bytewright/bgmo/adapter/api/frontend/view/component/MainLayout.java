@@ -67,19 +67,23 @@ public class MainLayout extends AppLayout implements RouterLayout, AfterNavigati
         .set("margin", "0 var(--lumo-space-m)");
 
     // Right Side: Action Buttons
-    Button createBtn = new Button("New Meetup", VaadinIcon.PLUS.create(), e -> openCreateDialog());
+    Button createBtn =
+        new Button(
+            getTranslation("navbar.create-meetup"),
+            VaadinIcon.PLUS.create(),
+            e -> openCreateDialog());
     createBtn.addThemeVariants(ButtonVariant.LUMO_PRIMARY, ButtonVariant.LUMO_SMALL);
 
     Button libBtn =
         new Button(
-            "Profile",
+            getTranslation("navbar.profile"),
             VaadinIcon.HANDS_UP.create(),
             e -> UI.getCurrent().navigate(ProfileView.class));
     libBtn.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
 
     Button logoutBtn =
         new Button(
-            "logout",
+            getTranslation("navbar.logout"),
             VaadinIcon.EXIT.create(),
             e -> {
               authService.logout();

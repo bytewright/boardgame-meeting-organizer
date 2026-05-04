@@ -190,11 +190,18 @@ public class MeetupWorkflows {
   public void cancelMeetup(UUID meetupId) {
     MeetupEvent meetup = meetupDao.findOrThrow(meetupId);
     log.info("Creator wants to cancel meeting: {}", meetup);
+    meetup.setCanceled(true);
+    meetupDao.createOrUpdate(meetup);
+    notificationManager.addEventCanceledTask(meetup.getId());
   }
 
   public void rescheduleEvent(UUID meetupId, ZonedDateTime newDate, ZonedDateTime newRegClose) {
     MeetupEvent meetup = meetupDao.findOrThrow(meetupId);
-    log.info("Creator wants to reschedule meeting: {}", meetup);
+    log.info("Creator wants to reschedule meeting: {}", meetup.getId());
+    meetup.setEventDate(newDate);
+    meetup.setRegistrationClosing(newRegClose);
+    meetupDao.createOrUpdate(meetup);
+    notificationManager.addEventRescheduledTask(meetup.getId());
   }
 
   public int confirmRemainingSlotsRandom(UUID meetupId) {

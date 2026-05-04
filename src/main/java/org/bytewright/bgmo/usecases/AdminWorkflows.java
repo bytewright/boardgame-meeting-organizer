@@ -30,13 +30,16 @@ public class AdminWorkflows {
   private final AdapterSettingsDao adapterSettingsDao;
   private final RegisteredUserDao userDao;
 
-  public RegisteredUser approveUser(UUID adminId, UUID userToApprove) {
+  public void approveUser(UUID adminId, UUID userToApprove) {
     RegisteredUser admin = userDao.findOrThrow(adminId);
     RegisteredUser user = userDao.findOrThrow(userToApprove);
-    log.info(
-        "Admin '{}' changes state of user {} to approved!", admin.logEntity(), user.logEntity());
     notificationManager.addUserApprovedTask(user.getId());
-    return transitionStateToApproved(user);
+    RegisteredUser persisted = transitionStateToApproved(user);
+    log.info(
+        "Admin '{}' changes state of user {} to {}!",
+        admin.logEntity(),
+        user.logEntity(),
+        persisted.getStatus());
   }
 
   private RegisteredUser transitionStateToApproved(RegisteredUser user) {
@@ -83,7 +86,7 @@ public class AdminWorkflows {
     return userDao.getRegistrationIntroText(userId).orElse("Kein Text hinterlegt.");
   }
 
-  public RegisteredUser toggleUserBanStatus(UUID userId) {
+  public void toggleUserBanStatus(UUID userId) {
     RegisteredUser admin = findActiveAdmin();
     RegisteredUser user = userDao.findOrThrow(userId);
 
@@ -94,7 +97,7 @@ public class AdminWorkflows {
       log.info("Admin '{}' banned user {}", admin.logEntity(), user.logEntity());
       user.setStatus(UserStatus.BANNED);
     }
-    return userDao.createOrUpdate(user);
+    userDao.createOrUpdate(user);
   }
 
   public String generateAndSetTemporaryPassword(UUID userId) {

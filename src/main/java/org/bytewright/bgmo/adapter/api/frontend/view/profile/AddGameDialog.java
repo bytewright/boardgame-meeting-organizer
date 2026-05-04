@@ -10,14 +10,12 @@ import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.NotificationVariant;
-import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.IntegerField;
 import com.vaadin.flow.component.textfield.NumberField;
 import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
@@ -65,7 +63,7 @@ public class AddGameDialog extends Dialog {
 
     Locale locale = getLocale();
 
-    List<SourceOption> options = new ArrayList<>();
+    java.util.List<SourceOption> options = new java.util.ArrayList<>();
     options.add(SourceOption.manual(getTranslation("gamelib.add.source.manual")));
     providers.stream().map(p -> SourceOption.fromProvider(p, locale)).forEach(options::add);
 
@@ -76,7 +74,6 @@ public class AddGameDialog extends Dialog {
     sourceCombo.setWidthFull();
     sourceCombo.setAllowCustomValue(false);
 
-    // Provider-specific area: logo + input field with hint - hidden for manual
     Image providerLogo = new Image();
     providerLogo.setHeight("32px");
     providerLogo.setVisible(false);
@@ -131,7 +128,6 @@ public class AddGameDialog extends Dialog {
 
     String input = providerInputField.getValue();
 
-    // Offline validation via the provider's own validator
     Function<String, Boolean> validator = selected.inputValidator();
     if (validator != null && !validator.apply(input)) {
       providerInputField.setInvalid(true);
@@ -172,6 +168,13 @@ public class AddGameDialog extends Dialog {
     descField.setValue(prefill.getDescription() != null ? prefill.getDescription() : "");
     descField.setWidthFull();
 
+    // -- Notes (owner-specific, not shown publicly in description) --
+    // i18n key: gamelib.field.notes
+    TextArea notesField = new TextArea(getTranslation("gamelib.field.notes"));
+    notesField.setValue(prefill.getNotes() != null ? prefill.getNotes() : "");
+    notesField.setWidthFull();
+    notesField.setHelperText(getTranslation("gamelib.field.notes.helper"));
+
     // -- Player counts --
     IntegerField minP = new IntegerField(getTranslation("gamelib.field.minPlayers"));
     minP.setValue(prefill.getMinPlayers() > 0 ? prefill.getMinPlayers() : 1);
@@ -182,11 +185,7 @@ public class AddGameDialog extends Dialog {
     maxP.setMin(1);
     maxP.setMaxWidth(160, Unit.PIXELS);
     IntegerField optimalP = new IntegerField(getTranslation("gamelib.field.optimalPlayers"));
-    if (prefill.getOptimalPlayers() != null) {
-      optimalP.setValue(prefill.getOptimalPlayers());
-    } else {
-      optimalP.setValue(3);
-    }
+    optimalP.setValue(prefill.getOptimalPlayers() != null ? prefill.getOptimalPlayers() : 3);
     optimalP.setMin(1);
     optimalP.setMaxWidth(160, Unit.PIXELS);
     HorizontalLayout playersRow = new HorizontalLayout(minP, maxP, optimalP);
@@ -213,14 +212,24 @@ public class AddGameDialog extends Dialog {
     HorizontalLayout metaRow = new HorizontalLayout(complexityField, playTimeField);
     metaRow.setWidthFull();
 
-    // -- URL list --
-    List<String> urls = new ArrayList<>();
+    // -- Tags --
+    TagEditor tagEditor = new TagEditor(prefill.getTags());
+
+    // -- URL list -- (consumers are no-ops here; handleSave reads urlListEditor.getUrls() directly)
     UrlListEditor urlListEditor =
         new UrlListEditor(
-            prefill.getUrls() != null ? prefill.getUrls() : List.of(), urls::add, urls::remove);
+            prefill.getUrls() != null ? prefill.getUrls() : List.of(), link -> {}, link -> {});
 
     phaseContainer.add(
-        nameField, artworkField, descField, playersRow, metaRow, bggIdField, urlListEditor);
+        nameField,
+        artworkField,
+        descField,
+        notesField,
+        playersRow,
+        metaRow,
+        bggIdField,
+        tagEditor,
+        urlListEditor);
 
     // -- Footer --
     Button backBtn =
@@ -236,12 +245,14 @@ public class AddGameDialog extends Dialog {
                     nameField,
                     artworkField,
                     descField,
+                    notesField,
                     minP,
                     maxP,
                     optimalP,
                     bggIdField,
                     complexityField,
                     playTimeField,
+                    tagEditor.getTags(),
                     urlListEditor.getUrls()));
     saveBtn.addThemeVariants(ButtonVariant.LUMO_PRIMARY, ButtonVariant.LUMO_SUCCESS);
 
@@ -252,13 +263,15 @@ public class AddGameDialog extends Dialog {
       TextField nameField,
       TextField artworkField,
       TextArea descField,
+      TextArea notesField,
       IntegerField minP,
       IntegerField maxP,
       IntegerField optimalP,
       IntegerField bggIdField,
       NumberField complexityField,
       IntegerField playTimeField,
-      List<String> urlList) {
+      List<String> tagList,
+      List<Game.UserLink> urlList) {
 
     if (nameField.getValue().isBlank()) {
       nameField.setInvalid(true);
@@ -267,80 +280,27 @@ public class AddGameDialog extends Dialog {
     }
     nameField.setInvalid(false);
 
-    List<String> urls = urlList.stream().filter(s -> !s.isBlank()).toList();
+    List<Game.UserLink> urls =
+        urlList.stream().filter(l -> l.url() != null && !l.url().isBlank()).toList();
 
     Game.Creation creation =
         Game.Creation.builder()
             .name(nameField.getValue())
             .artworkLink(artworkField.getValue().isBlank() ? null : artworkField.getValue())
             .description(descField.getValue().isBlank() ? null : descField.getValue())
+            .notes(notesField.getValue().isBlank() ? null : notesField.getValue())
             .minPlayers(minP.getValue() != null ? minP.getValue() : 1)
             .maxPlayers(maxP.getValue() != null ? maxP.getValue() : 1)
             .optimalPlayers(optimalP.getValue())
             .bggId(bggIdField.getValue() != null ? bggIdField.getValue().longValue() : null)
             .complexity(complexityField.getValue())
             .playTimeMinutesPerPlayer(playTimeField.getValue())
+            .tags(tagList)
             .urls(urls)
             .build();
     saveConsumer.accept(currentUser, creation);
     Notification.show(getTranslation("gamelib.notif.saved"));
     close();
-  }
-
-  // ---------------------------------------------------------------------------
-  // URL list editor
-  // ---------------------------------------------------------------------------
-
-  private VerticalLayout buildUrlListEditor(List<String> initialUrls, List<TextField> urlFields) {
-    VerticalLayout urlLayout = new VerticalLayout();
-    urlLayout.setPadding(false);
-    urlLayout.setSpacing(true);
-    urlLayout.add(new Span(getTranslation("gamelib.field.urls")));
-
-    for (String url : initialUrls) {
-      urlLayout.add(buildUrlRow(urlLayout, url, urlFields));
-    }
-
-    Button addUrlBtn =
-        new Button(
-            getTranslation("gamelib.action.add_url"),
-            VaadinIcon.PLUS.create(),
-            e -> {
-              HorizontalLayout newRow = buildUrlRow(urlLayout, "", urlFields);
-              // Insert before the "Add URL" button (last component)
-              urlLayout.addComponentAtIndex(urlLayout.getComponentCount() - 1, newRow);
-            });
-    addUrlBtn.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
-    urlLayout.add(addUrlBtn);
-
-    return urlLayout;
-  }
-
-  private HorizontalLayout buildUrlRow(
-      VerticalLayout parent, String value, List<TextField> urlFields) {
-    HorizontalLayout row = new HorizontalLayout();
-    row.setAlignItems(FlexComponent.Alignment.CENTER);
-    row.setWidthFull();
-
-    TextField urlField = new TextField();
-    urlField.setPlaceholder(getTranslation("gamelib.field.url.placeholder"));
-    urlField.setValue(value);
-    urlField.setWidthFull();
-    urlFields.add(urlField);
-
-    Button removeBtn =
-        new Button(
-            VaadinIcon.TRASH.create(),
-            e -> {
-              urlFields.remove(urlField);
-              parent.remove(row);
-            });
-    removeBtn.addThemeVariants(ButtonVariant.LUMO_ERROR, ButtonVariant.LUMO_TERTIARY);
-    removeBtn.getStyle().set("flex-shrink", "0");
-
-    row.add(urlField, removeBtn);
-    row.expand(urlField);
-    return row;
   }
 
   // ---------------------------------------------------------------------------

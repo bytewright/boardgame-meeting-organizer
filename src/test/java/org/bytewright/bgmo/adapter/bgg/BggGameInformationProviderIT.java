@@ -5,12 +5,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Optional;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
-
 import org.bytewright.bgmo.domain.model.AdapterSettings;
 import org.bytewright.bgmo.domain.model.Game;
 import org.bytewright.bgmo.domain.service.GameInformationProvider;
@@ -69,7 +67,8 @@ class BggGameInformationProviderIT {
 
     assertThat(game.getUrls())
         .isNotEmpty()
-        .contains("https://boardgamegeek.com/boardgame/" + BGG_ID_GLOOMHAVEN);
+        .element(0)
+        .returns("https://boardgamegeek.com/boardgame/" + BGG_ID_GLOOMHAVEN, Game.UserLink::url);
   }
 
   @Test
@@ -135,28 +134,28 @@ class BggGameInformationProviderIT {
       return new BggXmlParser();
     }
 
-      @Bean
-      BggApiClient bggApiClient(RestClient bggRestClient) throws IOException {
-          BggApiClient mock = Mockito.mock(BggApiClient.class);
-          Path zip = Path.of("src/test/resources/bgg/bgg-fixtures.zip");
+    @Bean
+    BggApiClient bggApiClient(RestClient bggRestClient) throws IOException {
+      BggApiClient mock = Mockito.mock(BggApiClient.class);
+      Path zip = Path.of("src/test/resources/bgg/bgg-fixtures.zip");
 
-          try (ZipFile zf = new ZipFile(zip.toFile())) {
-              Mockito.when(mock.fetchGame(9209)).thenReturn(readEntry(zf, "9209-6a8992.xml"));
-              Mockito.when(mock.fetchGame(30549)).thenReturn(readEntry(zf, "30549-15ee16.xml"));
-              Mockito.when(mock.fetchGame(174430)).thenReturn(readEntry(zf, "174430-feb6df.xml"));
-              Mockito.when(mock.fetchGame(224517)).thenReturn(readEntry(zf, "224517-17ff25.xml"));
-          }
-
-          return mock;
+      try (ZipFile zf = new ZipFile(zip.toFile())) {
+        Mockito.when(mock.fetchGame(9209)).thenReturn(readEntry(zf, "9209-6a8992.xml"));
+        Mockito.when(mock.fetchGame(30549)).thenReturn(readEntry(zf, "30549-15ee16.xml"));
+        Mockito.when(mock.fetchGame(174430)).thenReturn(readEntry(zf, "174430-feb6df.xml"));
+        Mockito.when(mock.fetchGame(224517)).thenReturn(readEntry(zf, "224517-17ff25.xml"));
       }
 
-      private Optional<String> readEntry(ZipFile zf, String name) throws IOException {
-          ZipEntry entry = zf.getEntry(name);
-          if (entry == null) return Optional.empty();
-          try (InputStream is = zf.getInputStream(entry)) {
-              return Optional.of(new String(is.readAllBytes(), StandardCharsets.UTF_8));
-          }
+      return mock;
+    }
+
+    private Optional<String> readEntry(ZipFile zf, String name) throws IOException {
+      ZipEntry entry = zf.getEntry(name);
+      if (entry == null) return Optional.empty();
+      try (InputStream is = zf.getInputStream(entry)) {
+        return Optional.of(new String(is.readAllBytes(), StandardCharsets.UTF_8));
       }
+    }
 
     @Bean
     AdapterSettingsDao adapterSettingsDao() {

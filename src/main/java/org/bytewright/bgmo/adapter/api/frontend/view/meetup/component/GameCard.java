@@ -135,8 +135,8 @@ public class GameCard extends Details {
       links.add(bggLink);
     }
 
-    for (String url : game.getUrls()) {
-      Anchor userLink = new Anchor(url, url);
+    for (var url : game.getUrls()) {
+      Anchor userLink = new Anchor(url.url(), url.displayText());
       userLink.setTarget("_blank");
       userLink.getStyle().set("font-size", "var(--lumo-font-size-s)");
       links.add(userLink);

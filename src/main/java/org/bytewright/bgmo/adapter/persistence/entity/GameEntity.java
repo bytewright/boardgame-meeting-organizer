@@ -8,7 +8,9 @@ import java.util.List;
 import java.util.UUID;
 import lombok.*;
 import org.bytewright.bgmo.adapter.persistence.converter.StringListConverter;
+import org.bytewright.bgmo.adapter.persistence.converter.UserLinksConverter;
 import org.bytewright.bgmo.adapter.persistence.entity.user.RegisteredUserEntity;
+import org.bytewright.bgmo.domain.model.Game;
 import org.bytewright.bgmo.domain.model.data.HasUUID;
 import org.hibernate.annotations.UuidGenerator;
 import org.springframework.data.annotation.CreatedDate;
@@ -49,6 +51,10 @@ public class GameEntity extends AbstractEntity<UUID> implements HasUUID {
   @Nullable
   private String description;
 
+  @Column(columnDefinition = "TEXT")
+  @Nullable
+  private String notes;
+
   @Column(nullable = false)
   private int minPlayers;
 
@@ -62,16 +68,25 @@ public class GameEntity extends AbstractEntity<UUID> implements HasUUID {
 
   @Column @Nullable private Long bggId;
 
-  @Column
+  @Column(columnDefinition = "TEXT")
   @Convert(converter = StringListConverter.class)
   @ToString.Exclude
   @Builder.Default
   @Setter(AccessLevel.NONE)
-  private List<String> urls = new ArrayList<>();
+  private List<String> tags = new ArrayList<>();
+
+  @Column(columnDefinition = "TEXT")
+  @Convert(converter = UserLinksConverter.class)
+  @ToString.Exclude
+  @Builder.Default
+  @Setter(AccessLevel.NONE)
+  private List<Game.UserLink> urls = new ArrayList<>();
 
   @Column @Nullable private Double complexity;
 
-  @Column @Nullable private String artworkLink;
+  @Column(length = 1024)
+  @Nullable
+  private String artworkLink;
 
   @ManyToOne(fetch = FetchType.LAZY, optional = false)
   @JoinColumn(nullable = false, updatable = false)

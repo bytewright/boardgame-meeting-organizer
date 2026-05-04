@@ -44,9 +44,11 @@
         id uuid not null,
         owner_id uuid not null,
         name varchar(1024) not null,
-        artworkLink varchar(255),
+        artworkLink varchar(1024),
         description TEXT,
-        urls varchar(255),
+        notes TEXT,
+        urls TEXT,
+        tags TEXT,
         primary key (id)
     );
 

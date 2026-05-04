@@ -15,7 +15,6 @@ import org.bytewright.bgmo.domain.model.user.UserRole;
 import org.bytewright.bgmo.domain.service.UrlGenerator;
 import org.bytewright.bgmo.domain.service.data.MeetupDao;
 import org.bytewright.bgmo.domain.service.data.RegisteredUserDao;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 /**
@@ -58,7 +57,14 @@ public class NotificationManager {
     // todo add async task to notify user that a request was accepted
   }
 
-  @Async
+  public void addEventRescheduledTask(UUID meetupId) {
+    // todo add async task to notify users that event was moved
+  }
+
+  public void addEventCanceledTask(UUID meetupId) {
+    // todo add async task to notify users that event was canceled
+  }
+
   public void addUserRegistrationTask(UUID userId) {
     Set<RegisteredUser> siteAdmins = userDao.findAllActiveByRole(UserRole.ADMIN);
     RegisteredUser newUser = userDao.findOrThrow(userId);

@@ -1,13 +1,9 @@
 package org.bytewright.bgmo.adapter.bgg;
 
 import java.io.StringReader;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import lombok.extern.slf4j.Slf4j;
@@ -49,9 +45,9 @@ class BggXmlParser {
 
   Optional<Game.Creation> parseGameCreation(String xml, long bggId) {
     try {
-      //Path dumpPath =
+      // Path dumpPath =
       //    Path.of("%d-%s.xml".formatted(bggId, UUID.randomUUID().toString().substring(0, 6)));
-      //Files.writeString(
+      // Files.writeString(
       //    dumpPath, xml, StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.CREATE);
       Document doc = parseXmlSafely(xml);
       NodeList items = doc.getElementsByTagName("item");
@@ -84,8 +80,8 @@ class BggXmlParser {
       description = "%s%n%s".formatted("BGG-Rating: %02f".formatted(rating), description);
       List<String> tags = extractTags(item);
 
-      List<String> urls = new ArrayList<>();
-      urls.add(BGG_GAME_URL_PREFIX + bggId);
+      List<Game.UserLink> urls = new ArrayList<>();
+      urls.add(new Game.UserLink(BGG_GAME_URL_PREFIX + bggId, "Boardgamegeek Link"));
 
       return Optional.of(
           Game.Creation.builder()
