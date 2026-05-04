@@ -103,8 +103,9 @@ public class UserWorkflows {
             .complexity(gameDto.getComplexity())
             .urls(gameDto.getUrls())
             .build();
-    log.info("Adding game to user {}: {}", userId, newGame);
-    return gameDao.createOrUpdate(newGame);
+    Game persisted = gameDao.createOrUpdate(newGame);
+    log.info("Adding game to user {}: {} (ID:{})", userId, persisted.getName(), persisted.id());
+    return persisted;
   }
 
   public RegisteredUser addContactInfo(UUID userId, ContactInfo contactInfo) {

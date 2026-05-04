@@ -199,7 +199,7 @@ public class AddGameDialog extends Dialog {
     NumberField complexityField = new NumberField(getTranslation("gamelib.field.complexity"));
     complexityField.setMin(1.0);
     complexityField.setMax(5.0);
-    complexityField.setStep(0.1);
+    complexityField.setStep(0.001);
     complexityField.setWidth((float) (Math.floor(DIALOG_WIDTH_PX / 2.) - 15), Unit.PIXELS);
     if (prefill.getComplexity() != null) complexityField.setValue(prefill.getComplexity());
 

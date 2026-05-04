@@ -5,7 +5,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
-import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.bytewright.bgmo.domain.model.AdapterSettings;
 import org.bytewright.bgmo.domain.model.notification.NotificationContext;

@@ -16,7 +16,7 @@ import org.springframework.web.client.RestClient;
  * #MAX_RETRIES} times with a {@value #RETRY_DELAY_MS}ms delay.
  *
  * <p>The field name {@code bggRestClient} intentionally matches the bean name defined in {@link
- * BggConfiguration} so Spring resolves the correct bean by name without an explicit
+ * BggContextConfig} so Spring resolves the correct bean by name without an explicit
  * {@code @Qualifier}.
  */
 @Slf4j
@@ -28,7 +28,7 @@ class BggApiClient {
   static final long RETRY_DELAY_MS = 2_000;
 
   /**
-   * @see BggConfiguration#bggRestClient()
+   * @see BggContextConfig#bggRestClient()
    */
   private final RestClient bggRestClient;
 

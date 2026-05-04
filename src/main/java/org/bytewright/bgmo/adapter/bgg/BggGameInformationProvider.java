@@ -27,7 +27,7 @@ import tools.jackson.databind.json.JsonMapper;
 @RequiredArgsConstructor
 public class BggGameInformationProvider
     implements GameInformationProvider, AdapterSettingsProvider {
-  private static final String ADAPTER_NAME = "BggGameInformationProvider-integration";
+  static final String ADAPTER_NAME = "BggGameInformationProvider-integration";
   private final BggAdapterProperties bggAdapterProperties;
   private final AdapterSettingsDao adapterSettingsDao;
   private final MessageSource messageSource;

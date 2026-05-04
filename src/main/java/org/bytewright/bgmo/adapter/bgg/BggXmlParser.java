@@ -1,9 +1,13 @@
 package org.bytewright.bgmo.adapter.bgg;
 
 import java.io.StringReader;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import lombok.extern.slf4j.Slf4j;
@@ -11,6 +15,7 @@ import org.bytewright.bgmo.domain.model.Game;
 import org.springframework.stereotype.Component;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 
@@ -44,8 +49,11 @@ class BggXmlParser {
 
   Optional<Game.Creation> parseGameCreation(String xml, long bggId) {
     try {
+      //Path dumpPath =
+      //    Path.of("%d-%s.xml".formatted(bggId, UUID.randomUUID().toString().substring(0, 6)));
+      //Files.writeString(
+      //    dumpPath, xml, StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.CREATE);
       Document doc = parseXmlSafely(xml);
-
       NodeList items = doc.getElementsByTagName("item");
       if (items.getLength() == 0) {
         log.warn("BGG API returned no items for bggId={}", bggId);
@@ -62,10 +70,19 @@ class BggXmlParser {
 
       int minPlayers = extractIntValueAttr(item, "minplayers", 1);
       int maxPlayers = extractIntValueAttr(item, "maxplayers", 1);
+      int playTimeMins = extractIntValueAttr(item, "playingtime", 1);
       String description = extractTextContent(item, "description");
       String artworkLink = extractTextContent(item, "image");
       Double complexity = extractComplexity(item);
       Integer optimalPlayers = extractOptimalPlayers(item, minPlayers, maxPlayers);
+      long playtimePerPlayer =
+          Math.round(
+              1.5
+                  * playTimeMins
+                  / maxPlayers); // what's on the boxes always lies, so increase by 50%
+      double rating = extractBggRating(item);
+      description = "%s%n%s".formatted("BGG-Rating: %02f".formatted(rating), description);
+      List<String> tags = extractTags(item);
 
       List<String> urls = new ArrayList<>();
       urls.add(BGG_GAME_URL_PREFIX + bggId);
@@ -78,9 +95,11 @@ class BggXmlParser {
               .maxPlayers(maxPlayers)
               .description(nullIfBlank(description))
               .optimalPlayers(optimalPlayers)
+              .playTimeMinutesPerPlayer(Math.toIntExact(playtimePerPlayer))
               .complexity(complexity)
               .artworkLink(nullIfBlank(artworkLink != null ? artworkLink.strip() : null))
               .urls(urls)
+              .tags(tags)
               .build());
 
     } catch (Exception e) {
@@ -90,7 +109,6 @@ class BggXmlParser {
   }
 
   // --- XML helpers ---
-
   /** XXE-safe document builder. */
   private Document parseXmlSafely(String xml) throws Exception {
     DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
@@ -135,6 +153,20 @@ class BggXmlParser {
     return null;
   }
 
+  private List<String> extractTags(Element item) {
+    List<String> result = new ArrayList<>();
+    NodeList nodes = item.getElementsByTagName("link");
+    for (int i = 0; i < nodes.getLength(); i++) {
+      Node node = nodes.item(i);
+      String type = node.getAttributes().getNamedItem("type").getNodeValue();
+      if ("boardgamemechanic".equals(type) || "boardgamecategory".equals(type)) {
+        String value = node.getAttributes().getNamedItem("value").getNodeValue();
+        result.add(value);
+      }
+    }
+    return result;
+  }
+
   /**
    * Reads {@code averageweight} from the {@code <statistics>} block. Returns null if weight is 0
    * (meaning no votes yet).
@@ -145,12 +177,26 @@ class BggXmlParser {
       String raw = ((Element) nodes.item(0)).getAttribute("value");
       try {
         double weight = Double.parseDouble(raw);
-        return weight > 0.0 ? weight : null;
+        return weight > 0.0 ? Math.round(weight * 100.0) / 100.0 : null;
       } catch (NumberFormatException e) {
         log.debug("Could not parse averageweight: '{}'", raw);
       }
     }
     return null;
+  }
+
+  private double extractBggRating(Element item) {
+    NodeList nodes = item.getElementsByTagName("bayesaverage");
+    if (nodes.getLength() > 0) {
+      String raw = ((Element) nodes.item(0)).getAttribute("value");
+      try {
+        double weight = Double.parseDouble(raw);
+        return weight > 0.0 ? weight : 0;
+      } catch (NumberFormatException e) {
+        log.debug("Could not parse bgg avg rating: '{}'", raw);
+      }
+    }
+    return 0;
   }
 
   /**

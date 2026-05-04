@@ -113,7 +113,7 @@ public class GameLibSection extends VerticalLayout {
     bggId.setValue(game.getBggId() != null ? Math.toIntExact(game.getBggId()) : null);
     bggId.setWidthFull();
     NumberField complexity = new NumberField(getTranslation("gamelib.field.complexity"));
-    complexity.setStep(0.01);
+    complexity.setStep(0.001);
     complexity.setMin(1);
     complexity.setMax(5);
     complexity.setWidthFull();
@@ -126,7 +126,7 @@ public class GameLibSection extends VerticalLayout {
     maxP.setValue(game.getMaxPlayers());
     maxP.setMaxWidth(125, Unit.PIXELS);
     IntegerField optimalPlayerCount =
-        new IntegerField(getTranslation("gamelib.field.optimalPLayers"));
+        new IntegerField(getTranslation("gamelib.field.optimalPlayers"));
     optimalPlayerCount.setValue(game.getOptimalPlayers());
     optimalPlayerCount.setMaxWidth(125, Unit.PIXELS);
     playersRow.add(minP, maxP, optimalPlayerCount);

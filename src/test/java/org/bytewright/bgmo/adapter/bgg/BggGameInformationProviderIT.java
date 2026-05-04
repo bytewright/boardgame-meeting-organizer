@@ -2,16 +2,25 @@ package org.bytewright.bgmo.adapter.bgg;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Optional;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
+
+import org.bytewright.bgmo.domain.model.AdapterSettings;
 import org.bytewright.bgmo.domain.model.Game;
 import org.bytewright.bgmo.domain.service.GameInformationProvider;
+import org.bytewright.bgmo.domain.service.JsonMapperFactory;
 import org.bytewright.bgmo.domain.service.data.AdapterSettingsDao;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
 import org.springframework.context.annotation.Bean;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 import org.springframework.web.client.RestClient;
 
@@ -20,7 +29,8 @@ import org.springframework.web.client.RestClient;
  * Requires network access.
  */
 // @Tag("integration")
-@SpringJUnitConfig(classes = {BggGameInformationProviderIT.TestConfig.class})
+@SpringJUnitConfig(
+    classes = {BggGameInformationProviderIT.TestConfig.class, BggContextConfig.class})
 class BggGameInformationProviderIT {
 
   // Well-known BGG IDs used as test fixtures — stable, popular games unlikely to be removed
@@ -45,30 +55,15 @@ class BggGameInformationProviderIT {
     assertThat(game.getBggId()).isEqualTo(BGG_ID_GLOOMHAVEN);
     assertThat(game.getMinPlayers()).isEqualTo(1);
     assertThat(game.getMaxPlayers()).isEqualTo(4);
-  }
-
-  @Test
-  void fetchGloomhaven_returnsComplexityInValidRange() {
-    Game.Creation game = fetchOrFail(BGG_ID_GLOOMHAVEN);
 
     // Gloomhaven is a heavy game; BGG averageweight consistently > 3.5
     assertThat(game.getComplexity()).isNotNull().isBetween(1.0, 5.0);
     assertThat(game.getComplexity()).isGreaterThan(3.0);
-  }
-
-  @Test
-  void fetchGloomhaven_returnsOptimalPlayerCount() {
-    Game.Creation game = fetchOrFail(BGG_ID_GLOOMHAVEN);
 
     // Community consensus for Gloomhaven is 2–3 players best; value must be in [min, max]
     assertThat(game.getOptimalPlayers())
         .isNotNull()
         .isBetween(game.getMinPlayers(), game.getMaxPlayers());
-  }
-
-  @Test
-  void fetchGloomhaven_returnsArtworkAndBggUrl() {
-    Game.Creation game = fetchOrFail(BGG_ID_GLOOMHAVEN);
 
     assertThat(game.getArtworkLink()).isNotNull().isNotBlank().startsWith("https://");
 
@@ -135,41 +130,66 @@ class BggGameInformationProviderIT {
   // -------------------------------------------------------------------------
 
   static class TestConfig {
-
-    @Bean
-    RestClient bggRestClient() {
-      return RestClient.builder()
-          .baseUrl("https://boardgamegeek.com/xmlapi2")
-          .defaultHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_XML_VALUE)
-          .build();
-    }
-
     @Bean
     BggXmlParser bggXmlParser() {
       return new BggXmlParser();
     }
 
+      @Bean
+      BggApiClient bggApiClient(RestClient bggRestClient) throws IOException {
+          BggApiClient mock = Mockito.mock(BggApiClient.class);
+          Path zip = Path.of("src/test/resources/bgg/bgg-fixtures.zip");
+
+          try (ZipFile zf = new ZipFile(zip.toFile())) {
+              Mockito.when(mock.fetchGame(9209)).thenReturn(readEntry(zf, "9209-6a8992.xml"));
+              Mockito.when(mock.fetchGame(30549)).thenReturn(readEntry(zf, "30549-15ee16.xml"));
+              Mockito.when(mock.fetchGame(174430)).thenReturn(readEntry(zf, "174430-feb6df.xml"));
+              Mockito.when(mock.fetchGame(224517)).thenReturn(readEntry(zf, "224517-17ff25.xml"));
+          }
+
+          return mock;
+      }
+
+      private Optional<String> readEntry(ZipFile zf, String name) throws IOException {
+          ZipEntry entry = zf.getEntry(name);
+          if (entry == null) return Optional.empty();
+          try (InputStream is = zf.getInputStream(entry)) {
+              return Optional.of(new String(is.readAllBytes(), StandardCharsets.UTF_8));
+          }
+      }
+
     @Bean
-    BggApiClient bggApiClient(RestClient bggRestClient) {
-      return new BggApiClient(bggRestClient);
+    AdapterSettingsDao adapterSettingsDao() {
+      AdapterSettingsDao mock = Mockito.mock(AdapterSettingsDao.class);
+      String json =
+          JsonMapperFactory.unRedactedMapper()
+              .writeValueAsString(BggAdapterSettings.builder().build());
+      AdapterSettings mockSettings = AdapterSettings.builder().adapterSettings(json).build();
+      Mockito.when(mock.findByAdapterName(BggGameInformationProvider.ADAPTER_NAME))
+          .thenReturn(mockSettings);
+      return mock;
+    }
+
+    @Bean
+    BggAdapterProperties bggAdapterProperties() {
+      BggAdapterProperties properties = new BggAdapterProperties();
+      properties.setEnabled(true);
+      properties.setApiToken("someKey");
+      properties.setBggBaseUrl("https://fake-domain.com/xmlapi2/");
+      return properties;
     }
 
     @Bean
     GameInformationProvider gameInformationProvider(
+        BggAdapterProperties properties,
         AdapterSettingsDao adapterSettingsDao,
         BggApiClient bggApiClient,
         MessageSource messageSource,
         BggXmlParser bggXmlParser) {
-      BggAdapterProperties properties = new BggAdapterProperties();
-      properties.setEnabled(true);
       return new BggGameInformationProvider(
           properties, adapterSettingsDao, messageSource, bggApiClient, bggXmlParser);
     }
   }
-
-  // -------------------------------------------------------------------------
-  // Helpers
-  // -------------------------------------------------------------------------
 
   private Game.Creation fetchOrFail(long bggId) {
     return provider

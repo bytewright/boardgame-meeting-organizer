@@ -52,5 +52,6 @@ public class Game implements HasUUID {
     @Nullable private Double complexity;
     @Nullable private String artworkLink;
     @ToString.Exclude @Singular private List<String> urls;
+    @ToString.Exclude @Singular private List<String> tags;
   }
 }
