@@ -10,6 +10,7 @@ import org.bytewright.bgmo.domain.model.notification.NotificationContext;
 import org.bytewright.bgmo.domain.model.notification.NotificationTargetType;
 import org.bytewright.bgmo.domain.model.notification.NotificationType;
 import org.bytewright.bgmo.domain.model.user.ContactInfo;
+import org.bytewright.bgmo.domain.model.user.ContactInfoType;
 import org.bytewright.bgmo.domain.model.user.RegisteredUser;
 import org.bytewright.bgmo.domain.model.user.UserRole;
 import org.bytewright.bgmo.domain.service.UrlGenerator;
@@ -69,7 +70,9 @@ public class NotificationManager {
     Set<RegisteredUser> siteAdmins = userDao.findAllActiveByRole(UserRole.ADMIN);
     RegisteredUser newUser = userDao.findOrThrow(userId);
     log.info(
-        "Sending info about new user registration with id {} to {} admins", userId, siteAdmins);
+        "Sending info about new user registration with id {} to {} admins",
+        userId,
+        siteAdmins.size());
     for (RegisteredUser user : siteAdmins) {
       var context =
           NotificationContext.builder()
@@ -91,6 +94,11 @@ public class NotificationManager {
     Optional<ContactInfo> primaryContactOpt = getPrimaryContact(user);
     if (primaryContactOpt.isPresent()) {
       ContactInfo contactInfo = primaryContactOpt.get();
+      log.info(
+          "Dispatching {} notification to user {} over channel {}",
+          context.notificationType(),
+          user.logEntity(),
+          contactInfo.type());
       executors.stream()
           .filter(e -> e.isContactHandlerFor(contactInfo.type()))
           .filter(e -> e.supports(context))
@@ -106,8 +114,11 @@ public class NotificationManager {
           .filter(contactInfo -> primaryContactId.equals(contactInfo.id()))
           .findAny();
     }
+    Set<ContactInfoType> activeTypes = Set.of(ContactInfoType.TELEGRAM);
     if (user.getContactInfos().size() == 1) {
-      return user.getContactInfos().stream().findAny();
+      return user.getContactInfos().stream()
+          .filter(contactInfo -> activeTypes.contains(contactInfo.type()))
+          .findAny();
     }
     return Optional.empty();
   }

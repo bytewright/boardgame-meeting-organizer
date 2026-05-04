@@ -127,7 +127,8 @@ public class AdminWorkflows {
                             + settings.getAdapterName()));
     if (!provider.isValidSettingsJson(newJson)) {
       throw new IllegalArgumentException(
-          "Adapter '%s' rejected new settings as invalid. Check json syntax and content!");
+          "Adapter '%s' rejected new settings as invalid. Check json syntax and content!"
+              .formatted(provider.getAdapterName()));
     }
     adapterSettingsDao.createOrUpdate(settings.toBuilder().adapterSettings(newJson).build());
   }
