@@ -2,7 +2,9 @@ package org.bytewright.bgmo.adapter.api.frontend.view.component;
 
 import static org.bytewright.bgmo.domain.service.CoreAppContextConfig.APP_NAME_SHORT;
 
+import com.vaadin.flow.component.ClickEvent;
 import com.vaadin.flow.component.Component;
+import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.HasElement;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.applayout.AppLayout;
@@ -10,12 +12,11 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
-import com.vaadin.flow.router.AfterNavigationEvent;
-import com.vaadin.flow.router.AfterNavigationObserver;
 import com.vaadin.flow.router.RouterLayout;
 import com.vaadin.flow.router.RouterLink;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
@@ -32,14 +33,13 @@ import org.bytewright.bgmo.domain.service.data.GameDao;
 import org.bytewright.bgmo.usecases.MeetupWorkflows;
 
 @AnonymousAllowed
-public class MainLayout extends AppLayout implements RouterLayout, AfterNavigationObserver {
+public class MainLayout extends AppLayout implements RouterLayout {
   public static final String MAX_DISPLAYPORT_WIDTH = "800px"; // Mobile-first reasonable fixed width
 
   private final SessionAuthenticationService authService;
   private final MeetupWorkflows meetupWorkflows;
   private final GameDao gameDao;
   private final Clock clock;
-  private RouterLink homeLink;
 
   public MainLayout(
       SessionAuthenticationService authService,
@@ -55,34 +55,51 @@ public class MainLayout extends AppLayout implements RouterLayout, AfterNavigati
   }
 
   private void createHeader() {
-    // Left Side: Back/Home link
-    homeLink = new RouterLink("", DashboardView.class);
-    homeLink.add(VaadinIcon.CHEVRON_LEFT.create());
-    homeLink.getStyle().set("text-decoration", "none").set("color", "inherit");
-
-    // Title or Logo
+    // Logo — clicking always navigates to dashboard
+    RouterLink logoLink = new RouterLink("", DashboardView.class);
     H2 logo = new H2(APP_NAME_SHORT);
     logo.getStyle()
         .set("font-size", "var(--lumo-font-size-l)")
-        .set("margin", "0 var(--lumo-space-m)");
+        .set("margin", "0 var(--lumo-space-s)");
+    logoLink.add(logo);
+    logoLink.getStyle().set("text-decoration", "none").set("color", "inherit");
 
-    // Right Side: Action Buttons
+    boolean loggedIn = authService.getCurrentUser().isPresent();
+
+    HorizontalLayout header;
+    if (loggedIn) {
+      header = buildAuthenticatedHeader(logoLink);
+    } else {
+      header = buildAnonymousHeader(logoLink);
+    }
+
+    header.setDefaultVerticalComponentAlignment(FlexComponent.Alignment.CENTER);
+    header.expand(logoLink); // Logo takes remaining space, buttons stay right-aligned
+    header.setWidthFull();
+    header.setPadding(true);
+    header.getStyle().set("border-bottom", "1px solid var(--lumo-contrast-10pct)");
+
+    addToNavbar(header);
+  }
+
+  /** Header for logged-in users: Profile, Create, (Admin,) Logout. */
+  private HorizontalLayout buildAuthenticatedHeader(RouterLink logoLink) {
+    Button profileBtn =
+        createNavButton(
+            getTranslation("navbar.profile"),
+            VaadinIcon.HANDS_UP.create(),
+            e -> UI.getCurrent().navigate(ProfileView.class));
+    profileBtn.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
+
     Button createBtn =
-        new Button(
+        createNavButton(
             getTranslation("navbar.create-meetup"),
             VaadinIcon.PLUS.create(),
             e -> openCreateDialog());
     createBtn.addThemeVariants(ButtonVariant.LUMO_PRIMARY, ButtonVariant.LUMO_SMALL);
 
-    Button libBtn =
-        new Button(
-            getTranslation("navbar.profile"),
-            VaadinIcon.HANDS_UP.create(),
-            e -> UI.getCurrent().navigate(ProfileView.class));
-    libBtn.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
-
     Button logoutBtn =
-        new Button(
+        createNavButton(
             getTranslation("navbar.logout"),
             VaadinIcon.EXIT.create(),
             e -> {
@@ -91,22 +108,40 @@ public class MainLayout extends AppLayout implements RouterLayout, AfterNavigati
             });
     logoutBtn.addThemeVariants(ButtonVariant.LUMO_TERTIARY, ButtonVariant.LUMO_ERROR);
 
-    HorizontalLayout header = new HorizontalLayout(homeLink, logo, libBtn, createBtn, logoutBtn);
+    HorizontalLayout header = new HorizontalLayout(logoLink, profileBtn, createBtn, logoutBtn);
     if (authService.isCurrentUserAdmin()) {
-      header.add(adminLink());
+      header.add(buildAdminButton());
     }
-    header.setDefaultVerticalComponentAlignment(FlexComponent.Alignment.CENTER);
-    header.expand(logo); // Pushes buttons to the right
-    header.setWidthFull();
-    header.setPadding(true);
-    header.getStyle().set("border-bottom", "1px solid var(--lumo-contrast-10pct)");
-
-    addToNavbar(header);
+    return header;
   }
 
-  private Component adminLink() {
+  /** Header for anonymous visitors: just a Login button */
+  private HorizontalLayout buildAnonymousHeader(RouterLink logoLink) {
+    Button loginBtn =
+        createNavButton(
+            getTranslation("navbar.login"),
+            VaadinIcon.SIGN_IN.create(),
+            e -> UI.getCurrent().navigate(LoginView.class));
+    loginBtn.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
+
+    return new HorizontalLayout(logoLink, loginBtn);
+  }
+
+  private Button createNavButton(
+      String label, Icon icon, ComponentEventListener<ClickEvent<Button>> listener) {
+    icon.getStyle().set("margin", "0"); // neutralise default icon margins inside buttons
+    Button btn = new Button(label, icon, listener);
+    btn.getStyle()
+        .set("flex-direction", "column")
+        .set("height", "auto")
+        .set("min-height", "52px")
+        .set("gap", "2px");
+    return btn;
+  }
+
+  private Component buildAdminButton() {
     Button adminBtn =
-        new Button(
+        createNavButton(
             "Admin",
             VaadinIcon.CONTROLLER.create(),
             e -> UI.getCurrent().navigate(AdminDashboardView.class));
@@ -132,15 +167,6 @@ public class MainLayout extends AppLayout implements RouterLayout, AfterNavigati
                       })
                   .open();
             });
-  }
-
-  @Override
-  public void afterNavigation(AfterNavigationEvent event) {
-    boolean onDashboard =
-        event.getLocation().getPath().isBlank()
-            || event.getLocation().getPath().equals("dashboard")
-            || event.getLocation().getPath().equals("home");
-    homeLink.setVisible(!onDashboard);
   }
 
   @Override
