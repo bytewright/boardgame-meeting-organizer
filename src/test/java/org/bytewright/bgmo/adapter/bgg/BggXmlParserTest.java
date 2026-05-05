@@ -3,9 +3,12 @@ package org.bytewright.bgmo.adapter.bgg;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
-import java.nio.file.Files;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.Optional;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 import lombok.SneakyThrows;
 import org.bytewright.bgmo.domain.model.Game;
 import org.junit.jupiter.api.Test;
@@ -22,7 +25,14 @@ class BggXmlParserTest {
   void testLoadXml() {
     // ARRANGE
     long bggId = 224517;
-    String xml = Files.readString(Path.of("src/test/resources/bgg/224517-17ff25.xml"));
+    Path zip = Path.of("src/test/resources/bgg/bgg-fixtures.zip");
+    String xml;
+    try (ZipFile zf = new ZipFile(zip.toFile())) {
+      ZipEntry entry = zf.getEntry("224517-17ff25.xml");
+      try (InputStream is = zf.getInputStream(entry)) {
+        xml = new String(is.readAllBytes(), StandardCharsets.UTF_8);
+      }
+    }
     // ACT
     Optional<Game.Creation> creation = testee.parseGameCreation(xml, bggId);
     // ASSERT

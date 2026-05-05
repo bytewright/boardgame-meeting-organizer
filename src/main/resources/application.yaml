@@ -35,4 +35,4 @@ bgmo:
     base-url: "${APP_BASE_URL:}"
     automation-autostart: false
     security-pw-pepper: "${APP_PASSWORD_PEPPER:}"
-    profanityFilterListPath: "${APP_PROFANITY_BLOCK_LIST:}"
+    profanityFilterListPath: "${APP_PROFANITY_BLOCK_LIST:classpath:blocklists/de_profanity}"

@@ -169,7 +169,6 @@ public class AddGameDialog extends Dialog {
     descField.setWidthFull();
 
     // -- Notes (owner-specific, not shown publicly in description) --
-    // i18n key: gamelib.field.notes
     TextArea notesField = new TextArea(getTranslation("gamelib.field.notes"));
     notesField.setValue(prefill.getNotes() != null ? prefill.getNotes() : "");
     notesField.setWidthFull();

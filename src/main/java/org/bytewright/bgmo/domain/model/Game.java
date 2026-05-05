@@ -44,7 +44,7 @@ public class Game implements HasUUID {
   @Nullable private String artworkLink;
 
   /** Short descriptors like "worker placement", "cooperative", "filler". */
-  @Builder.Default private List<String> tags = new ArrayList<>();
+  @ToString.Exclude @Builder.Default private List<String> tags = new ArrayList<>();
 
   /** User defined links. Can point to house rules, errata, YouTube tutorials, etc. */
   @ToString.Exclude @Builder.Default private List<UserLink> urls = new ArrayList<>();

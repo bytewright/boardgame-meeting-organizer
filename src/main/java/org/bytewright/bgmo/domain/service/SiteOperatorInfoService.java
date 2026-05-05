@@ -52,6 +52,10 @@ public class SiteOperatorInfoService implements AdapterSettingsProvider {
     return getSettings().getTosParagraphs();
   }
 
+  public List<String> getAboutSiteInfoText() {
+    return getSettings().getAboutSiteParagraphs();
+  }
+
   private Settings getSettings() {
     AdapterSettings adapterSettings = adapterSettingsDao.findByAdapterName(getAdapterName());
     return mapper.readValue(adapterSettings.getAdapterSettings(), Settings.class);
@@ -99,6 +103,14 @@ public class SiteOperatorInfoService implements AdapterSettingsProvider {
     @Builder.Default private ContactInfo.EmailContact email = null;
 
     @Builder.Default private List<String> tosParagraphs = defaultTos();
+    @Builder.Default private List<String> aboutSiteParagraphs = defaultAboutSite();
+
+    private static List<String> defaultAboutSite() {
+      return List.of(
+          """
+        Diese Plattform ist Quelloffen, der code kann auf github eingesehen werden.
+        """);
+    }
 
     private static List<String> defaultTos() {
       return List.of(

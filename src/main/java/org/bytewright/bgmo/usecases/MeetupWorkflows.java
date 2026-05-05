@@ -1,6 +1,7 @@
 package org.bytewright.bgmo.usecases;
 
 import jakarta.transaction.Transactional;
+import java.net.URI;
 import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -11,7 +12,8 @@ import org.bytewright.bgmo.domain.model.MeetupEvent;
 import org.bytewright.bgmo.domain.model.MeetupJoinRequest;
 import org.bytewright.bgmo.domain.model.RequestState;
 import org.bytewright.bgmo.domain.model.user.RegisteredUser;
-import org.bytewright.bgmo.domain.service.BgmoProperties;
+import org.bytewright.bgmo.domain.service.InputSanitizer;
+import org.bytewright.bgmo.domain.service.SiteManagementService;
 import org.bytewright.bgmo.domain.service.automation.TimeSource;
 import org.bytewright.bgmo.domain.service.data.MeetupDao;
 import org.bytewright.bgmo.domain.service.data.ModelDao;
@@ -24,12 +26,13 @@ import org.springframework.stereotype.Service;
 @Transactional
 @RequiredArgsConstructor
 public class MeetupWorkflows {
-  private final NotificationManager notificationManager;
   private final ModelDao<MeetupJoinRequest> joinRequestModelDao;
-  private final BgmoProperties bgmoProperties;
+  private final SiteManagementService siteManagementService;
+  private final NotificationManager notificationManager;
+  private final InputSanitizer inputSanitizer;
   private final RegisteredUserDao userDao;
-  private final MeetupDao meetupDao;
   private final TimeSource timeSource;
+  private final MeetupDao meetupDao;
 
   public MeetupEvent create(MeetupCreation event) {
     if (!event.isUnlimitedSlots() && event.getJoinSlots() == null) {
@@ -40,8 +43,8 @@ public class MeetupWorkflows {
     log.info("Creating new meetup from: {}", event);
     MeetupEvent meetupEvent =
         MeetupEvent.builder()
-            .title(event.getTitle())
-            .description(event.getDescription())
+            .title(inputSanitizer.plainText(event.getTitle()))
+            .description(inputSanitizer.plainText(event.getDescription()))
             .eventDate(event.getEventDate())
             .registrationClosing(event.getRegistrationClosingDate())
             .creatorId(event.getCreator().getId())
@@ -55,7 +58,9 @@ public class MeetupWorkflows {
             .build();
     MeetupEvent persisted = meetupDao.createOrUpdate(meetupEvent);
     notificationManager.addNewEventCreatedTask(persisted.id());
-    log.info("Available at: {}meetup/{}", bgmoProperties.getBaseUrl(), persisted.id());
+    URI meetup =
+        siteManagementService.getBaseUrl().resolve("meetup").resolve(persisted.id().toString());
+    log.info("Available at: {}", meetup);
     return persisted;
   }
 

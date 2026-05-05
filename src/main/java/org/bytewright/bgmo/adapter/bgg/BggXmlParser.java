@@ -71,11 +71,7 @@ class BggXmlParser {
       String artworkLink = extractTextContent(item, "image");
       Double complexity = extractComplexity(item);
       Integer optimalPlayers = extractOptimalPlayers(item, minPlayers, maxPlayers);
-      long playtimePerPlayer =
-          Math.round(
-              1.5
-                  * playTimeMins
-                  / maxPlayers); // what's on the boxes always lies, so increase by 50%
+      long playtimePerPlayer = calcPlayTimePerPlayer(playTimeMins, maxPlayers);
       double rating = extractBggRating(item);
       description = "%s%n%s".formatted("BGG-Rating: %02f".formatted(rating), description);
       List<String> tags = extractTags(item);
@@ -102,6 +98,13 @@ class BggXmlParser {
       log.error("Failed to parse BGG XML response for bggId={}", bggId, e);
       return Optional.empty();
     }
+  }
+
+  private long calcPlayTimePerPlayer(int playTimeMins, int maxPlayers) {
+    // what's on the boxes always lies, so increase by 50%
+    double playtimePerPlayerWithMargin = 1.5 * playTimeMins / maxPlayers;
+    // round (ceil) to nearest 5
+    return (long) (Math.ceil(playtimePerPlayerWithMargin / 5.0) * 5);
   }
 
   // --- XML helpers ---

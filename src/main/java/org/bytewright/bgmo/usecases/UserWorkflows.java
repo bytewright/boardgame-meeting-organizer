@@ -9,6 +9,7 @@ import org.bytewright.bgmo.domain.model.data.HasUUID;
 import org.bytewright.bgmo.domain.model.user.ContactInfo;
 import org.bytewright.bgmo.domain.model.user.RegisteredUser;
 import org.bytewright.bgmo.domain.model.user.ValidationResult;
+import org.bytewright.bgmo.domain.service.InputSanitizer;
 import org.bytewright.bgmo.domain.service.automation.TimeSource;
 import org.bytewright.bgmo.domain.service.data.GameDao;
 import org.bytewright.bgmo.domain.service.data.ModelDao;
@@ -30,6 +31,7 @@ public class UserWorkflows {
   private final BgmoUserDetailsService userDetailsService;
   private final ModelDao<ContactInfo> contactInfoModelDao;
   private final NotificationManager notificationManager;
+  private final InputSanitizer inputSanitizer;
   private final RegisteredUserDao userDao;
   private final TimeSource timeSource;
   private final GameDao gameDao;
@@ -43,7 +45,7 @@ public class UserWorkflows {
     RegisteredUser newUser =
         userDao.createOrUpdate(
             RegisteredUser.builder()
-                .displayName(userDto.getDisplayName())
+                .displayName(inputSanitizer.plainText(userDto.getDisplayName()))
                 .loginName(userDto.getLoginName())
                 .passwordHash(userDetailsService.hashPw(userDto.getPassword()))
                 .preferredLocale(userDto.getPreferredLocale())
@@ -53,11 +55,11 @@ public class UserWorkflows {
         "Q1 '%s':%s%nQ2 '%s':%s%nQ3 '%s':%s"
             .formatted(
                 "AboutYourself",
-                userDto.getIntroAboutYourself(),
+                inputSanitizer.plainText(userDto.getIntroAboutYourself()),
                 "HowDidYouHear",
-                userDto.getIntroHowDidYouHear(),
+                inputSanitizer.plainText(userDto.getIntroHowDidYouHear()),
                 "WhoInvitedYou",
-                userDto.getIntroWhoInvitedYou());
+                inputSanitizer.plainText(userDto.getIntroWhoInvitedYou()));
     userDao.addRegistrationIntroText(refetchedUser.getId(), introText);
     log.info("Created user with id {}: {}, {}", refetchedUser.getId(), refetchedUser, introText);
     TransactionSynchronizationManager.registerSynchronization(
@@ -89,11 +91,13 @@ public class UserWorkflows {
    * GameDao#createOrUpdate(HasUUID)}
    */
   public Game addGameToLibrary(UUID userId, Game.Creation gameDto) {
+    List<String> cleanedTags = gameDto.getTags().stream().map(inputSanitizer::plainText).toList();
     Game newGame =
         Game.builder()
             .ownerId(userId)
-            .name(gameDto.getName())
-            .description(gameDto.getDescription())
+            .name(inputSanitizer.plainText(gameDto.getName()))
+            .description(inputSanitizer.plainText(gameDto.getDescription()))
+            .notes(inputSanitizer.plainText(gameDto.getNotes()))
             .bggId(gameDto.getBggId())
             .minPlayers(gameDto.getMinPlayers())
             .maxPlayers(gameDto.getMaxPlayers())
@@ -101,6 +105,7 @@ public class UserWorkflows {
             .artworkLink(gameDto.getArtworkLink())
             .playTimeMinutesPerPlayer(gameDto.getPlayTimeMinutesPerPlayer())
             .complexity(gameDto.getComplexity())
+            .tags(cleanedTags)
             .urls(gameDto.getUrls())
             .build();
     Game persisted = gameDao.createOrUpdate(newGame);
@@ -139,9 +144,8 @@ public class UserWorkflows {
     RegisteredUser user = userDao.findById(userId).orElseThrow();
     if (user.getDisplayName().equals(newDisplayName)) return;
     log.info("User {} changes his display name to: {}", user.logEntity(), newDisplayName);
-    user.setDisplayName(newDisplayName);
+    user.setDisplayName(inputSanitizer.plainText(newDisplayName));
     userDao.createOrUpdate(user);
-    // TODO profanity filter
   }
 
   public void changePassword(UUID userId, String newPassword) {

@@ -59,7 +59,6 @@ See [Architecture.md](./ARCHITECTURE.md)
 # ToDos - Bugs
 
 - Locale switcher geht nicht/wird nicht angewandt
-- game urls not shown on meetup detail page view
 - logout shown in main bar even if user is anon
 
 # ToDos - Features
@@ -71,11 +70,7 @@ See [Architecture.md](./ARCHITECTURE.md)
 - meetup MeetupEditView
     - Reschedule events
 - meetup details expanded
-  - Add link text for game urls
-  - Gamecards could include tags like "worker placement"
   - Event game poll
   - meetup links: use something else than db uuid as identifier
 - FavIcon
-- baseUrl as mini adapter so it's editable in admin site
 - Registration closed date on meetup detail view
-- add github link to impressum

@@ -39,6 +39,11 @@ public class ImpressumView extends VerticalLayout {
         .getOperatorEmail()
         .ifPresent(email -> add(labeledLine("E-Mail:", email.email())));
 
+    add(section("Informationen zur Webseite"));
+    for (String paragraph : operatorInfoService.getAboutSiteInfoText()) {
+      add(new Paragraph(paragraph));
+    }
+
     add(section("Hinweis zur Streitschlichtung"));
     add(
         new Paragraph(
@@ -68,7 +73,6 @@ public class ImpressumView extends VerticalLayout {
   }
 
   private Span labeledLine(String label, String value) {
-    Span s = new Span(label + " " + value);
-    return s;
+    return new Span(label + " " + value);
   }
 }

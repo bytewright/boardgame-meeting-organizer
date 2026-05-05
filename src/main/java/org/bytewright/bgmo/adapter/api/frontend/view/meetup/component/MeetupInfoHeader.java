@@ -1,8 +1,8 @@
 package org.bytewright.bgmo.adapter.api.frontend.view.meetup.component;
 
 import com.vaadin.flow.component.Unit;
+import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H2;
-import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
@@ -102,7 +102,14 @@ public class MeetupInfoHeader extends VerticalLayout {
         meetup.getDescription() != null && !meetup.getDescription().isBlank()
             ? meetup.getDescription()
             : getTranslation("meetup.no-desc");
-    add(new Paragraph(desc));
+    Div descDiv = new Div();
+    descDiv.setText(desc);
+    descDiv
+        .getStyle()
+        .set("white-space", "pre-wrap") // honours \n, wraps long lines
+        .set("word-break", "break-word") // no overflow on long unbroken strings
+        .set("font-family", "inherit");
+    add(descDiv);
   }
 
   private String buildSlotsText(MeetupDetailContext ctx) {
