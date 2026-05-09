@@ -37,8 +37,7 @@ public class VaadinContextConfig implements AppShellConfigurator, VaadinServiceI
 
   @Override
   public void configurePage(AppShellSettings settings) {
-    // todo
-    // settings.addFavIcon();
+    settings.addFavIcon("icon", "assets/images/favicon-32x32.png", "32x32");
   }
 
   @Override

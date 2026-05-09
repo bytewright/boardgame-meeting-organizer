@@ -1,16 +1,10 @@
 package org.bytewright.bgmo.adapter.api.frontend.view.component;
 
-import static org.bytewright.bgmo.domain.service.CoreAppContextConfig.APP_NAME_SHORT;
-
-import com.vaadin.flow.component.ClickEvent;
-import com.vaadin.flow.component.Component;
-import com.vaadin.flow.component.ComponentEventListener;
-import com.vaadin.flow.component.HasElement;
-import com.vaadin.flow.component.UI;
+import com.vaadin.flow.component.*;
 import com.vaadin.flow.component.applayout.AppLayout;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
-import com.vaadin.flow.component.html.H2;
+import com.vaadin.flow.component.html.Image;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
@@ -57,13 +51,12 @@ public class MainLayout extends AppLayout implements RouterLayout {
   private void createHeader() {
     // Logo — clicking always navigates to dashboard
     RouterLink logoLink = new RouterLink("", DashboardView.class);
-    H2 logo = new H2(APP_NAME_SHORT);
-    logo.getStyle()
-        .set("font-size", "var(--lumo-font-size-l)")
-        .set("margin", "0 var(--lumo-space-s)");
-    logoLink.add(logo);
+    Image banner = new Image("assets/images/banner.png", "Site banner");
+    banner.setHeight(75, Unit.PIXELS);
+    logoLink.add(banner);
     logoLink.getStyle().set("text-decoration", "none").set("color", "inherit");
-
+    logoLink.getElement().setAttribute("aria-label", "Go to dashboard");
+    logoLink.setHighlightCondition((routerLink, event) -> false);
     boolean loggedIn = authService.getCurrentUser().isPresent();
 
     HorizontalLayout header;
@@ -75,9 +68,13 @@ public class MainLayout extends AppLayout implements RouterLayout {
 
     header.setDefaultVerticalComponentAlignment(FlexComponent.Alignment.CENTER);
     header.expand(logoLink); // Logo takes remaining space, buttons stay right-aligned
+    header.setMaxWidth(MAX_DISPLAYPORT_WIDTH);
     header.setWidthFull();
-    header.setPadding(true);
-    header.getStyle().set("border-bottom", "1px solid var(--lumo-contrast-10pct)");
+    header.setPadding(false);
+    header
+        .getStyle()
+        .set("margin", "0 auto")
+        .set("border-bottom", "1px solid var(--lumo-contrast-10pct)");
 
     addToNavbar(header);
   }
@@ -181,12 +178,12 @@ public class MainLayout extends AppLayout implements RouterLayout {
                   () -> new IllegalArgumentException("AppLayout content must be a Component"));
     }
     VerticalLayout wrapper = new VerticalLayout();
-    wrapper.setSizeFull();
+    wrapper.setWidthFull();
+    wrapper.setMinHeight(100, Unit.PERCENTAGE);
     wrapper.setPadding(false);
     wrapper.setSpacing(false);
 
     wrapper.addAndExpand(target);
-
     wrapper.add(createFooter());
     setContent(wrapper);
   }

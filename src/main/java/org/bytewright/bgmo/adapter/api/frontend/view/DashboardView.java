@@ -49,7 +49,7 @@ public class DashboardView extends VerticalLayout implements BeforeEnterObserver
     this.meetupDao = meetupDao;
     this.registeredUserDao = registeredUserDao;
 
-    setSizeFull();
+    setWidthFull();
     setPadding(true);
     setSpacing(true);
     getStyle().set("max-width", MainLayout.MAX_DISPLAYPORT_WIDTH).set("margin", "0 auto");
