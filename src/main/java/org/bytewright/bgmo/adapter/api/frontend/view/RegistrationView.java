@@ -20,7 +20,9 @@ import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.router.RouterLink;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
+import org.bytewright.bgmo.adapter.api.frontend.view.component.LocalePicker;
 import org.bytewright.bgmo.adapter.api.frontend.view.component.MainLayout;
+import org.bytewright.bgmo.adapter.api.frontend.view.component.factory.ComponentFactory;
 import org.bytewright.bgmo.domain.model.user.RegisteredUser;
 import org.bytewright.bgmo.domain.service.security.PasswordRules;
 import org.bytewright.bgmo.usecases.UserWorkflows;
@@ -31,9 +33,11 @@ import org.bytewright.bgmo.usecases.UserWorkflows;
 public class RegistrationView extends VerticalLayout {
 
   private final UserWorkflows userWorkflows;
+  private final ComponentFactory componentFactory;
 
-  public RegistrationView(UserWorkflows userWorkflows) {
+  public RegistrationView(UserWorkflows userWorkflows, ComponentFactory componentFactory) {
     this.userWorkflows = userWorkflows;
+    this.componentFactory = componentFactory;
 
     addClassName("registration-view");
     setAlignItems(Alignment.CENTER);
@@ -63,7 +67,8 @@ public class RegistrationView extends VerticalLayout {
 
     H1 title = new H1(getTranslation("register.title"));
     title.getStyle().set("margin", "0").set("font-size", "var(--lumo-font-size-xxl)");
-    header.add(title);
+    LocalePicker localePicker = componentFactory.localePicker();
+    header.add(title, localePicker);
 
     // --- Account Fields ---
     Binder<RegisteredUser.Creation.CreationBuilder> binder = new Binder<>();

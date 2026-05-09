@@ -58,19 +58,21 @@ See [Architecture.md](./ARCHITECTURE.md)
 
 # ToDos - Bugs
 
-- Locale switcher geht nicht/wird nicht angewandt
-- logout shown in main bar even if user is anon
-
 # ToDos - Features
 
 - Security upgrade
     - pw reset flow
     - rate limiting
-- remove back button, make "BGMO" clickable & lead to dashboard
 - meetup MeetupEditView
     - Reschedule events
 - meetup details expanded
   - Event game poll
   - meetup links: use something else than db uuid as identifier
-- FavIcon
+
 - Registration closed date on meetup detail view
+- event signup: add first come first serve as default option
+- event creation: select adress as manadatory
+  - tillis?
+  - open location?
+  - park? => free text option and not selected from profile
+- add event organizer in telegram as link to user for direct messages
