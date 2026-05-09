@@ -18,6 +18,7 @@ import java.time.Clock;
 import org.bytewright.bgmo.adapter.api.frontend.SessionAuthenticationService;
 import org.bytewright.bgmo.adapter.api.frontend.view.*;
 import org.bytewright.bgmo.adapter.api.frontend.view.admin.AdminDashboardView;
+import org.bytewright.bgmo.adapter.api.frontend.view.component.factory.ComponentFactory;
 import org.bytewright.bgmo.adapter.api.frontend.view.legal.DatenschutzView;
 import org.bytewright.bgmo.adapter.api.frontend.view.legal.ImpressumView;
 import org.bytewright.bgmo.adapter.api.frontend.view.legal.TermsOfUseView;
@@ -29,17 +30,19 @@ import org.bytewright.bgmo.usecases.MeetupWorkflows;
 @AnonymousAllowed
 public class MainLayout extends AppLayout implements RouterLayout {
   public static final String MAX_DISPLAYPORT_WIDTH = "800px"; // Mobile-first reasonable fixed width
-
+  private final ComponentFactory componentFactory;
   private final SessionAuthenticationService authService;
   private final MeetupWorkflows meetupWorkflows;
   private final GameDao gameDao;
   private final Clock clock;
 
   public MainLayout(
+      ComponentFactory componentFactory,
       SessionAuthenticationService authService,
       MeetupWorkflows meetupWorkflows,
       GameDao gameDao,
       Clock clock) {
+    this.componentFactory = componentFactory;
     this.authService = authService;
     this.meetupWorkflows = meetupWorkflows;
     this.gameDao = gameDao;
@@ -105,7 +108,9 @@ public class MainLayout extends AppLayout implements RouterLayout {
             });
     logoutBtn.addThemeVariants(ButtonVariant.LUMO_TERTIARY, ButtonVariant.LUMO_ERROR);
 
-    HorizontalLayout header = new HorizontalLayout(logoLink, profileBtn, createBtn, logoutBtn);
+    LocalePicker localePicker = componentFactory.localePicker();
+    HorizontalLayout header =
+        new HorizontalLayout(logoLink, createBtn, localePicker, profileBtn, logoutBtn);
     if (authService.isCurrentUserAdmin()) {
       header.add(buildAdminButton());
     }
@@ -121,7 +126,8 @@ public class MainLayout extends AppLayout implements RouterLayout {
             e -> UI.getCurrent().navigate(LoginView.class));
     loginBtn.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
 
-    return new HorizontalLayout(logoLink, loginBtn);
+    LocalePicker localePicker = componentFactory.localePicker();
+    return new HorizontalLayout(logoLink, localePicker, loginBtn);
   }
 
   private Button createNavButton(

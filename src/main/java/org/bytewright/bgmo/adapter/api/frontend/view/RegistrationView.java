@@ -6,7 +6,6 @@ import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
-import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.html.*;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
@@ -21,7 +20,6 @@ import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.router.RouterLink;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
-import java.util.Locale;
 import org.bytewright.bgmo.adapter.api.frontend.view.component.MainLayout;
 import org.bytewright.bgmo.domain.model.user.RegisteredUser;
 import org.bytewright.bgmo.domain.service.security.PasswordRules;
@@ -39,7 +37,6 @@ public class RegistrationView extends VerticalLayout {
 
     addClassName("registration-view");
     setAlignItems(Alignment.CENTER);
-    // setJustifyContentMode(JustifyContentMode.CENTER);
 
     setSizeFull();
     setPadding(true);
@@ -66,15 +63,7 @@ public class RegistrationView extends VerticalLayout {
 
     H1 title = new H1(getTranslation("register.title"));
     title.getStyle().set("margin", "0").set("font-size", "var(--lumo-font-size-xxl)");
-
-    ComboBox<Locale> localePicker = new ComboBox<>();
-    localePicker.setItems(Locale.GERMAN, Locale.ENGLISH);
-    localePicker.setValue(getLocale().getLanguage().equals("de") ? Locale.GERMAN : Locale.ENGLISH);
-    localePicker.setItemLabelGenerator(l -> l.equals(Locale.GERMAN) ? "🇩🇪 DE" : "🇬🇧 EN");
-    localePicker.setWidth("100px");
-    localePicker.addValueChangeListener(e -> UI.getCurrent().getSession().setLocale(e.getValue()));
-
-    header.add(title, localePicker);
+    header.add(title);
 
     // --- Account Fields ---
     Binder<RegisteredUser.Creation.CreationBuilder> binder = new Binder<>();
@@ -166,7 +155,7 @@ public class RegistrationView extends VerticalLayout {
     submit.addClickListener(
         e -> {
           if (binder.writeBeanIfValid(dto)) {
-            dto.preferredLocale(localePicker.getValue());
+            dto.preferredLocale(getLocale());
             userWorkflows.create(dto.build());
 
             card.removeAll();

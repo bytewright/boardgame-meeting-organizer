@@ -5,6 +5,7 @@ import java.util.*;
 import java.util.function.BiConsumer;
 import lombok.RequiredArgsConstructor;
 import org.bytewright.bgmo.adapter.api.frontend.service.i18n.LocaleService;
+import org.bytewright.bgmo.adapter.api.frontend.view.component.LocalePicker;
 import org.bytewright.bgmo.adapter.api.frontend.view.profile.AddGameDialog;
 import org.bytewright.bgmo.adapter.api.frontend.view.profile.ContactSection;
 import org.bytewright.bgmo.adapter.api.frontend.view.profile.GameLibSection;
@@ -32,6 +33,10 @@ public class ComponentFactory {
     Map<ContactInfoType, String> botHandles = verificationService.getBotHandles();
     return new ContactSection(
         this, verificationService, userWorkflows, userDao, currentUser, botHandles);
+  }
+
+  public LocalePicker localePicker() {
+    return new LocalePicker(localeService);
   }
 
   public GameLibSection gameLibSection(RegisteredUser currentUser) {

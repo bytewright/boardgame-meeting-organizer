@@ -5,7 +5,6 @@ import static org.bytewright.bgmo.domain.service.CoreAppContextConfig.APP_NAME_S
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
-import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.details.Details;
 import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.notification.Notification;
@@ -18,7 +17,6 @@ import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import jakarta.annotation.security.PermitAll;
-import java.util.Locale;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.bytewright.bgmo.adapter.api.frontend.SessionAuthenticationService;
@@ -85,17 +83,6 @@ public class ProfileView extends VerticalLayout implements BeforeEnterObserver {
               userWorkflows.changeDisplayName(currentUser.getId(), nameField.getValue());
               Notification.show(getTranslation("profile.status.saved"));
             });
-    ComboBox<Locale> localePicker = new ComboBox<>(getTranslation("profile.account.locale"));
-    localePicker.setItems(Locale.GERMAN, Locale.ENGLISH);
-    localePicker.setItemLabelGenerator(l -> l.getDisplayLanguage(getLocale()));
-    localePicker.setValue(
-        currentUser.getPreferredLocale() != null ? currentUser.getPreferredLocale() : getLocale());
-    localePicker.setWidthFull();
-    localePicker.addValueChangeListener(
-        e -> {
-          userWorkflows.changeLocale(currentUser.getId(), localePicker.getValue());
-          Notification.show(getTranslation("profile.status.saved"));
-        });
 
     // --- Part B: Security (Password Change) ---
     PasswordField pwdField = new PasswordField(getTranslation("profile.account.password"));
@@ -134,8 +121,7 @@ public class ProfileView extends VerticalLayout implements BeforeEnterObserver {
             });
     updatePwdBtn.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
 
-    layout.add(
-        nameField, saveDisplayNameBtn, localePicker, pwdField, confirmPwdField, updatePwdBtn);
+    layout.add(nameField, saveDisplayNameBtn, pwdField, confirmPwdField, updatePwdBtn);
     layout.setAlignItems(Alignment.END); // Align buttons to the right for better visual flow
 
     return wrapInStyledSection(getTranslation("profile.account.title"), layout);
