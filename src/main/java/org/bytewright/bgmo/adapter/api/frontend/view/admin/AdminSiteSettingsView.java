@@ -17,13 +17,11 @@ import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import jakarta.annotation.security.RolesAllowed;
-import java.util.Comparator;
 import java.util.List;
 import org.bytewright.bgmo.adapter.api.frontend.view.component.MainLayout;
-import org.bytewright.bgmo.domain.model.AdapterSettings;
+import org.bytewright.bgmo.domain.model.AdapterInfoAndSettings;
 import org.bytewright.bgmo.domain.model.user.ContactInfo;
 import org.bytewright.bgmo.domain.service.SiteOperatorInfoService;
-import org.bytewright.bgmo.domain.service.data.AdapterSettingsDao;
 import org.bytewright.bgmo.usecases.AdminWorkflows;
 import tools.jackson.core.JacksonException;
 import tools.jackson.databind.json.JsonMapper;
@@ -37,7 +35,6 @@ public class AdminSiteSettingsView extends VerticalLayout {
 
   public AdminSiteSettingsView(
       SiteOperatorInfoService operatorInfoService,
-      AdapterSettingsDao adapterSettingsDao,
       AdminWorkflows adminWorkflows,
       JsonMapper objectMapper) {
     this.objectMapper = objectMapper;
@@ -50,7 +47,7 @@ public class AdminSiteSettingsView extends VerticalLayout {
     add(new H2("Site-Einstellungen"));
 
     buildOperatorInfoSection(operatorInfoService);
-    buildAdapterSettingsSection(adapterSettingsDao, adminWorkflows);
+    buildAdapterSettingsSection(adminWorkflows);
   }
 
   // ── Operator info (read-only display) ────────────────────────────────────────
@@ -106,37 +103,35 @@ public class AdminSiteSettingsView extends VerticalLayout {
 
   // ── Adapter settings (JSON view/edit) ────────────────────────────────────────
 
-  private void buildAdapterSettingsSection(
-      AdapterSettingsDao adapterSettingsDao, AdminWorkflows adminWorkflows) {
+  private void buildAdapterSettingsSection(AdminWorkflows adminWorkflows) {
     add(sectionHeading("Adapter-Einstellungen"));
     add(
         new Paragraph(
             "Jeder Adapter speichert seine Konfiguration als JSON. "
                 + "Der JSON-Inhalt wird nicht validiert; ungültige Werte können den jeweiligen Adapter beeinträchtigen."));
+    List<AdapterInfoAndSettings> allAdaptersAndSettings =
+        adminWorkflows.findAllAdaptersAndSettings();
 
-    List<AdapterSettings> allSettings =
-        adapterSettingsDao.findAll().stream()
-            .sorted(Comparator.comparing(AdapterSettings::getAdapterName))
-            .toList();
-
-    if (allSettings.isEmpty()) {
+    if (allAdaptersAndSettings.isEmpty()) {
       add(new Span("Keine Adapter-Einstellungen vorhanden."));
       return;
     }
 
-    for (AdapterSettings settings : allSettings) {
+    for (var settings : allAdaptersAndSettings) {
       add(buildAdapterCard(settings, adminWorkflows));
     }
   }
 
-  private VerticalLayout buildAdapterCard(AdapterSettings settings, AdminWorkflows adminWorkflows) {
-    H3 adapterName = new H3(settings.getAdapterName());
+  private VerticalLayout buildAdapterCard(
+      AdapterInfoAndSettings settings, AdminWorkflows adminWorkflows) {
+    H3 adapterName = new H3(settings.adapterInfo().stableName());
     adapterName.getStyle().set("margin", "0 0 var(--lumo-space-s) 0");
+    Span adapterDesc = new Span(settings.adapterInfo().description());
 
     TextArea jsonArea = new TextArea();
     jsonArea.setWidthFull();
     jsonArea.setMinHeight("150px");
-    jsonArea.setValue(prettyPrint(settings.getAdapterSettings()));
+    jsonArea.setValue(prettyPrint(settings.adapterSettings().getAdapterSettings()));
     jsonArea.getStyle().set("font-family", "monospace").set("font-size", "var(--lumo-font-size-s)");
 
     Span validationMsg = new Span();
@@ -162,8 +157,9 @@ public class AdminSiteSettingsView extends VerticalLayout {
                 showError("Speichern fehlgeschlagen: Ungültiges JSON.");
                 return;
               }
-              adminWorkflows.updateAdapterSettings(settings, newJson);
-              showSuccess("Einstellungen für \"" + settings.getAdapterName() + "\" gespeichert.");
+              adminWorkflows.updateAdapterSettings(settings.adapterSettings(), newJson);
+              showSuccess(
+                  "Einstellungen für \"" + settings.adapterInfo().stableName() + "\" gespeichert.");
             });
     saveBtn.addThemeVariants(ButtonVariant.LUMO_PRIMARY, ButtonVariant.LUMO_SMALL);
 
@@ -172,7 +168,7 @@ public class AdminSiteSettingsView extends VerticalLayout {
             "Änderungen zurücksetzen",
             VaadinIcon.REFRESH.create(),
             e -> {
-              jsonArea.setValue(prettyPrint(settings.getAdapterSettings()));
+              jsonArea.setValue(prettyPrint(settings.adapterSettings().getAdapterSettings()));
               validationMsg.setText("");
             });
     resetBtn.addThemeVariants(ButtonVariant.LUMO_TERTIARY, ButtonVariant.LUMO_SMALL);
@@ -180,7 +176,7 @@ public class AdminSiteSettingsView extends VerticalLayout {
     HorizontalLayout actions = new HorizontalLayout(saveBtn, resetBtn, validationMsg);
     actions.setAlignItems(Alignment.CENTER);
 
-    VerticalLayout card = new VerticalLayout(adapterName, jsonArea, actions);
+    VerticalLayout card = new VerticalLayout(adapterName, adapterDesc, jsonArea, actions);
     card.setPadding(true);
     card.setSpacing(false);
     card.getStyle()

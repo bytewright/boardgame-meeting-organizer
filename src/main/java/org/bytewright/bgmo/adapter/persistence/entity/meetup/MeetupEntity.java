@@ -10,6 +10,8 @@ import lombok.Builder;
 import org.bytewright.bgmo.adapter.persistence.entity.AbstractEntity;
 import org.bytewright.bgmo.adapter.persistence.entity.GameEntity;
 import org.bytewright.bgmo.adapter.persistence.entity.user.RegisteredUserEntity;
+import org.bytewright.bgmo.domain.model.MeetupVisibility;
+import org.bytewright.bgmo.domain.model.SlotDistributionStrategy;
 import org.bytewright.bgmo.domain.model.data.HasUUID;
 import org.hibernate.annotations.UuidGenerator;
 import org.springframework.data.annotation.CreatedDate;
@@ -47,11 +49,29 @@ public class MeetupEntity extends AbstractEntity<UUID> implements HasUUID {
   @Nullable
   private String description;
 
+  @Column(nullable = false, columnDefinition = "text")
+  @Nullable
+  private String areaHint;
+
+  @Column(nullable = false, columnDefinition = "text")
+  @Nullable
+  private String fullLocation;
+
   @Column(nullable = false)
   private ZonedDateTime eventDate;
 
   @Column(nullable = false)
   private ZonedDateTime registrationClosing;
+
+  @Column(nullable = false)
+  @Enumerated(EnumType.STRING)
+  @Builder.Default
+  private MeetupVisibility visibility = MeetupVisibility.PUBLIC;
+
+  @Column(nullable = false)
+  @Enumerated(EnumType.STRING)
+  @Builder.Default
+  private SlotDistributionStrategy slotStrategy = SlotDistributionStrategy.FIRST_COME_FIRST_SERVE;
 
   @Column(nullable = false)
   private int durationHours;

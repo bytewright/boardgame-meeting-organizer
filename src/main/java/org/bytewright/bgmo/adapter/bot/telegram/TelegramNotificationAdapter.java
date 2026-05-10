@@ -164,7 +164,7 @@ public class TelegramNotificationAdapter
   }
 
   private TelegramSettings getSettings() {
-    AdapterSettings adapterSettings = adapterSettingsDao.findByAdapterName(getAdapterName());
+    AdapterSettings adapterSettings = adapterSettingsDao.findByAdapter(getAdapterInfo());
     return objectMapper.readValue(adapterSettings.getAdapterSettings(), TelegramSettings.class);
   }
 
@@ -174,19 +174,23 @@ public class TelegramNotificationAdapter
   }
 
   @Override
-  public String getAdapterName() {
-    return ADAPTER_NAME;
+  public AdapterSettingsProvider.AdapterInfo getAdapterInfo() {
+    return AdapterSettingsProvider.AdapterInfo.builder()
+        .stableName(ADAPTER_NAME)
+        .description(
+            "Telegram messenger API integration, sends notifications and updates to linked users")
+        .build();
   }
 
   @Override
-  public boolean isValidSettingsJson(String jsonData) {
+  public ValidationResult isValidSettingsJson(String jsonData) {
     try {
       TelegramSettings telegramSettings = objectMapper.readValue(jsonData, TelegramSettings.class);
-      return telegramSettings != null;
+      return telegramSettings != null ? ValidationResult.VALID : ValidationResult.INVALID;
     } catch (tools.jackson.core.JacksonException e) {
       log.error("Provided settings are invalid", e);
     }
-    return false;
+    return ValidationResult.INVALID;
   }
 
   @Override

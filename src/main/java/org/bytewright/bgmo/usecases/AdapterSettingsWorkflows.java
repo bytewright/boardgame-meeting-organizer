@@ -1,5 +1,7 @@
 package org.bytewright.bgmo.usecases;
 
+import static org.bytewright.bgmo.domain.service.AdapterSettingsProvider.ValidationResult.*;
+
 import jakarta.transaction.Transactional;
 import java.util.HashSet;
 import java.util.Set;
@@ -25,7 +27,7 @@ public class AdapterSettingsWorkflows implements ApplicationListener<ContextRefr
   public void onApplicationEvent(ContextRefreshedEvent ignored) {
     Set<String> seenNames = new HashSet<>();
     for (AdapterSettingsProvider provider : adapterSettingsProviders) {
-      String adapterName = provider.getAdapterName();
+      String adapterName = provider.getAdapterInfo().stableName();
       if (!seenNames.add(adapterName)) {
         throw new IllegalStateException("Detected two adapters with same name: " + adapterName);
       }
@@ -38,27 +40,31 @@ public class AdapterSettingsWorkflows implements ApplicationListener<ContextRefr
   }
 
   private void verifySettings(AdapterSettingsProvider provider) {
-    AdapterSettings adapterSettings =
-        adapterSettingsDao.findByAdapterName(provider.getAdapterName());
-    if (!provider.isValidSettingsJson(adapterSettings.getAdapterSettings())) {
-      throw new IllegalArgumentException(
-          "Database contains incompatible adapter config for: " + provider.getAdapterName());
+    AdapterSettings adapterSettings = adapterSettingsDao.findByAdapter(provider.getAdapterInfo());
+    try {
+      var validationResult = provider.isValidSettingsJson(adapterSettings.getAdapterSettings());
+      if (validationResult == VALID) return;
+    } catch (Exception e) {
+      log.error(
+          "Provider crashed during validation: {}", provider.getAdapterInfo().stableName(), e);
     }
+    throw new IllegalArgumentException(
+        "Database contains incompatible adapter config for: " + provider.getAdapterInfo());
   }
 
   @SneakyThrows
   private void createDefaultSettings(AdapterSettingsProvider provider) {
     String defaultSettingsJson = provider.getDefaultSettings();
-    if (!provider.isValidSettingsJson(defaultSettingsJson)) {
+    if (provider.isValidSettingsJson(defaultSettingsJson) == INVALID) {
       throw new IllegalArgumentException(
-          "Adapter returned invalid default settings! " + provider.getAdapterName());
+          "Adapter returned invalid default settings! " + provider.getAdapterInfo());
     }
     AdapterSettings settings =
         AdapterSettings.builder()
-            .adapterName(provider.getAdapterName())
+            .adapterName(provider.getAdapterInfo().stableName())
             .adapterSettings(defaultSettingsJson)
             .build();
-    log.info("Creating default settings in db for adapter: {}", provider.getAdapterName());
+    log.info("Creating default settings in db for adapter: {}", provider.getAdapterInfo());
     adapterSettingsDao.createOrUpdate(settings);
   }
 }

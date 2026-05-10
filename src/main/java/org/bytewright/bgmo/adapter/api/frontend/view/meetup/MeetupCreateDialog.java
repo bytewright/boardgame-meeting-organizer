@@ -16,7 +16,7 @@ import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
 import java.time.*;
 import org.bytewright.bgmo.domain.model.Game;
-import org.bytewright.bgmo.domain.model.MeetupCreation;
+import org.bytewright.bgmo.domain.model.MeetupEvent;
 import org.bytewright.bgmo.domain.model.user.RegisteredUser;
 import org.bytewright.bgmo.domain.service.data.GameDao;
 import org.bytewright.bgmo.usecases.MeetupWorkflows;
@@ -170,13 +170,14 @@ public class MeetupCreateDialog extends Dialog {
     boolean unlimited = unlimitedSlotsCheck.getValue();
     Integer slots = (!unlimited && !slotsField.isEmpty()) ? slotsField.getValue() : null;
 
-    MeetupCreation creation =
-        MeetupCreation.builder()
+    MeetupEvent.MeetupCreation creation =
+        MeetupEvent.MeetupCreation.builder()
             .title(titleField.getValue().strip())
             .description(descriptionField.getValue())
             .eventDate(eventDatePicker.getValue().atZone(ZoneId.systemDefault()))
             .registrationClosingDate(
-                registrationClosedDatePicker.getValue().atZone(ZoneId.systemDefault()))
+                LocalDate.from(
+                    registrationClosedDatePicker.getValue().atZone(ZoneId.systemDefault())))
             .durationHours(durationField.getValue())
             .creator(creator)
             .unlimitedSlots(unlimited)

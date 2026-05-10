@@ -13,7 +13,6 @@ import org.bytewright.bgmo.adapter.api.frontend.service.MeetupDetailContext;
 import org.bytewright.bgmo.adapter.api.frontend.service.i18n.LocaleService;
 import org.bytewright.bgmo.adapter.api.frontend.view.component.GameTimeAndDuration;
 import org.bytewright.bgmo.domain.model.MeetupEvent;
-import org.bytewright.bgmo.domain.model.user.ContactInfo;
 
 /**
  * Renders the public event header: title, date, time, creator, slot count, and the organiser's
@@ -80,21 +79,17 @@ public class MeetupInfoHeader extends VerticalLayout {
 
     // ── Address block ─────────────────────────────────────────────────────────
     if (ctx.showFullAddress()) {
-      ctx.creatorAddress().ifPresent(addr -> add(buildFullAddressBlock(addr)));
+      add(buildFullAddressBlock(ctx));
     } else if (ctx.showZipCode()) {
-      ctx.zipCode()
-          .ifPresent(
-              zip -> {
-                Icon locationIcon = VaadinIcon.MAP_MARKER.create();
-                locationIcon.setSize("var(--lumo-icon-size-s)");
-                locationIcon.getStyle().set("color", "var(--lumo-secondary-text-color)");
-                Span zipSpan = new Span(getTranslation("meetup.address.area", zip));
-                HorizontalLayout zipRow = new HorizontalLayout(locationIcon, zipSpan);
-                zipRow.setAlignItems(Alignment.CENTER);
-                zipRow.setSpacing(false);
-                zipRow.getStyle().set("gap", "var(--lumo-space-s)");
-                add(zipRow);
-              });
+      Icon locationIcon = VaadinIcon.MAP_MARKER.create();
+      locationIcon.setSize("var(--lumo-icon-size-s)");
+      locationIcon.getStyle().set("color", "var(--lumo-secondary-text-color)");
+      Span zipSpan = new Span(getTranslation("meetup.address.area", ctx.zipCode()));
+      HorizontalLayout zipRow = new HorizontalLayout(locationIcon, zipSpan);
+      zipRow.setAlignItems(Alignment.CENTER);
+      zipRow.setSpacing(false);
+      zipRow.getStyle().set("gap", "var(--lumo-space-s)");
+      add(zipRow);
     }
 
     // ── Description ──────────────────────────────────────────────────────────
@@ -125,7 +120,7 @@ public class MeetupInfoHeader extends VerticalLayout {
     return getTranslation("meetup.slotsFilled", accepted, meetup.getJoinSlots());
   }
 
-  private VerticalLayout buildFullAddressBlock(ContactInfo.AddressContact addr) {
+  private VerticalLayout buildFullAddressBlock(MeetupDetailContext ctx) {
     VerticalLayout block = new VerticalLayout();
     block.setPadding(true);
     block.setSpacing(false);
@@ -141,23 +136,9 @@ public class MeetupInfoHeader extends VerticalLayout {
         .set("font-size", "var(--lumo-font-size-s)")
         .set("color", "var(--lumo-secondary-text-color)");
 
-    Span name = new Span(addr.nameOnBell());
+    Span name = new Span(ctx.fullAddress());
     name.getStyle().set("font-weight", "bold");
-
-    Span street = new Span(addr.street());
-    Span cityLine = new Span(addr.zipCode() + " " + addr.city());
-
-    block.add(label, name, street, cityLine);
-
-    if (addr.comment() != null && !addr.comment().isBlank()) {
-      Span comment = new Span(addr.comment());
-      comment
-          .getStyle()
-          .set("font-size", "var(--lumo-font-size-s)")
-          .set("color", "var(--lumo-secondary-text-color)");
-      block.add(comment);
-    }
-
+    block.add(label, name);
     return block;
   }
 }

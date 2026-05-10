@@ -20,6 +20,7 @@ import tools.jackson.databind.json.JsonMapper;
 @Service
 @RequiredArgsConstructor
 public class SiteOperatorInfoService implements AdapterSettingsProvider {
+  private static final String ADAPTER_NAME = "core.site-operator-info-service";
   private final Set<ChatBotNotificationTaskExecutor> chatBots;
   private final AdapterSettingsDao adapterSettingsDao;
   private final JsonMapper mapper;
@@ -57,26 +58,30 @@ public class SiteOperatorInfoService implements AdapterSettingsProvider {
   }
 
   private Settings getSettings() {
-    AdapterSettings adapterSettings = adapterSettingsDao.findByAdapterName(getAdapterName());
+    AdapterSettings adapterSettings = adapterSettingsDao.findByAdapter(getAdapterInfo());
     return mapper.readValue(adapterSettings.getAdapterSettings(), Settings.class);
   }
 
   @Override
-  public String getAdapterName() {
-    return "SiteOperatorInfoService";
+  public AdapterSettingsProvider.AdapterInfo getAdapterInfo() {
+    return AdapterSettingsProvider.AdapterInfo.builder()
+        .stableName(ADAPTER_NAME)
+        .description("'CMS' like functionality for legal info about site operator")
+        .build();
   }
 
   @Override
-  public boolean isValidSettingsJson(String jsonData) {
+  public ValidationResult isValidSettingsJson(String jsonData) {
     try {
       Settings settings = mapper.readValue(jsonData, Settings.class);
-      return settings != null
+      if (settings != null
           && settings.getAddress() != null
           && settings.getTosParagraphs() != null
-          && !settings.getTosParagraphs().isEmpty();
+          && !settings.getTosParagraphs().isEmpty()) return ValidationResult.VALID;
     } catch (Exception e) {
-      return false;
+      log.error("Error while validating json", e);
     }
+    return ValidationResult.INVALID;
   }
 
   @Override

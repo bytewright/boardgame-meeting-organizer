@@ -27,7 +27,7 @@ import org.bytewright.bgmo.adapter.api.frontend.view.component.factory.Component
 import org.bytewright.bgmo.adapter.api.frontend.view.legal.DatenschutzView;
 import org.bytewright.bgmo.adapter.api.frontend.view.legal.ImpressumView;
 import org.bytewright.bgmo.adapter.api.frontend.view.legal.TermsOfUseView;
-import org.bytewright.bgmo.adapter.api.frontend.view.meetup.MeetupCreateDialog;
+import org.bytewright.bgmo.adapter.api.frontend.view.meetup.MeetupCreationView;
 import org.bytewright.bgmo.adapter.api.frontend.view.profile.ContactSettingsView;
 import org.bytewright.bgmo.adapter.api.frontend.view.profile.GameLibView;
 import org.bytewright.bgmo.adapter.api.frontend.view.profile.UserSettingsView;
@@ -95,7 +95,8 @@ public class MainLayout extends AppLayout implements RouterLayout {
         createNavButton(
             getTranslation("navbar.create-meetup"),
             VaadinIcon.PLUS.create(),
-            e -> openCreateDialog());
+            e -> UI.getCurrent().navigate(MeetupCreationView.class));
+
     createBtn.addThemeVariants(ButtonVariant.LUMO_PRIMARY, ButtonVariant.LUMO_SMALL);
 
     MenuBar profileMenu = buildProfileMenuBar();
@@ -218,20 +219,6 @@ public class MainLayout extends AppLayout implements RouterLayout {
     return btn;
   }
 
-  private void openCreateDialog() {
-    authService
-        .getCurrentUser()
-        .ifPresent(
-            user ->
-                new MeetupCreateDialog(
-                        clock,
-                        user,
-                        meetupWorkflows,
-                        gameDao,
-                        () -> UI.getCurrent().getPage().reload())
-                    .open());
-  }
-
   @Override
   public void showRouterLayoutContent(HasElement content) {
     Component target = null;
@@ -265,7 +252,8 @@ public class MainLayout extends AppLayout implements RouterLayout {
     LocalePicker localePicker = componentFactory.localePicker();
 
     HorizontalLayout footer =
-        new HorizontalLayout(impressum, new Span("·"), datenschutz, new Span("·"), tos, new Span("·"),localePicker);
+        new HorizontalLayout(
+            impressum, new Span("·"), datenschutz, new Span("·"), tos, new Span("·"), localePicker);
     footer.setWidthFull();
     footer.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
     footer.setDefaultVerticalComponentAlignment(FlexComponent.Alignment.CENTER);

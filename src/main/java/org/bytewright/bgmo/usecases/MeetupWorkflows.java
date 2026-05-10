@@ -2,12 +2,12 @@ package org.bytewright.bgmo.usecases;
 
 import jakarta.transaction.Transactional;
 import java.net.URI;
+import java.time.LocalTime;
 import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.bytewright.bgmo.domain.model.MeetupCreation;
 import org.bytewright.bgmo.domain.model.MeetupEvent;
 import org.bytewright.bgmo.domain.model.MeetupJoinRequest;
 import org.bytewright.bgmo.domain.model.RequestState;
@@ -34,19 +34,25 @@ public class MeetupWorkflows {
   private final TimeSource timeSource;
   private final MeetupDao meetupDao;
 
-  public MeetupEvent create(MeetupCreation event) {
+  public MeetupEvent create(MeetupEvent.MeetupCreation event) {
     if (!event.isUnlimitedSlots() && event.getJoinSlots() == null) {
       log.warn(
           "Detected missconfig, changing new event to unlimited slots as no slot count was provided");
       event.setUnlimitedSlots(true);
     }
     log.info("Creating new meetup from: {}", event);
+
+    ZonedDateTime registrationClosing =
+        ZonedDateTime.of(
+            event.getRegistrationClosingDate(),
+            LocalTime.of(20, 0),
+            siteManagementService.getServiceTimeZone());
     MeetupEvent meetupEvent =
         MeetupEvent.builder()
             .title(inputSanitizer.plainText(event.getTitle()))
             .description(inputSanitizer.plainText(event.getDescription()))
             .eventDate(event.getEventDate())
-            .registrationClosing(event.getRegistrationClosingDate())
+            .registrationClosing(registrationClosing)
             .creatorId(event.getCreator().getId())
             .canceled(false)
             .tsCreation(timeSource.now())
@@ -55,6 +61,10 @@ public class MeetupWorkflows {
             .allowAnonSignup(event.isAllowAnonSignup())
             .durationHours(event.getDurationHours())
             .offeredGames(event.getOfferedGames())
+            .areaHint(event.getLocation().areaHint())
+            .fullLocation(event.getLocation().fullLocation())
+            .visibility(event.getVisibility())
+            .slotStrategy(event.getSlotStrategy())
             .build();
     MeetupEvent persisted = meetupDao.createOrUpdate(meetupEvent);
     notificationManager.addNewEventCreatedTask(persisted.id());

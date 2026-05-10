@@ -9,6 +9,7 @@ import org.bytewright.bgmo.adapter.persistence.dao.repository.AdapterSettingsRep
 import org.bytewright.bgmo.adapter.persistence.entity.AdapterSettingEntity;
 import org.bytewright.bgmo.adapter.persistence.entity.AdapterSettingEntity_;
 import org.bytewright.bgmo.domain.model.AdapterSettings;
+import org.bytewright.bgmo.domain.service.AdapterSettingsProvider;
 import org.bytewright.bgmo.domain.service.data.AdapterSettingsDao;
 import org.mapstruct.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,9 +37,9 @@ public abstract class AdapterSettingEntityMapper
   }
 
   @Override
-  public AdapterSettings findByAdapterName(String adapterName) {
+  public AdapterSettings findByAdapter(AdapterSettingsProvider.AdapterInfo adapterInfo) {
     Specification<AdapterSettingEntity> specification =
-        Specification.where(adapterNameIs(adapterName));
+        Specification.where(adapterNameIs(adapterInfo.stableName()));
     return adapterSettingsRepository.findOne(specification).map(this::toDto).orElseThrow();
   }
 

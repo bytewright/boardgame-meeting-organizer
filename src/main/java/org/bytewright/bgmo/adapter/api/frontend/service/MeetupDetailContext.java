@@ -9,7 +9,6 @@ import org.bytewright.bgmo.adapter.api.frontend.view.meetup.ViewerRole;
 import org.bytewright.bgmo.domain.model.Game;
 import org.bytewright.bgmo.domain.model.MeetupEvent;
 import org.bytewright.bgmo.domain.model.MeetupJoinRequest;
-import org.bytewright.bgmo.domain.model.user.ContactInfo;
 import org.bytewright.bgmo.domain.model.user.RegisteredUser;
 
 /**
@@ -26,7 +25,7 @@ import org.bytewright.bgmo.domain.model.user.RegisteredUser;
  * @param offeredGames fully hydrated game objects (empty list when none offered)
  * @param creatorDisplayName display name of the organiser, fallback to UUID string
  * @param zipCode organiser's zip / postal code — shown to everyone when present
- * @param creatorAddress full organiser address — only exposed to components when {@link
+ * @param fullAddress full organiser address — only exposed to components when {@link
  *     #showFullAddress()} returns true
  */
 public record MeetupDetailContext(
@@ -37,12 +36,12 @@ public record MeetupDetailContext(
     boolean isFull,
     List<Game> offeredGames,
     String creatorDisplayName,
-    Optional<String> zipCode,
-    Optional<ContactInfo.AddressContact> creatorAddress) {
+    String zipCode,
+    String fullAddress) {
 
   /** Everyone sees the zip code when the organiser has an address on file. */
   public boolean showZipCode() {
-    return zipCode.isPresent();
+    return true;
   }
 
   /**

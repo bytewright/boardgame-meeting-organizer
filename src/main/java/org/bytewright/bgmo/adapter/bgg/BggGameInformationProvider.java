@@ -27,7 +27,12 @@ import tools.jackson.databind.json.JsonMapper;
 @RequiredArgsConstructor
 public class BggGameInformationProvider
     implements GameInformationProvider, AdapterSettingsProvider {
-  static final String ADAPTER_NAME = "BggGameInformationProvider-integration";
+  private static final String ADAPTER_NAME = "BggGameInformationProvider-integration";
+  static final AdapterSettingsProvider.AdapterInfo ADAPTER_INFO =
+      AdapterSettingsProvider.AdapterInfo.builder()
+          .stableName(ADAPTER_NAME)
+          .description("BGG API integration, looks up game info by BGG-IDs")
+          .build();
   private final BggAdapterProperties bggAdapterProperties;
   private final AdapterSettingsDao adapterSettingsDao;
   private final MessageSource messageSource;
@@ -64,7 +69,7 @@ public class BggGameInformationProvider
 
   @SneakyThrows
   private BggAdapterSettings getSettings() {
-    AdapterSettings adapterSettings = adapterSettingsDao.findByAdapterName(ADAPTER_NAME);
+    AdapterSettings adapterSettings = adapterSettingsDao.findByAdapter(getAdapterInfo());
     return objectMapper.readValue(adapterSettings.getAdapterSettings(), BggAdapterSettings.class);
   }
 
@@ -106,19 +111,22 @@ public class BggGameInformationProvider
   }
 
   @Override
-  public String getAdapterName() {
-    return ADAPTER_NAME;
+  public AdapterSettingsProvider.AdapterInfo getAdapterInfo() {
+    return AdapterSettingsProvider.AdapterInfo.builder()
+        .stableName(ADAPTER_NAME)
+        .description("BGG API integration, looks up game info by BGG-IDs")
+        .build();
   }
 
   @Override
-  public boolean isValidSettingsJson(String jsonData) {
+  public ValidationResult isValidSettingsJson(String jsonData) {
     try {
       var settings = objectMapper.readValue(jsonData, BggAdapterSettings.class);
-      return settings != null;
+      return settings != null ? ValidationResult.VALID : ValidationResult.INVALID;
     } catch (JacksonException e) {
       log.error("Provided settings are invalid", e);
     }
-    return false;
+    return ValidationResult.INVALID;
   }
 
   @Override

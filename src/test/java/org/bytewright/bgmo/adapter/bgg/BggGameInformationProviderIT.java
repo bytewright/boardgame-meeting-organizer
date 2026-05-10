@@ -1,6 +1,7 @@
 package org.bytewright.bgmo.adapter.bgg;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.bytewright.bgmo.adapter.bgg.BggGameInformationProvider.ADAPTER_INFO;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -164,8 +165,7 @@ class BggGameInformationProviderIT {
           JsonMapperFactory.unRedactedMapper()
               .writeValueAsString(BggAdapterSettings.builder().build());
       AdapterSettings mockSettings = AdapterSettings.builder().adapterSettings(json).build();
-      Mockito.when(mock.findByAdapterName(BggGameInformationProvider.ADAPTER_NAME))
-          .thenReturn(mockSettings);
+      Mockito.when(mock.findByAdapter(ADAPTER_INFO)).thenReturn(mockSettings);
       return mock;
     }
 

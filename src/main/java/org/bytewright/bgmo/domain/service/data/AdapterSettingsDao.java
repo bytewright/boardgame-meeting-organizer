@@ -7,7 +7,7 @@ import org.bytewright.bgmo.domain.service.AdapterSettingsProvider;
  * @see AdapterSettingsProvider
  */
 public interface AdapterSettingsDao extends ModelDao<AdapterSettings> {
-  AdapterSettings findByAdapterName(String adapterName);
+  AdapterSettings findByAdapter(AdapterSettingsProvider.AdapterInfo adapterInfo);
 
   boolean existsByAdapterName(String adapterName);
 }

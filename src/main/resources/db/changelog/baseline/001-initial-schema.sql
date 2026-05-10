@@ -83,7 +83,11 @@
         creator_id uuid not null,
         id uuid not null,
         description text,
+        areaHint text not null,
+        fullLocation text not null,
         title varchar(2048) not null,
+        visibility varchar(32) not null check (visibility in ('PUBLIC','WITH_LINK_ONLY')),
+        slotStrategy varchar(32) not null check (slotStrategy in ('FIRST_COME_FIRST_SERVE','REQUEST_APPROVE','LOTTERY')),
         primary key (id)
     );
 

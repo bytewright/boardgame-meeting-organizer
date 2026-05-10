@@ -1,11 +1,11 @@
 package org.bytewright.bgmo.usecases;
 
-import java.util.Comparator;
-import java.util.List;
-import java.util.Set;
-import java.util.UUID;
+import static org.bytewright.bgmo.domain.service.AdapterSettingsProvider.ValidationResult.VALID;
+
+import java.util.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.bytewright.bgmo.domain.model.AdapterInfoAndSettings;
 import org.bytewright.bgmo.domain.model.AdapterSettings;
 import org.bytewright.bgmo.domain.model.user.RegisteredUser;
 import org.bytewright.bgmo.domain.model.user.UserRole;
@@ -58,7 +58,9 @@ public class AdminWorkflows {
 
   private RegisteredUser findActiveAdmin() {
     Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    Objects.requireNonNull(authentication);
     User user = (User) authentication.getPrincipal();
+    Objects.requireNonNull(user);
     UUID userId = UUID.fromString(user.getUsername());
     RegisteredUser appUser = userDao.findOrThrow(userId);
     if (appUser.getRole() != UserRole.ADMIN) {
@@ -118,18 +120,40 @@ public class AdminWorkflows {
   public void updateAdapterSettings(AdapterSettings settings, String newJson) {
     AdapterSettingsProvider provider =
         adapterSettingsProviders.stream()
-            .filter(asp -> asp.getAdapterName().equals(settings.getAdapterName()))
+            .filter(asp -> asp.getAdapterInfo().stableName().equals(settings.getAdapterName()))
             .findAny()
             .orElseThrow(
                 () ->
                     new IllegalArgumentException(
                         "There is no adapter in app context with name: "
                             + settings.getAdapterName()));
-    if (!provider.isValidSettingsJson(newJson)) {
-      throw new IllegalArgumentException(
-          "Adapter '%s' rejected new settings as invalid. Check json syntax and content!"
-              .formatted(provider.getAdapterName()));
+    AdapterSettings adapterSettings = adapterSettingsDao.findByAdapter(provider.getAdapterInfo());
+    try {
+      var validationResult = provider.isValidSettingsJson(adapterSettings.getAdapterSettings());
+      if (validationResult == VALID) {
+        adapterSettingsDao.createOrUpdate(settings.toBuilder().adapterSettings(newJson).build());
+        return;
+      }
+    } catch (Exception e) {
+      log.error(
+          "Provider crashed during validation: {}", provider.getAdapterInfo().stableName(), e);
     }
-    adapterSettingsDao.createOrUpdate(settings.toBuilder().adapterSettings(newJson).build());
+    throw new IllegalArgumentException(
+        "Adapter '%s' rejected new settings as invalid. Check json syntax and content!"
+            .formatted(provider.getAdapterInfo()));
+  }
+
+  /** sorted by name */
+  public List<AdapterInfoAndSettings> findAllAdaptersAndSettings() {
+    List<AdapterInfoAndSettings> infoAndSettings = new ArrayList<>();
+    for (AdapterSettingsProvider provider :
+        adapterSettingsProviders.stream()
+            .sorted(Comparator.comparing(p -> p.getAdapterInfo().stableName()))
+            .toList()) {
+      AdapterSettingsProvider.AdapterInfo adapterInfo = provider.getAdapterInfo();
+      AdapterSettings adapterSettings = adapterSettingsDao.findByAdapter(adapterInfo);
+      infoAndSettings.add(new AdapterInfoAndSettings(adapterInfo, adapterSettings));
+    }
+    return infoAndSettings;
   }
 }

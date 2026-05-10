@@ -25,7 +25,7 @@ class MeetupWorkflowsTest extends IntegrationTest {
     RegisteredUser joiner = helper.user();
     MeetupEvent meetupEvent =
         meetupWorkflows.create(
-            MeetupCreation.builder()
+            MeetupEvent.MeetupCreation.builder()
                 .title("myEvent")
                 .creator(creator)
                 .eventDate(helper.now())

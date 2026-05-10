@@ -1,6 +1,7 @@
 package org.bytewright.bgmo.domain.service;
 
 import java.net.URI;
+import java.time.ZoneId;
 import lombok.Builder;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
@@ -16,6 +17,7 @@ import tools.jackson.databind.json.JsonMapper;
 @Service
 @RequiredArgsConstructor
 public class SiteManagementService implements AdapterSettingsProvider {
+  private static final String ADAPTER_NAME = "core.site-management-service";
   private final JsonMapper mapper = JsonMapperFactory.unRedactedMapper();
   private final AdapterSettingsDao adapterSettingsDao;
 
@@ -24,30 +26,37 @@ public class SiteManagementService implements AdapterSettingsProvider {
   }
 
   private SiteSettings getSettings() {
-    AdapterSettings settings = adapterSettingsDao.findByAdapterName(getAdapterName());
+    AdapterSettings settings = adapterSettingsDao.findByAdapter(getAdapterInfo());
     String adapterSettings = settings.getAdapterSettings();
     return mapper.readValue(adapterSettings, SiteSettings.class);
   }
 
   @Override
-  public String getAdapterName() {
-    return "SiteManagementService";
+  public AdapterSettingsProvider.AdapterInfo getAdapterInfo() {
+    return AdapterSettingsProvider.AdapterInfo.builder()
+        .stableName(ADAPTER_NAME)
+        .description("Global site-wide settings management")
+        .build();
   }
 
   @Override
-  public boolean isValidSettingsJson(String jsonData) {
+  public ValidationResult isValidSettingsJson(String jsonData) {
     try {
       var settings = mapper.readValue(jsonData, SiteSettings.class);
-      return settings != null;
+      return settings != null ? ValidationResult.VALID : ValidationResult.INVALID;
     } catch (JacksonException e) {
       log.error("Provided settings are invalid", e);
     }
-    return false;
+    return ValidationResult.INVALID;
   }
 
   @Override
   public String getDefaultSettings() throws Exception {
     return mapper.writeValueAsString(SiteSettings.builder().build());
+  }
+
+  public ZoneId getServiceTimeZone() {
+    return ZoneId.of("Europe/Berlin");
   }
 
   @Data

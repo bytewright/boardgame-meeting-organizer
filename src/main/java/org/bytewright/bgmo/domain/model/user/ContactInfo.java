@@ -34,6 +34,7 @@ public sealed interface ContactInfo extends HasUUID
     }
   }
 
+  /** deprecated, app doesn't need this and should be removed */
   @Builder(toBuilder = true)
   record AddressContact(
       UUID id,

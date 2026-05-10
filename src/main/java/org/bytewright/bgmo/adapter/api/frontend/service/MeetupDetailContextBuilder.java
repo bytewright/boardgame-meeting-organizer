@@ -11,7 +11,6 @@ import org.bytewright.bgmo.domain.model.Game;
 import org.bytewright.bgmo.domain.model.MeetupEvent;
 import org.bytewright.bgmo.domain.model.MeetupJoinRequest;
 import org.bytewright.bgmo.domain.model.RequestState;
-import org.bytewright.bgmo.domain.model.user.ContactInfo;
 import org.bytewright.bgmo.domain.model.user.RegisteredUser;
 import org.bytewright.bgmo.domain.service.data.GameDao;
 import org.bytewright.bgmo.domain.service.data.RegisteredUserDao;
@@ -56,16 +55,6 @@ public class MeetupDetailContextBuilder {
             .findById(meetup.getCreatorId())
             .map(RegisteredUser::getDisplayName)
             .orElseGet(() -> meetup.getCreatorId().toString());
-
-    // Organiser address — fetched once for the whole page.
-    Optional<ContactInfo.AddressContact> creatorAddress =
-        userDao.findById(meetup.getCreatorId()).stream()
-            .flatMap(u -> u.getContactInfos().stream())
-            .filter(ContactInfo.AddressContact.class::isInstance)
-            .map(ContactInfo.AddressContact.class::cast)
-            .findFirst();
-
-    Optional<String> zipCode = creatorAddress.map(ContactInfo.AddressContact::zipCode);
 
     // ── Determine viewer role ────────────────────────────────────────────────
     ViewerRole role;
@@ -115,7 +104,7 @@ public class MeetupDetailContextBuilder {
         isFull,
         offeredGames,
         creatorDisplayName,
-        zipCode,
-        creatorAddress);
+        meetup.getAreaHint(),
+        meetup.getFullLocation());
   }
 }
