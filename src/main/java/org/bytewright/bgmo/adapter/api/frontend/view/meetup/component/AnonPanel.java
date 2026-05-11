@@ -66,24 +66,30 @@ public class AnonPanel extends VerticalLayout {
 
     Button joinBtn = new Button(getTranslation("meetup.join-request"));
     joinBtn.addThemeVariants(ButtonVariant.LUMO_PRIMARY, ButtonVariant.LUMO_SUCCESS);
-    joinBtn.addClickListener(
-        e ->
-            new AnonJoinDialog(
-                    ctx.meetup().getTitle(),
-                    (displayName, contactInfo) -> {
-                      UUID token = getOrCreateAnonToken.get();
-                      meetupWorkflows.requestToJoinAnon(
-                          ctx.meetup().getId(), token, displayName, contactInfo);
-                      Notification n =
-                          Notification.show(
-                              getTranslation("meetup.joinSent"),
-                              3000,
-                              Notification.Position.TOP_CENTER);
-                      n.addThemeVariants(NotificationVariant.LUMO_SUCCESS);
-                      onRefresh.run();
-                    })
-                .open());
-    add(joinBtn);
+    if (ctx.meetup().isAllowAnonSignup()) {
+      joinBtn.addClickListener(
+          e ->
+              new AnonJoinDialog(
+                      ctx.meetup().getTitle(),
+                      (displayName, contactInfo) -> {
+                        UUID token = getOrCreateAnonToken.get();
+                        meetupWorkflows.requestToJoinAnon(
+                            ctx.meetup().getId(), token, displayName, contactInfo);
+                        Notification n =
+                            Notification.show(
+                                getTranslation("meetup.joinSent"),
+                                3000,
+                                Notification.Position.TOP_CENTER);
+                        n.addThemeVariants(NotificationVariant.LUMO_SUCCESS);
+                        onRefresh.run();
+                      })
+                  .open());
+      add(joinBtn);
+    } else {
+      joinBtn.setEnabled(false);
+      add(joinBtn);
+      add(new Span(getTranslation("meetup.no-anon-allowed")));
+    }
 
     add(buildLoginHint());
   }

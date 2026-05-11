@@ -61,13 +61,14 @@ public class MeetupWorkflows {
             .allowAnonSignup(event.isAllowAnonSignup())
             .durationHours(event.getDurationHours())
             .offeredGames(event.getOfferedGames())
-            .areaHint(event.getLocation().areaHint())
-            .fullLocation(event.getLocation().fullLocation())
+            .areaHint(inputSanitizer.plainText(event.getLocation().areaHint().trim()))
+            .fullLocation(inputSanitizer.plainText(event.getLocation().fullLocation().trim()))
             .visibility(event.getVisibility())
             .slotStrategy(event.getSlotStrategy())
             .build();
     MeetupEvent persisted = meetupDao.createOrUpdate(meetupEvent);
     notificationManager.addNewEventCreatedTask(persisted.id());
+    // todo move to api adapter
     URI meetup =
         siteManagementService.getBaseUrl().resolve("meetup").resolve(persisted.id().toString());
     log.info("Available at: {}", meetup);

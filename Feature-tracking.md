@@ -1,6 +1,5 @@
 # ToDos - Bugs
 
-- AnonJoinDialog should use message keys
 - make timezone configurable
 
 # ToDos - Features

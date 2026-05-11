@@ -3,6 +3,7 @@ package org.bytewright.bgmo.adapter.persistence.dao.mapstruct;
 import jakarta.transaction.Transactional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.bytewright.bgmo.adapter.persistence.dao.BaseEntityMapper;
@@ -40,6 +41,11 @@ public abstract class MeetupEntityMapper extends BaseEntityMapper<MeetupEvent, M
 
   @Override
   public Set<MeetupEventLocation> findAllLocationsByOrganizer(UUID userId) {
-    return Set.of();
+    return repository
+        .findByCreator_Id(userId)
+        .map(
+            meetupEntity ->
+                new MeetupEventLocation(meetupEntity.getAreaHint(), meetupEntity.getFullLocation()))
+        .collect(Collectors.toSet());
   }
 }

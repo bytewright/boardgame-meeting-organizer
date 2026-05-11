@@ -27,44 +27,37 @@ public class AnonJoinDialog extends Dialog {
    *     responsible for persisting the request and storing the anon session token
    */
   public AnonJoinDialog(String meetupTitle, BiConsumer<String, String> onSubmit) {
-    setHeaderTitle("Request to join: " + meetupTitle);
+    setHeaderTitle(getTranslation("anon-join-dialog.header", meetupTitle));
     setCloseOnOutsideClick(false);
     setWidth("480px");
 
     // ── Fields ────────────────────────────────────────────────────────────
-    TextField nameField = new TextField("Your name");
+    TextField nameField = new TextField(getTranslation("anon-join-dialog.name.label"));
     nameField.setRequired(true);
-    nameField.setPlaceholder("How others will see you, e.g. \"Alex\"");
+    nameField.setPlaceholder(getTranslation("anon-join-dialog.name.placeholder"));
     nameField.setWidthFull();
 
-    TextField contactField = new TextField("Contact info");
+    TextField contactField = new TextField(getTranslation("anon-join-dialog.contact.label"));
     contactField.setRequired(true);
-    contactField.setPlaceholder("Telegram @handle · Signal/phone · e-mail …");
-    contactField.setHelperText(
-        "Only the organiser sees this — and only after they confirm your spot.");
+    contactField.setPlaceholder(getTranslation("anon-join-dialog.contact.placeholder"));
+    contactField.setHelperText(getTranslation("anon-join-dialog.contact.helper"));
     contactField.setWidthFull();
 
     // ── GDPR notice ───────────────────────────────────────────────────────
-    Paragraph gdprNote =
-        new Paragraph(
-            "Data handling: your display name will be shown publicly to other attendees once "
-                + "the organiser confirms your spot. Your contact info is stored securely, "
-                + "is visible only to the event organiser, and will be deleted after the event "
-                + "concludes. You can request early deletion by contacting the organiser directly. "
-                + "No data is shared with third parties.");
+    Paragraph gdprNote = new Paragraph(getTranslation("anon-join-dialog.gdpr.text"));
     gdprNote
         .getStyle()
         .set("font-size", "0.82em")
         .set("color", "var(--lumo-secondary-text-color)")
         .set("line-height", "1.5");
 
-    Checkbox consentBox = new Checkbox("I have read and agree to the above data handling.");
+    Checkbox consentBox = new Checkbox(getTranslation("anon-join-dialog.consent.label"));
 
     // ── Buttons ───────────────────────────────────────────────────────────
-    Button cancelBtn = new Button("Cancel", e -> close());
+    Button cancelBtn = new Button(getTranslation("anon-join-dialog.btn.cancel"), e -> close());
     cancelBtn.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
 
-    Button submitBtn = new Button("Send join request");
+    Button submitBtn = new Button(getTranslation("anon-join-dialog.btn.submit"));
     submitBtn.addThemeVariants(ButtonVariant.LUMO_PRIMARY, ButtonVariant.LUMO_SUCCESS);
     submitBtn.addClickListener(
         e -> {
@@ -72,7 +65,7 @@ public class AnonJoinDialog extends Dialog {
 
           if (nameField.getValue() == null || nameField.getValue().isBlank()) {
             nameField.setInvalid(true);
-            nameField.setErrorMessage("Please enter a name.");
+            nameField.setErrorMessage(getTranslation("anon-join-dialog.validation.name-required"));
             valid = false;
           } else {
             nameField.setInvalid(false);
@@ -80,7 +73,8 @@ public class AnonJoinDialog extends Dialog {
 
           if (contactField.getValue() == null || contactField.getValue().isBlank()) {
             contactField.setInvalid(true);
-            contactField.setErrorMessage("Please enter how the organiser can reach you.");
+            contactField.setErrorMessage(
+                getTranslation("anon-join-dialog.validation.contact-required"));
             valid = false;
           } else {
             contactField.setInvalid(false);
@@ -89,7 +83,7 @@ public class AnonJoinDialog extends Dialog {
           if (!consentBox.getValue()) {
             Notification n =
                 Notification.show(
-                    "Please accept the data handling notice before sending your request.",
+                    getTranslation("anon-join-dialog.validation.consent-required"),
                     3500,
                     Notification.Position.MIDDLE);
             n.addThemeVariants(NotificationVariant.LUMO_ERROR);

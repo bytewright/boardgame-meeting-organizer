@@ -43,6 +43,7 @@ public class MeetupLocationService implements AdapterSettingsProvider {
     List<MeetupLocationSuggestion> allLocationsForUser =
         Stream.concat(
                 getSettings().locations().stream()
+                    .filter(PersistedLocation::enabled)
                     .map(l -> new MeetupEventLocation(l.areaHint(), l.fullLocation()))
                     .map(MeetupLocationSuggestion::common),
                 allLocationsByOrganizer.stream().map(MeetupLocationSuggestion::personal))
