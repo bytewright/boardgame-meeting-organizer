@@ -2,11 +2,18 @@ package org.bytewright.bgmo.adapter.api.frontend.view.meetup;
 
 import static org.bytewright.bgmo.domain.service.CoreAppContextConfig.APP_NAME_SHORT;
 
+import com.vaadin.flow.component.Unit;
 import com.vaadin.flow.component.html.Hr;
+import com.vaadin.flow.component.html.Paragraph;
+import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.icon.Icon;
+import com.vaadin.flow.component.icon.VaadinIcon;
+import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.*;
 import com.vaadin.flow.server.VaadinSession;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
+import java.time.ZonedDateTime;
 import java.util.UUID;
 import lombok.extern.slf4j.Slf4j;
 import org.bytewright.bgmo.adapter.api.frontend.SessionAuthenticationService;
@@ -17,6 +24,7 @@ import org.bytewright.bgmo.adapter.api.frontend.view.DashboardView;
 import org.bytewright.bgmo.adapter.api.frontend.view.component.MainLayout;
 import org.bytewright.bgmo.adapter.api.frontend.view.meetup.component.*;
 import org.bytewright.bgmo.domain.model.MeetupEvent;
+import org.bytewright.bgmo.domain.model.SlotDistributionStrategy;
 import org.bytewright.bgmo.domain.model.user.RegisteredUser;
 import org.bytewright.bgmo.domain.service.data.MeetupDao;
 import org.bytewright.bgmo.usecases.MeetupWorkflows;
@@ -89,6 +97,25 @@ public class MeetupDetailView extends VerticalLayout implements BeforeEnterObser
     add(new ConfirmedAttendeesSection(ctx));
     add(new Hr());
 
+    SlotDistributionStrategy slotStrategy = meetup.getSlotStrategy();
+    add(
+        new Span(
+            getTranslation(
+                "meetup.slot-distribution.title", getTranslation(slotStrategy.getMessageKey()))));
+    add(new Paragraph(getTranslation(slotStrategy.getHelperTextKey())));
+
+    add(new Hr());
+    add(new Span(getTranslation("meetup.registrationClosure.title")));
+    ZonedDateTime registrationClosing = meetup.getRegistrationClosing();
+    Icon registrationClosingIcon = VaadinIcon.CALENDAR_CLOCK.create();
+    registrationClosingIcon.setSize("var(--lumo-icon-size-s)");
+    registrationClosingIcon.getStyle().set("color", "var(--lumo-secondary-text-color)");
+    Span registrationClosingSpan =
+        new Span(registrationClosing.format(localeService.getDateFormatter()));
+    registrationClosingSpan.setMinWidth(200, Unit.PIXELS);
+    HorizontalLayout regClosingRow =
+        new HorizontalLayout(registrationClosingIcon, registrationClosingSpan);
+    add(regClosingRow);
     // ── Role-specific panel (exactly one) ─────────────────────────────────────
     add(
         switch (ctx.role()) {

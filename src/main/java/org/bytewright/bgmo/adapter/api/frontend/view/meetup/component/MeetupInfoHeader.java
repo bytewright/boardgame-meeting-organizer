@@ -1,9 +1,7 @@
 package org.bytewright.bgmo.adapter.api.frontend.view.meetup.component;
 
 import com.vaadin.flow.component.Unit;
-import com.vaadin.flow.component.html.Div;
-import com.vaadin.flow.component.html.H2;
-import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.html.*;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
@@ -50,6 +48,8 @@ public class MeetupInfoHeader extends VerticalLayout {
     calendarIcon.setSize("var(--lumo-icon-size-s)");
     calendarIcon.getStyle().set("color", "var(--lumo-secondary-text-color)");
     Span dateSpan = new Span(eventDate.format(localeService.getDateFormatter()));
+    dateSpan.setMinWidth(200, Unit.PIXELS);
+
     HorizontalLayout dateRow = new HorizontalLayout(calendarIcon, dateSpan);
     dateRow.setAlignItems(Alignment.CENTER);
     dateRow.setSpacing(false);
@@ -84,7 +84,7 @@ public class MeetupInfoHeader extends VerticalLayout {
       Icon locationIcon = VaadinIcon.MAP_MARKER.create();
       locationIcon.setSize("var(--lumo-icon-size-s)");
       locationIcon.getStyle().set("color", "var(--lumo-secondary-text-color)");
-      Span zipSpan = new Span(getTranslation("meetup.address.area", ctx.zipCode()));
+      Span zipSpan = new Span(ctx.meetup().getAreaHint());
       HorizontalLayout zipRow = new HorizontalLayout(locationIcon, zipSpan);
       zipRow.setAlignItems(Alignment.CENTER);
       zipRow.setSpacing(false);
@@ -129,14 +129,22 @@ public class MeetupInfoHeader extends VerticalLayout {
         .set("background", "var(--lumo-contrast-5pct)")
         .set("border-radius", "var(--lumo-border-radius-m)")
         .set("border-left", "3px solid var(--lumo-success-color)");
-
+    Icon locationIcon = VaadinIcon.MAP_MARKER.create();
+    locationIcon.setSize("var(--lumo-icon-size-s)");
+    locationIcon.getStyle().set("color", "var(--lumo-secondary-text-color)");
+    Span zipSpan = new Span(ctx.meetup().getAreaHint());
+    HorizontalLayout zipRow = new HorizontalLayout(locationIcon, zipSpan);
+    zipRow.setAlignItems(Alignment.CENTER);
+    zipRow.setSpacing(false);
+    zipRow.getStyle().set("gap", "var(--lumo-space-s)");
+    block.add(zipRow);
     Span label = new Span(getTranslation("meetup.address.full.label"));
     label
         .getStyle()
         .set("font-size", "var(--lumo-font-size-s)")
         .set("color", "var(--lumo-secondary-text-color)");
 
-    Span name = new Span(ctx.fullAddress());
+    Span name = new Span(ctx.meetup().getFullLocation());
     name.getStyle().set("font-weight", "bold");
     block.add(label, name);
     return block;

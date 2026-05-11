@@ -97,14 +97,6 @@ public class MeetupDetailContextBuilder {
     }
 
     return new MeetupDetailContext(
-        meetup,
-        currentUser,
-        role,
-        myRequest,
-        isFull,
-        offeredGames,
-        creatorDisplayName,
-        meetup.getAreaHint(),
-        meetup.getFullLocation());
+        meetup, currentUser, role, myRequest, isFull, offeredGames, creatorDisplayName);
   }
 }

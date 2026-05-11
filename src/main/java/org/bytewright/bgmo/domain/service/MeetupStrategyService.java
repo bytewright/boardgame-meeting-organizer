@@ -25,7 +25,7 @@ public class MeetupStrategyService {
         getDto(locale, LOTTERY));
   }
 
-  private SlotDistributionStrategyWithLocalization getDto(
+  public SlotDistributionStrategyWithLocalization getDto(
       Locale locale, SlotDistributionStrategy strategy) {
     return SlotDistributionStrategyWithLocalization.builder()
         .strategy(strategy)

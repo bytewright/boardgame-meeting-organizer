@@ -24,9 +24,6 @@ import org.bytewright.bgmo.domain.model.user.RegisteredUser;
  * @param isFull whether all slots are taken (false when slots are unlimited)
  * @param offeredGames fully hydrated game objects (empty list when none offered)
  * @param creatorDisplayName display name of the organiser, fallback to UUID string
- * @param zipCode organiser's zip / postal code — shown to everyone when present
- * @param fullAddress full organiser address — only exposed to components when {@link
- *     #showFullAddress()} returns true
  */
 public record MeetupDetailContext(
     MeetupEvent meetup,
@@ -35,9 +32,7 @@ public record MeetupDetailContext(
     Optional<MeetupJoinRequest> myRequest,
     boolean isFull,
     List<Game> offeredGames,
-    String creatorDisplayName,
-    String zipCode,
-    String fullAddress) {
+    String creatorDisplayName) {
 
   /** Everyone sees the zip code when the organiser has an address on file. */
   public boolean showZipCode() {
