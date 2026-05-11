@@ -4,8 +4,11 @@
 - agree dataprotection during registration
 - Registrierung: clarify scope of information entered, add helptexts and labels
 - i18n for legal pages
+- profile settings: too much whitespace around display name, should be left aligned
+- anonview: "erstelle einen Account" should be link to register page
 
 # ToDos - Features
+- mousecursor does not show whats clickable, with mobile in mind: how to better promote clickability of stuff
 - on dashboard: display own meetups on top
 - meetup MeetupEditView
   - Reschedule events

@@ -23,7 +23,7 @@ public class SiteOperatorInfoService implements AdapterSettingsProvider {
   private static final String ADAPTER_NAME = "core.site-operator-info-service";
   private final Set<ChatBotNotificationTaskExecutor> chatBots;
   private final AdapterSettingsDao adapterSettingsDao;
-  private final JsonMapper mapper;
+  private final JsonMapper mapper = JsonMapperFactory.unRedactedMapper();
 
   public ContactInfo.AddressContact getOperatorAddress() {
     return getSettings().getAddress();

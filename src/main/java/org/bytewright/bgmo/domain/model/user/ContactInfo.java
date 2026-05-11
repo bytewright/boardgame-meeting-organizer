@@ -2,6 +2,7 @@ package org.bytewright.bgmo.domain.model.user;
 
 import java.util.UUID;
 import lombok.Builder;
+import lombok.extern.jackson.Jacksonized;
 import org.bytewright.bgmo.domain.model.data.HasUUID;
 
 public sealed interface ContactInfo extends HasUUID
@@ -20,6 +21,7 @@ public sealed interface ContactInfo extends HasUUID
 
   boolean isVerified();
 
+  @Jacksonized
   @Builder(toBuilder = true)
   record EmailContact(UUID id, UUID userId, String email, boolean isVerified)
       implements ContactInfo {
