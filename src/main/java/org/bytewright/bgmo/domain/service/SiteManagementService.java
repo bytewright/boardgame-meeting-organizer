@@ -43,7 +43,11 @@ public class SiteManagementService implements AdapterSettingsProvider {
   public ValidationResult isValidSettingsJson(String jsonData) {
     try {
       var settings = mapper.readValue(jsonData, SiteSettings.class);
-      return settings != null ? ValidationResult.VALID : ValidationResult.INVALID;
+      ZoneId zoneId = ZoneId.of(settings.getTimeZone());
+      log.debug("Zone seems to be valid as no exception thrown: {}", zoneId);
+      URI uri = URI.create(settings.getBaseUrl());
+      log.debug("Baseurl seems to be valid as no exception thrown: {}", uri);
+      return ValidationResult.VALID;
     } catch (JacksonException e) {
       log.error("Provided settings are invalid", e);
     }
@@ -56,13 +60,14 @@ public class SiteManagementService implements AdapterSettingsProvider {
   }
 
   public ZoneId getServiceTimeZone() {
-    return ZoneId.of("Europe/Berlin");
+    return ZoneId.of(getSettings().getTimeZone());
   }
 
   @Data
   @Builder
   @Jacksonized
   private static class SiteSettings {
-    @Builder.Default private String baseUrl = "";
+    @Builder.Default private String baseUrl = "http://localhost:8080/";
+    @Builder.Default private String timeZone = "Europe/Berlin";
   }
 }

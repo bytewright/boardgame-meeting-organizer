@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.bytewright.bgmo.domain.model.MeetupEvent;
 import org.bytewright.bgmo.domain.model.MeetupJoinRequest;
+import org.bytewright.bgmo.domain.model.MeetupVisibility;
 import org.bytewright.bgmo.domain.model.RequestState;
 import org.bytewright.bgmo.domain.model.user.RegisteredUser;
 import org.bytewright.bgmo.domain.service.InputSanitizer;
@@ -243,5 +244,14 @@ public class MeetupWorkflows {
 
     toConfirm.forEach(r -> confirmAttendee(meetup.getId(), r));
     return slotsFilledAtRandom;
+  }
+
+  public List<MeetupEvent> findPubliclyListed() {
+    return meetupDao
+        .findNotExpired(timeSource.now().atZone(siteManagementService.getServiceTimeZone()))
+        .filter(m -> !m.isCanceled())
+        .filter(meetupEvent -> meetupEvent.getVisibility() == MeetupVisibility.PUBLIC)
+        .sorted(Comparator.comparing(MeetupEvent::getEventDate))
+        .toList();
   }
 }

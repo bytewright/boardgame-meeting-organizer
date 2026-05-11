@@ -11,7 +11,6 @@ import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.*;
 import jakarta.annotation.security.PermitAll;
 import java.time.ZonedDateTime;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
@@ -23,8 +22,8 @@ import org.bytewright.bgmo.adapter.api.frontend.view.meetup.MeetupDetailView;
 import org.bytewright.bgmo.domain.model.MeetupEvent;
 import org.bytewright.bgmo.domain.model.RequestState;
 import org.bytewright.bgmo.domain.model.user.RegisteredUser;
-import org.bytewright.bgmo.domain.service.data.MeetupDao;
 import org.bytewright.bgmo.domain.service.data.RegisteredUserDao;
+import org.bytewright.bgmo.usecases.MeetupWorkflows;
 
 @Slf4j
 @Route(value = "dashboard", layout = MainLayout.class)
@@ -36,17 +35,17 @@ public class DashboardView extends VerticalLayout implements BeforeEnterObserver
 
   private final LocaleService localeService;
   private final SessionAuthenticationService authService;
-  private final MeetupDao meetupDao;
+  private final MeetupWorkflows meetupWorkflows;
   private final RegisteredUserDao registeredUserDao;
 
   public DashboardView(
       LocaleService localeService,
       SessionAuthenticationService authService,
-      MeetupDao meetupDao,
+      MeetupWorkflows meetupWorkflows,
       RegisteredUserDao registeredUserDao) {
     this.localeService = localeService;
     this.authService = authService;
-    this.meetupDao = meetupDao;
+    this.meetupWorkflows = meetupWorkflows;
     this.registeredUserDao = registeredUserDao;
 
     setWidthFull();
@@ -58,12 +57,7 @@ public class DashboardView extends VerticalLayout implements BeforeEnterObserver
   private void buildUI() {
     removeAll();
 
-    List<MeetupEvent> upcomingMeetups =
-        meetupDao.findAll().stream()
-            .filter(m -> !m.isCanceled())
-            .filter(m -> m.getEventDate().isAfter(ZonedDateTime.now().minusDays(1)))
-            .sorted(Comparator.comparing(MeetupEvent::getEventDate))
-            .toList();
+    List<MeetupEvent> upcomingMeetups = meetupWorkflows.findPubliclyListed();
 
     if (upcomingMeetups.isEmpty()) {
       add(new Span(getTranslation("dashboard.no-meetups")));

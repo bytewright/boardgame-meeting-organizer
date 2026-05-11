@@ -1,14 +1,12 @@
 # ToDos - Bugs
 
-- make timezone configurable
 - show on registration and profil: information about contact details why? how? for what?
 - agree dataprotection during registration
 - Registrierung: clarify scope of information entered, add helptexts and labels
-- Restrict visibility according to strategy
 - i18n for legal pages
 
 # ToDos - Features
-
+- on dashboard: display own meetups on top
 - meetup MeetupEditView
   - Reschedule events
 - meetup details expanded

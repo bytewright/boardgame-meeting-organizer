@@ -1,9 +1,11 @@
 package org.bytewright.bgmo.adapter.persistence.dao.mapstruct;
 
 import jakarta.transaction.Transactional;
+import java.time.ZonedDateTime;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.bytewright.bgmo.adapter.persistence.dao.BaseEntityMapper;
@@ -47,5 +49,10 @@ public abstract class MeetupEntityMapper extends BaseEntityMapper<MeetupEvent, M
             meetupEntity ->
                 new MeetupEventLocation(meetupEntity.getAreaHint(), meetupEntity.getFullLocation()))
         .collect(Collectors.toSet());
+  }
+
+  @Override
+  public Stream<MeetupEvent> findNotExpired(ZonedDateTime now) {
+    return repository.findByEventDateAfterAndCanceledFalseOrderByEventDateAsc(now).map(this::toDto);
   }
 }
