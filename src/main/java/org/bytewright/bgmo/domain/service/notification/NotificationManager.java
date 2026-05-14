@@ -6,6 +6,7 @@ import java.util.Set;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.bytewright.bgmo.domain.model.event.MeetupCreatedEvent;
 import org.bytewright.bgmo.domain.model.notification.NotificationContext;
 import org.bytewright.bgmo.domain.model.notification.NotificationTargetType;
 import org.bytewright.bgmo.domain.model.notification.NotificationType;
@@ -16,6 +17,7 @@ import org.bytewright.bgmo.domain.model.user.UserRole;
 import org.bytewright.bgmo.domain.service.UrlGenerator;
 import org.bytewright.bgmo.domain.service.data.MeetupDao;
 import org.bytewright.bgmo.domain.service.data.RegisteredUserDao;
+import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 
 /**
@@ -31,7 +33,12 @@ public class NotificationManager {
   private final RegisteredUserDao userDao;
   private final MeetupDao meetupDao;
 
-  public void addNewEventCreatedTask(UUID meetupId) {
+  @EventListener
+  public void onMeetupCreatedEvent(MeetupCreatedEvent event) {
+    addNewEventCreatedTask(event.id());
+  }
+
+  private void addNewEventCreatedTask(UUID meetupId) {
     var meetup = meetupDao.findById(meetupId).orElseThrow();
     var context =
         NotificationContext.builder()

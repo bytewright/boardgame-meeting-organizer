@@ -110,7 +110,7 @@ public class UserWorkflows {
    *
    * <p>If this is the user's first contact info, it is automatically set as primary.
    *
-   * <p>If the user is in {@link UserStatus#PENDING_APPROVAL} and had no prior contact info, their
+   * <p>If the user is in {@link UserStatus#AFTER_REGISTRATION} and had no prior contact info, their
    * status is promoted to {@link UserStatus#ACTIVE} within the same transaction.
    */
   public RegisteredUser addContactInfo(UUID userId, ContactInfo contactInfo) {
@@ -125,7 +125,7 @@ public class UserWorkflows {
     }
 
     // Promote from PENDING_APPROVAL to ACTIVE on first contact info
-    if (user.getStatus() == UserStatus.PENDING_APPROVAL && existingContacts.isEmpty()) {
+    if (user.getStatus() == AFTER_REGISTRATION && existingContacts.isEmpty()) {
       user.setStatus(UserStatus.ACTIVE);
       log.info("User {} promoted to ACTIVE after adding first contact info", user.logEntity());
     }

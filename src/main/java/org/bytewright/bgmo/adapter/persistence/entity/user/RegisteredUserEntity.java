@@ -65,7 +65,7 @@ public class RegisteredUserEntity extends AbstractEntity<UUID> implements HasUUI
   @Enumerated(EnumType.STRING)
   @Column(nullable = false)
   @Builder.Default
-  private UserStatus status = UserStatus.PENDING_APPROVAL;
+  private UserStatus status = UserStatus.AFTER_REGISTRATION;
 
   @Enumerated(EnumType.STRING)
   @Column(nullable = false)

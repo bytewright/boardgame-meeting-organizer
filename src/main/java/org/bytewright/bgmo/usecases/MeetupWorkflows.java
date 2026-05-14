@@ -1,7 +1,6 @@
 package org.bytewright.bgmo.usecases;
 
 import jakarta.transaction.Transactional;
-import java.net.URI;
 import java.time.LocalTime;
 import java.time.ZonedDateTime;
 import java.util.*;
@@ -19,6 +18,7 @@ import org.bytewright.bgmo.domain.service.automation.TimeSource;
 import org.bytewright.bgmo.domain.service.data.MeetupDao;
 import org.bytewright.bgmo.domain.service.data.ModelDao;
 import org.bytewright.bgmo.domain.service.data.RegisteredUserDao;
+import org.bytewright.bgmo.domain.service.event.EventPublisher;
 import org.bytewright.bgmo.domain.service.notification.NotificationManager;
 import org.springframework.stereotype.Service;
 
@@ -30,6 +30,7 @@ public class MeetupWorkflows {
   private final ModelDao<MeetupJoinRequest> joinRequestModelDao;
   private final SiteManagementService siteManagementService;
   private final NotificationManager notificationManager;
+  private final EventPublisher eventPublisher;
   private final InputSanitizer inputSanitizer;
   private final RegisteredUserDao userDao;
   private final TimeSource timeSource;
@@ -68,11 +69,7 @@ public class MeetupWorkflows {
             .slotStrategy(event.getSlotStrategy())
             .build();
     MeetupEvent persisted = meetupDao.createOrUpdate(meetupEvent);
-    notificationManager.addNewEventCreatedTask(persisted.id());
-    // todo move to api adapter
-    URI meetup =
-        siteManagementService.getBaseUrl().resolve("meetup").resolve(persisted.id().toString());
-    log.info("Available at: {}", meetup);
+    eventPublisher.publishAfterTransaction(persisted);
     return persisted;
   }
 

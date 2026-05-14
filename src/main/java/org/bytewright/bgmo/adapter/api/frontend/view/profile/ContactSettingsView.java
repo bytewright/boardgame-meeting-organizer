@@ -57,12 +57,13 @@ public class ContactSettingsView extends VerticalLayout implements BeforeEnterOb
     Paragraph paragraph = new Paragraph(getTranslation("profile.contacts.intro"));
     paragraph.setWidthFull();
     add(paragraph);
-    add(buildPrimaryContactSection(user));
 
     // Show the onboarding banner for users who have not yet added any contact info.
     // The banner disappears automatically on next navigation after PENDING_APPROVAL → ACTIVE.
     if (user.getStatus() == UserStatus.AFTER_REGISTRATION) {
       add(buildPendingBanner());
+    } else {
+      add(buildPrimaryContactSection(user));
     }
 
     ContactSection contactSection = componentFactory.contactSection(user);
@@ -105,7 +106,10 @@ public class ContactSettingsView extends VerticalLayout implements BeforeEnterOb
     comboBox.setHelperText(getTranslation("profile.contacts.primary.helper"));
     comboBox.setItemLabelGenerator(this::generateComboBoxLabel);
     comboBox.addValueChangeListener(
-        e -> userWorkflows.changePrimaryContactInfo(user.getId(), e.getValue()));
+        e -> {
+          userWorkflows.changePrimaryContactInfo(user.getId(), e.getValue());
+          buildView(user);
+        });
     section.add(comboBox);
     return section;
   }
