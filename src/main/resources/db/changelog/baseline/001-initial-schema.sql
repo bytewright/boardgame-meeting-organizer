@@ -113,7 +113,7 @@
         preferredLocale varchar(255),
         registrationIntroText text,
         role varchar(32) not null check (role in ('USER','ADMIN')),
-        status varchar(32) not null check (status in ('PENDING_APPROVAL','ACTIVE','BANNED')),
+        status varchar(32) not null check (status in ('PENDING_APPROVAL','AFTER_REGISTRATION','ACTIVE','SUSPENDED','BANNED','DELETED')),
         primary key (id),
         constraint UC_USER_LOGIN_NAME unique (loginName)
     );

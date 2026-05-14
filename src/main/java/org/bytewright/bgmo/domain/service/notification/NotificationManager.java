@@ -104,6 +104,11 @@ public class NotificationManager {
           .filter(e -> e.supports(context))
           .findAny()
           .ifPresent(notificationTaskExecutor -> notificationTaskExecutor.execute(context));
+    } else {
+      log.info(
+          "Couldn't find primary contact info to dispatch '{}' to user: {}",
+          context.notificationType(),
+          user.logEntity());
     }
   }
 

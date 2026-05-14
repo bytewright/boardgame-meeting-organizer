@@ -1,14 +1,14 @@
 package org.bytewright.bgmo.usecases;
 
+import static org.bytewright.bgmo.domain.model.user.UserStatus.AFTER_REGISTRATION;
+
 import jakarta.transaction.Transactional;
 import java.util.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.bytewright.bgmo.domain.model.Game;
 import org.bytewright.bgmo.domain.model.data.HasUUID;
-import org.bytewright.bgmo.domain.model.user.ContactInfo;
-import org.bytewright.bgmo.domain.model.user.RegisteredUser;
-import org.bytewright.bgmo.domain.model.user.ValidationResult;
+import org.bytewright.bgmo.domain.model.user.*;
 import org.bytewright.bgmo.domain.service.InputSanitizer;
 import org.bytewright.bgmo.domain.service.automation.TimeSource;
 import org.bytewright.bgmo.domain.service.data.GameDao;
@@ -49,19 +49,11 @@ public class UserWorkflows {
                 .loginName(userDto.getLoginName())
                 .passwordHash(userDetailsService.hashPw(userDto.getPassword()))
                 .preferredLocale(userDto.getPreferredLocale())
+                .status(AFTER_REGISTRATION)
+                .role(UserRole.USER)
                 .build());
     RegisteredUser refetchedUser = userDao.createOrUpdate(newUser);
-    String introText =
-        "Q1 '%s':%s%nQ2 '%s':%s%nQ3 '%s':%s"
-            .formatted(
-                "AboutYourself",
-                inputSanitizer.plainText(userDto.getIntroAboutYourself()),
-                "HowDidYouHear",
-                inputSanitizer.plainText(userDto.getIntroHowDidYouHear()),
-                "WhoInvitedYou",
-                inputSanitizer.plainText(userDto.getIntroWhoInvitedYou()));
-    userDao.addRegistrationIntroText(refetchedUser.getId(), introText);
-    log.info("Created user with id {}: {}, {}", refetchedUser.getId(), refetchedUser, introText);
+    log.info("Created user with id {}: {}", refetchedUser.getId(), refetchedUser);
     TransactionSynchronizationManager.registerSynchronization(
         new TransactionSynchronization() {
           @Override
@@ -113,14 +105,31 @@ public class UserWorkflows {
     return persisted;
   }
 
+  /**
+   * Adds a contact info entry to the user's profile.
+   *
+   * <p>If this is the user's first contact info, it is automatically set as primary.
+   *
+   * <p>If the user is in {@link UserStatus#PENDING_APPROVAL} and had no prior contact info, their
+   * status is promoted to {@link UserStatus#ACTIVE} within the same transaction.
+   */
   public RegisteredUser addContactInfo(UUID userId, ContactInfo contactInfo) {
     ContactInfo contactInfoWithId =
         contactInfoModelDao.createOrUpdate(contactInfo.withUserId(userId));
     RegisteredUser user = userDao.findOrThrow(userId);
-    Set<ContactInfo> contactInfos = user.getContactInfos();
-    if (contactInfos.stream().allMatch(ci -> ci.getId().equals(contactInfoWithId.id()))) {
-      user.setPrimaryContactId(contactInfo.id());
+    Set<ContactInfo> existingContacts = user.getContactInfos();
+
+    // First contact automatically becomes the primary contact
+    if (existingContacts.isEmpty()) {
+      user.setPrimaryContactId(contactInfoWithId.id());
     }
+
+    // Promote from PENDING_APPROVAL to ACTIVE on first contact info
+    if (user.getStatus() == UserStatus.PENDING_APPROVAL && existingContacts.isEmpty()) {
+      user.setStatus(UserStatus.ACTIVE);
+      log.info("User {} promoted to ACTIVE after adding first contact info", user.logEntity());
+    }
+
     return userDao.createOrUpdate(user);
   }
 

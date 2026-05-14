@@ -1,10 +1,6 @@
 # ToDos - Bugs
 
-- show on registration and profil: information about contact details why? how? for what?
-- agree dataprotection during registration
-- Registrierung: clarify scope of information entered, add helptexts and labels
 - i18n for legal pages
-- profile settings: too much whitespace around display name, should be left aligned
 - anonview: "erstelle einen Account" should be link to register page
 
 # ToDos - Features
@@ -15,7 +11,6 @@
 - meetup details expanded
   - Event game poll
   - url: use something else than db uuid as identifier
-- Registration closed date on meetup detail view
 - add event organizer in telegram as link to user for direct messages
 - add event organizer in FE as link to user for direct messages
 - Account deletion

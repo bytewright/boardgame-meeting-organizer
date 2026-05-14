@@ -31,8 +31,7 @@ public class ComponentFactory {
 
   public ContactSection contactSection(RegisteredUser currentUser) {
     Map<ContactInfoType, String> botHandles = verificationService.getBotHandles();
-    return new ContactSection(
-        this, verificationService, userWorkflows, userDao, currentUser, botHandles);
+    return new ContactSection(verificationService, userWorkflows, userDao, currentUser, botHandles);
   }
 
   public LocalePicker localePicker() {

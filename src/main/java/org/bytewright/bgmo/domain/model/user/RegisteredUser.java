@@ -22,7 +22,7 @@ public class RegisteredUser implements HasUUID {
   private Instant tsModified;
   private Instant tsLastLogin;
   @Nullable private Locale preferredLocale;
-  @Builder.Default private UserStatus status = UserStatus.PENDING_APPROVAL;
+  @Builder.Default private UserStatus status = UserStatus.AFTER_REGISTRATION;
   @Builder.Default private UserRole role = UserRole.USER;
   @Nullable private UUID primaryContactId;
   @ToString.Exclude @Builder.Default private Set<ContactInfo> contactInfos = new HashSet<>();

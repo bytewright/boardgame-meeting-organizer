@@ -7,7 +7,10 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public enum UserStatus {
   PENDING_APPROVAL(true),
+  AFTER_REGISTRATION(false),
   ACTIVE(false),
-  BANNED(true);
+  SUSPENDED(true),
+  BANNED(true),
+  DELETED(true);
   private final boolean locked;
 }

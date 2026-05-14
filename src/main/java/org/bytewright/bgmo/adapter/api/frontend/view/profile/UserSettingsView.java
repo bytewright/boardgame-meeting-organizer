@@ -47,11 +47,11 @@ public class UserSettingsView extends VerticalLayout implements BeforeEnterObser
   private void buildView(RegisteredUser user) {
     removeAll();
     setAlignItems(Alignment.CENTER);
-    setWidthFull();
-    setPadding(true);
+
+    setMaxWidth(MainLayout.MAX_DISPLAYPORT_WIDTH);
+    getStyle().setMargin("0 auto");
 
     H2 title = new H2(getTranslation("profile.account.title"));
-    title.getStyle().set("max-width", MainLayout.MAX_DISPLAYPORT_WIDTH).set("width", "100%");
 
     add(title, buildDisplayNameSection(user), buildPasswordSection(user));
   }
@@ -89,7 +89,6 @@ public class UserSettingsView extends VerticalLayout implements BeforeEnterObser
     saveBtn.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
 
     section.add(heading, nameField, saveBtn);
-    section.setAlignItems(Alignment.END);
     return section;
   }
 
@@ -147,7 +146,6 @@ public class UserSettingsView extends VerticalLayout implements BeforeEnterObser
     updatePwdBtn.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
 
     section.add(heading, pwdField, confirmPwdField, updatePwdBtn);
-    section.setAlignItems(Alignment.END);
     return section;
   }
 }

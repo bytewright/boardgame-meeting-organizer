@@ -39,11 +39,11 @@ public class GameLibView extends VerticalLayout implements BeforeEnterObserver {
   private void buildView(RegisteredUser user) {
     removeAll();
     setAlignItems(Alignment.CENTER);
-    setWidthFull();
-    setPadding(true);
+
+    setMaxWidth(MainLayout.MAX_DISPLAYPORT_WIDTH);
+    getStyle().setMargin("0 auto");
 
     H2 title = new H2(getTranslation("profile.library.title"));
-    title.getStyle().set("max-width", MainLayout.MAX_DISPLAYPORT_WIDTH).set("width", "100%");
 
     GameLibSection gameLibSection = componentFactory.gameLibSection(user);
     gameLibSection.setMaxWidth(MainLayout.MAX_DISPLAYPORT_WIDTH);

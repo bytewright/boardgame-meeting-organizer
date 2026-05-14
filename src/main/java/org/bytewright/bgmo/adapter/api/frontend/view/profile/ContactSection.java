@@ -8,14 +8,12 @@ import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.NotificationVariant;
-import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextField;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
-import org.bytewright.bgmo.adapter.api.frontend.view.component.factory.ComponentFactory;
 import org.bytewright.bgmo.domain.model.user.ContactInfo;
 import org.bytewright.bgmo.domain.model.user.ContactInfoType;
 import org.bytewright.bgmo.domain.model.user.RegisteredUser;
@@ -40,7 +38,6 @@ public class ContactSection extends VerticalLayout {
   private final String signalBotHandle;
 
   public ContactSection(
-      ComponentFactory componentFactory,
       VerificationCodeService verificationService,
       UserWorkflows userWorkflows,
       RegisteredUserDao userDao,
@@ -66,7 +63,6 @@ public class ContactSection extends VerticalLayout {
         currentUser.getContactInfos().stream()
             .sorted(Comparator.comparing(c -> c.type().name()))
             .toList();
-
     add(buildMessengerSection(contacts, ContactInfoType.TELEGRAM, telegramBotHandle));
     add(new Hr());
     add(buildMessengerSection(contacts, ContactInfoType.SIGNAL, signalBotHandle));
@@ -84,12 +80,11 @@ public class ContactSection extends VerticalLayout {
 
   private Component buildMessengerSection(
       List<ContactInfo> contacts, ContactInfoType type, String botHandle) {
-
+    String typeLabel = ContactInfoLabelUtil.messengerName(type);
     VerticalLayout section = new VerticalLayout();
     section.setPadding(false);
     section.setSpacing(false);
-
-    section.add(sectionLabel(messengerName(type)));
+    section.add(sectionLabel(typeLabel));
 
     contacts.stream()
         .filter(c -> c.type() == type)
@@ -102,7 +97,7 @@ public class ContactSection extends VerticalLayout {
   }
 
   private Component buildLinkedMessengerRow(ContactInfo contact, ContactInfoType type) {
-    Span handle = new Span(displayValue(contact));
+    Span handle = new Span(ContactInfoLabelUtil.displayValue(contact));
     handle.getStyle().set("font-weight", "500");
 
     Span verifiedBadge = new Span(contact.isVerified() ? " ✓ Verified" : " ⚠ Unverified");
@@ -121,13 +116,14 @@ public class ContactSection extends VerticalLayout {
           userWorkflows.removeContact(currentUser.getId(), contact);
           currentUser.getContactInfos().remove(contact);
           rebuild();
-          Notification n = Notification.show(messengerName(type) + " unlinked.");
+          Notification n =
+              Notification.show(ContactInfoLabelUtil.messengerName(type) + " unlinked.");
           n.addThemeVariants(NotificationVariant.LUMO_CONTRAST);
         });
 
     HorizontalLayout row = new HorizontalLayout(handle, verifiedBadge, unlinkBtn);
-    row.setAlignItems(FlexComponent.Alignment.CENTER);
-    row.setJustifyContentMode(FlexComponent.JustifyContentMode.BETWEEN);
+    row.setAlignItems(Alignment.CENTER);
+    row.setJustifyContentMode(JustifyContentMode.BETWEEN);
     row.setWidthFull();
     row.getStyle().set("padding", "var(--lumo-space-s) 0");
     return row;
@@ -135,7 +131,9 @@ public class ContactSection extends VerticalLayout {
 
   private Component buildLinkButton(ContactInfoType type, String botHandle) {
     Button linkBtn =
-        new Button("Link " + messengerName(type) + " account", VaadinIcon.LINK.create());
+        new Button(
+            "Link " + ContactInfoLabelUtil.messengerName(type) + " account",
+            VaadinIcon.LINK.create());
     linkBtn.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
     linkBtn.addClickListener(
         e -> {
@@ -154,7 +152,8 @@ public class ContactSection extends VerticalLayout {
                             updated -> currentUser.setContactInfos(updated.getContactInfos()));
                     rebuild();
                     Notification n =
-                        Notification.show(messengerName(type) + " linked successfully!");
+                        Notification.show(
+                            ContactInfoLabelUtil.messengerName(type) + " linked successfully!");
                     n.addThemeVariants(NotificationVariant.LUMO_SUCCESS);
                   });
           dialog.open();
@@ -172,7 +171,7 @@ public class ContactSection extends VerticalLayout {
     section.setPadding(false);
     section.setSpacing(false);
 
-    section.add(sectionLabel(labelFor(type)));
+    section.add(sectionLabel(ContactInfoLabelUtil.labelFor(type)));
 
     // Existing entries
     contacts.stream().filter(c -> c.type() == type).forEach(c -> section.add(buildFreeformRow(c)));
@@ -181,13 +180,12 @@ public class ContactSection extends VerticalLayout {
     VerticalLayout addForm = buildAddForm(type);
     addForm.setVisible(false);
 
-    Button addBtn = new Button("+ Add " + labelFor(type));
+    Button addBtn = new Button(getTranslation(ContactInfoLabelUtil.translationKeyForAdd(type)));
     addBtn.addThemeVariants(ButtonVariant.LUMO_TERTIARY, ButtonVariant.LUMO_SMALL);
     addBtn.getStyle().set("margin-top", "var(--lumo-space-xs)");
     addBtn.addClickListener(
         e -> {
           addForm.setVisible(true);
-          addBtn.setVisible(false);
         });
 
     section.add(addBtn, addForm);
@@ -195,7 +193,7 @@ public class ContactSection extends VerticalLayout {
   }
 
   private Component buildFreeformRow(ContactInfo contact) {
-    Span value = new Span(displayValue(contact));
+    Span value = new Span(ContactInfoLabelUtil.displayValue(contact));
     value.getStyle().set("font-size", "var(--lumo-font-size-s)").set("word-break", "break-all");
 
     Button removeBtn = new Button(VaadinIcon.TRASH.create());
@@ -211,8 +209,8 @@ public class ContactSection extends VerticalLayout {
         });
 
     HorizontalLayout row = new HorizontalLayout(value, removeBtn);
-    row.setAlignItems(FlexComponent.Alignment.CENTER);
-    row.setJustifyContentMode(FlexComponent.JustifyContentMode.BETWEEN);
+    row.setAlignItems(Alignment.CENTER);
+    row.setJustifyContentMode(JustifyContentMode.BETWEEN);
     row.setWidthFull();
     row.getStyle()
         .set("padding", "var(--lumo-space-xs) 0")
@@ -234,6 +232,8 @@ public class ContactSection extends VerticalLayout {
         TextField emailField = new TextField("Email address");
         emailField.setWidthFull();
         emailField.setPlaceholder("name@example.com");
+        emailField.setHelperText(
+            getTranslation(ContactInfoLabelUtil.translationKeyForExplain(ContactInfoType.EMAIL)));
         form.add(
             emailField,
             saveRow(
@@ -253,6 +253,8 @@ public class ContactSection extends VerticalLayout {
         TextField phoneField = new TextField("Phone number");
         phoneField.setWidthFull();
         phoneField.setPlaceholder("+49 123 456789");
+        phoneField.setHelperText(
+            getTranslation(ContactInfoLabelUtil.translationKeyForExplain(ContactInfoType.PHONE)));
         form.add(
             phoneField,
             saveRow(
@@ -275,6 +277,9 @@ public class ContactSection extends VerticalLayout {
         TextField comment = new TextField("Comment (optional)");
         for (var f : List.of(nameOnBell, street, zip, city, comment)) f.setWidthFull();
         form.add(
+            new Span(
+                getTranslation(
+                    ContactInfoLabelUtil.translationKeyForExplain(ContactInfoType.ADDRESS))),
             nameOnBell,
             street,
             zip,
@@ -296,9 +301,7 @@ public class ContactSection extends VerticalLayout {
                 },
                 () -> form.setVisible(false)));
       }
-      default -> {
-        /* messenger types never reach here */
-      }
+      case TELEGRAM, SIGNAL -> throw new IllegalArgumentException();
     }
 
     return form;
@@ -345,36 +348,5 @@ public class ContactSection extends VerticalLayout {
         .set("padding-top", "var(--lumo-space-s)")
         .set("display", "block");
     return label;
-  }
-
-  private static String displayValue(ContactInfo contact) {
-    return switch (contact) {
-      case ContactInfo.EmailContact e -> e.email();
-      case ContactInfo.PhoneContact p -> p.phoneNr();
-      case ContactInfo.TelegramContact t -> t.chatId();
-      case ContactInfo.SignalContact s -> s.signalHandle();
-      case ContactInfo.AddressContact a ->
-          List.of(a.nameOnBell(), a.street(), a.zipCode() + " " + a.city()).stream()
-              .filter(v -> v != null && !v.isBlank())
-              .reduce((x, y) -> x + ", " + y)
-              .orElse("—");
-    };
-  }
-
-  private static String messengerName(ContactInfoType type) {
-    return switch (type) {
-      case TELEGRAM -> "Telegram";
-      case SIGNAL -> "Signal";
-      default -> type.name();
-    };
-  }
-
-  private static String labelFor(ContactInfoType type) {
-    return switch (type) {
-      case EMAIL -> "Email";
-      case PHONE -> "Phone";
-      case ADDRESS -> "Address";
-      default -> type.name();
-    };
   }
 }

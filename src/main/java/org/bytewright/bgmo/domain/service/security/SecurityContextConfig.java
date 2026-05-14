@@ -5,7 +5,9 @@ import java.util.Map;
 import org.bytewright.bgmo.domain.service.BgmoProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.crypto.argon2.Argon2PasswordEncoder;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -40,5 +42,10 @@ public class SecurityContextConfig {
     // upgrade pw encodings should DEFAULT_PW_ENCODER ever change on user login
     provider.setUserDetailsPasswordService(userDetailsService);
     return provider;
+  }
+
+  @Bean
+  public AuthenticationManager authenticationManager(AuthenticationConfiguration config) {
+    return config.getAuthenticationManager();
   }
 }
