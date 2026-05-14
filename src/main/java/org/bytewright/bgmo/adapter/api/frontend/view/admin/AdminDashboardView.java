@@ -38,10 +38,10 @@ public class AdminDashboardView extends VerticalLayout implements BeforeEnterObs
 
     long pendingCount = adminWorkflows.listNonActive().size();
 
-    HorizontalLayout cards = new HorizontalLayout();
-    cards.setWidthFull();
-    cards.setSpacing(true);
-    cards.add(
+    HorizontalLayout cardsRow1 = new HorizontalLayout();
+    cardsRow1.setWidthFull();
+    cardsRow1.setSpacing(true);
+    cardsRow1.add(
         new NavCardComponent(
             VaadinIcon.USER_CHECK,
             getTranslation("admin-dashboard.nav.user-approval.title"),
@@ -62,7 +62,18 @@ public class AdminDashboardView extends VerticalLayout implements BeforeEnterObs
             getTranslation("admin-dashboard.nav.site-mngt.subtitle"),
             false,
             () -> UI.getCurrent().navigate(AdminSiteSettingsView.class)));
-    add(cards);
+    add(cardsRow1);
+    HorizontalLayout cardsRow2 = new HorizontalLayout();
+    cardsRow2.setWidthFull();
+    cardsRow2.setSpacing(true);
+    cardsRow2.add(
+        new NavCardComponent(
+            VaadinIcon.AUTOMATION,
+            getTranslation("admin-dashboard.nav.automation.title"),
+            getTranslation("admin-dashboard.nav.automation.subtitle", pendingCount),
+            false,
+            () -> UI.getCurrent().navigate(AdminTaskManagementView.class)));
+    add(cardsRow2);
   }
 
   @Override

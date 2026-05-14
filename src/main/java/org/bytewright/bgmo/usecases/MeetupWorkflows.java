@@ -28,6 +28,7 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class MeetupWorkflows {
   private final ModelDao<MeetupJoinRequest> joinRequestModelDao;
+  private final AutomationTaskWorkflows automationTaskWorkflows;
   private final SiteManagementService siteManagementService;
   private final NotificationManager notificationManager;
   private final EventPublisher eventPublisher;
@@ -69,6 +70,7 @@ public class MeetupWorkflows {
             .slotStrategy(event.getSlotStrategy())
             .build();
     MeetupEvent persisted = meetupDao.createOrUpdate(meetupEvent);
+    automationTaskWorkflows.schedule(persisted);
     eventPublisher.publishAfterTransaction(persisted);
     return persisted;
   }
