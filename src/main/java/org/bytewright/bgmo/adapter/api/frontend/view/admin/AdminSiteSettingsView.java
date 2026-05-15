@@ -21,6 +21,7 @@ import java.util.List;
 import org.bytewright.bgmo.adapter.api.frontend.view.component.MainLayout;
 import org.bytewright.bgmo.domain.model.AdapterInfoAndSettings;
 import org.bytewright.bgmo.domain.model.user.ContactInfo;
+import org.bytewright.bgmo.domain.service.AdapterSettingsProvider;
 import org.bytewright.bgmo.domain.service.SiteOperatorInfoService;
 import org.bytewright.bgmo.usecases.AdminWorkflows;
 import tools.jackson.core.JacksonException;
@@ -140,7 +141,7 @@ public class AdminSiteSettingsView extends VerticalLayout {
     // Live JSON validation on change
     jsonArea.addValueChangeListener(
         e -> {
-          boolean valid = isValidJson(e.getValue());
+          boolean valid = isValidJson(adminWorkflows, settings, e.getValue());
           validationMsg.setText(valid ? "✓ Gültiges JSON" : "✗ Ungültiges JSON");
           validationMsg
               .getStyle()
@@ -153,13 +154,14 @@ public class AdminSiteSettingsView extends VerticalLayout {
             VaadinIcon.CHECK.create(),
             e -> {
               String newJson = jsonArea.getValue().trim();
-              if (!isValidJson(newJson)) {
+              if (!isValidJson(adminWorkflows, settings, newJson)) {
                 showError("Speichern fehlgeschlagen: Ungültiges JSON.");
                 return;
               }
               adminWorkflows.updateAdapterSettings(settings.adapterSettings(), newJson);
               showSuccess(
-                  "Einstellungen für \"" + settings.adapterInfo().stableName() + "\" gespeichert.");
+                  "Einstellungen für '%s' gespeichert."
+                      .formatted(settings.adapterInfo().stableName()));
             });
     saveBtn.addThemeVariants(ButtonVariant.LUMO_PRIMARY, ButtonVariant.LUMO_SMALL);
 
@@ -208,13 +210,10 @@ public class AdminSiteSettingsView extends VerticalLayout {
     }
   }
 
-  private boolean isValidJson(String json) {
-    try {
-      objectMapper.readTree(json);
-      return true;
-    } catch (JacksonException e) {
-      return false;
-    }
+  private boolean isValidJson(
+      AdminWorkflows adminWorkflows, AdapterInfoAndSettings settings, String json) {
+    return adminWorkflows.validateJson(settings.adapterInfo(), json)
+        == AdapterSettingsProvider.ValidationResult.VALID;
   }
 
   private void showSuccess(String message) {

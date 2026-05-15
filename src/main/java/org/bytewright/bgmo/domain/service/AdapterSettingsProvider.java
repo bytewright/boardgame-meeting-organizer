@@ -1,6 +1,8 @@
 package org.bytewright.bgmo.domain.service;
 
+import java.util.Optional;
 import lombok.Builder;
+import org.bytewright.bgmo.domain.model.AdapterSettings;
 
 /**
  * Allows adapters to store data in DB, this is mainly for site wide settings, e.g. configurable
@@ -19,6 +21,15 @@ public interface AdapterSettingsProvider {
   ValidationResult isValidSettingsJson(String jsonData);
 
   String getDefaultSettings() throws Exception;
+
+  default Optional<AdapterSettings> attemptSettingsRecovery(AdapterSettings adapterSettings) {
+    try {
+      adapterSettings.setAdapterSettings(getDefaultSettings());
+      return Optional.of(adapterSettings);
+    } catch (Exception e) {
+      return Optional.empty();
+    }
+  }
 
   @Builder
   record AdapterInfo(String stableName, String description) {}

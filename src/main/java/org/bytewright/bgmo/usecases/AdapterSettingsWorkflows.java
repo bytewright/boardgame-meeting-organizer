@@ -4,6 +4,7 @@ import static org.bytewright.bgmo.domain.service.AdapterSettingsProvider.Validat
 
 import jakarta.transaction.Transactional;
 import java.util.HashSet;
+import java.util.Optional;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
@@ -34,22 +35,39 @@ public class AdapterSettingsWorkflows implements ApplicationListener<ContextRefr
       if (!adapterSettingsDao.existsByAdapterName(adapterName)) {
         createDefaultSettings(provider);
       } else {
-        verifySettings(provider);
+        var adapterSettings = adapterSettingsDao.findByAdapter(provider.getAdapterInfo());
+        verifySettings(provider, adapterSettings, false);
       }
     }
   }
 
-  private void verifySettings(AdapterSettingsProvider provider) {
-    AdapterSettings adapterSettings = adapterSettingsDao.findByAdapter(provider.getAdapterInfo());
+  private boolean verifySettings(
+      AdapterSettingsProvider provider, AdapterSettings adapterSettings, boolean recovery) {
     try {
       var validationResult = provider.isValidSettingsJson(adapterSettings.getAdapterSettings());
-      if (validationResult == VALID) return;
+      if (validationResult == VALID) return true;
     } catch (Exception e) {
       log.error(
           "Provider crashed during validation: {}", provider.getAdapterInfo().stableName(), e);
     }
-    throw new IllegalArgumentException(
-        "Database contains incompatible adapter config for: " + provider.getAdapterInfo());
+    if (recovery) {
+      log.error("Recovery of settings failed for {}", provider.getAdapterInfo().stableName());
+      return false;
+    }
+    Optional<AdapterSettings> fallbackSettings = provider.attemptSettingsRecovery(adapterSettings);
+    if (fallbackSettings.isEmpty()) {
+      log.error(
+          "Database contains incompatible adapter config for, recovery failed: {}",
+          provider.getAdapterInfo());
+      return false;
+    }
+    AdapterSettings settings = fallbackSettings.get();
+    if (verifySettings(provider, adapterSettings, true)) {
+      log.warn("Recovery successful for settings {}", provider.getAdapterInfo().stableName());
+      adapterSettingsDao.createOrUpdate(settings);
+      return true;
+    }
+    return false;
   }
 
   @SneakyThrows

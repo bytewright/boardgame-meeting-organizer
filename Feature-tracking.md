@@ -2,6 +2,7 @@
 
 - i18n for legal pages
 - anonview: "erstelle einen Account" should be link to register page
+- adding messenger as first contact does not approve account
 
 # ToDos - Features
 - mousecursor does not show whats clickable, with mobile in mind: how to better promote clickability of stuff
@@ -17,6 +18,10 @@
 - remove ContactInfo.AddressContact
 - Meetup registration closure automation task
 - Meetup expired deletion automation task
+- Admin
+  - change status manually
+  - change role manually
+  - suspend user
 
 # ToDos - app improvements
 

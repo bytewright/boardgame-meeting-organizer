@@ -158,4 +158,20 @@ public class AdminWorkflows {
     }
     return infoAndSettings;
   }
+
+  public AdapterSettingsProvider.ValidationResult validateJson(
+      AdapterSettingsProvider.AdapterInfo adapterInfo, String json) {
+    Optional<AdapterSettingsProvider> provider =
+        adapterSettingsProviders.stream()
+            .filter(asp -> asp.getAdapterInfo().stableName().equals(adapterInfo.stableName()))
+            .findAny();
+    if (provider.isEmpty()) {
+      log.warn(
+          "Can't validate json because provider could not be found! {}", adapterInfo.stableName());
+      return AdapterSettingsProvider.ValidationResult.INVALID;
+    }
+    return provider
+        .map(p -> p.isValidSettingsJson(json))
+        .orElse(AdapterSettingsProvider.ValidationResult.INVALID);
+  }
 }

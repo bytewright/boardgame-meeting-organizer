@@ -26,15 +26,15 @@ public class SiteOperatorInfoService implements AdapterSettingsProvider {
   private final JsonMapper mapper = JsonMapperFactory.unRedactedMapper();
 
   public ContactInfo.AddressContact getOperatorAddress() {
-    return getSettings().getAddress();
+    return getSettings().orElse(Settings.builder().build()).getAddress();
   }
 
   public Optional<ContactInfo.PhoneContact> getOperatorPhone() {
-    return Optional.ofNullable(getSettings().getPhone());
+    return getSettings().map(Settings::getPhone);
   }
 
   public Optional<ContactInfo.EmailContact> getOperatorEmail() {
-    return Optional.ofNullable(getSettings().getEmail());
+    return getSettings().map(Settings::getEmail);
   }
 
   public boolean isTelegramIntegrationActive() {
@@ -50,16 +50,22 @@ public class SiteOperatorInfoService implements AdapterSettingsProvider {
   }
 
   public List<String> getTosText() {
-    return getSettings().getTosParagraphs();
+    return getSettings().map(Settings::getTosParagraphs).orElse(List.of());
   }
 
   public List<String> getAboutSiteInfoText() {
-    return getSettings().getAboutSiteParagraphs();
+    return getSettings().map(Settings::getAboutSiteParagraphs).orElse(List.of());
   }
 
-  private Settings getSettings() {
-    AdapterSettings adapterSettings = adapterSettingsDao.findByAdapter(getAdapterInfo());
-    return mapper.readValue(adapterSettings.getAdapterSettings(), Settings.class);
+  private Optional<Settings> getSettings() {
+    try {
+      AdapterSettings adapterSettings = adapterSettingsDao.findByAdapter(getAdapterInfo());
+      Settings settings = mapper.readValue(adapterSettings.getAdapterSettings(), Settings.class);
+      return Optional.of(settings);
+    } catch (Exception e) {
+      log.error("Failed to get settings", e);
+      return Optional.empty();
+    }
   }
 
   @Override
@@ -79,7 +85,7 @@ public class SiteOperatorInfoService implements AdapterSettingsProvider {
           && settings.getTosParagraphs() != null
           && !settings.getTosParagraphs().isEmpty()) return ValidationResult.VALID;
     } catch (Exception e) {
-      log.error("Error while validating json", e);
+      log.error("Error while validating json: {}", e.getMessage());
     }
     return ValidationResult.INVALID;
   }
@@ -93,7 +99,7 @@ public class SiteOperatorInfoService implements AdapterSettingsProvider {
   @Data
   @Builder
   @Jacksonized
-  private static class Settings {
+  static class Settings {
     @Builder.Default
     private ContactInfo.AddressContact address =
         ContactInfo.AddressContact.builder()

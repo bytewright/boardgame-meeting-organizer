@@ -188,7 +188,7 @@ public class TelegramNotificationAdapter
       TelegramSettings telegramSettings = objectMapper.readValue(jsonData, TelegramSettings.class);
       return telegramSettings != null ? ValidationResult.VALID : ValidationResult.INVALID;
     } catch (tools.jackson.core.JacksonException e) {
-      log.error("Provided settings are invalid", e);
+      log.error("Error while validating json: {}", e.getMessage());
     }
     return ValidationResult.INVALID;
   }

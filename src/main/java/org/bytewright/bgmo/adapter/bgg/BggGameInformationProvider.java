@@ -124,7 +124,7 @@ public class BggGameInformationProvider
       var settings = objectMapper.readValue(jsonData, BggAdapterSettings.class);
       return settings != null ? ValidationResult.VALID : ValidationResult.INVALID;
     } catch (JacksonException e) {
-      log.error("Provided settings are invalid", e);
+      log.error("Error while validating json: {}", e.getMessage());
     }
     return ValidationResult.INVALID;
   }

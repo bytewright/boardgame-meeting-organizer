@@ -49,7 +49,7 @@ public class SiteManagementService implements AdapterSettingsProvider {
       log.debug("Baseurl seems to be valid as no exception thrown: {}", uri);
       return ValidationResult.VALID;
     } catch (JacksonException e) {
-      log.error("Provided settings are invalid", e);
+      log.error("Error while validating json: {}", e.getMessage());
     }
     return ValidationResult.INVALID;
   }

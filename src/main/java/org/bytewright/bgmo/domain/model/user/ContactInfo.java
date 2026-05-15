@@ -25,6 +25,10 @@ public sealed interface ContactInfo extends HasUUID
   @Builder(toBuilder = true)
   record EmailContact(UUID id, UUID userId, String email, boolean isVerified)
       implements ContactInfo {
+    public EmailContact(String email) {
+      this(null, null, email, false);
+    }
+
     @Override
     public ContactInfoType type() {
       return ContactInfoType.EMAIL;
