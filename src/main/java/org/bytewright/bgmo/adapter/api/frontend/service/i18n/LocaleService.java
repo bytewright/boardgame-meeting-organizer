@@ -7,7 +7,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.bytewright.bgmo.adapter.api.frontend.SessionAuthenticationService;
+import org.bytewright.bgmo.adapter.api.frontend.service.SessionInfoService;
 import org.bytewright.bgmo.usecases.UserWorkflows;
 import org.springframework.context.MessageSource;
 import org.springframework.stereotype.Service;
@@ -25,7 +25,7 @@ public class LocaleService {
   private static final DateTimeFormatter DATE_TIME_FMT_DE =
       DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm", Locale.GERMAN);
 
-  private final SessionAuthenticationService authService;
+  private final SessionInfoService authService;
   private final MessageSource messageSource;
   private final UserWorkflows userWorkflows;
 

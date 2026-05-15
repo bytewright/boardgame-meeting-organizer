@@ -61,7 +61,6 @@ public class AnonPanel extends VerticalLayout {
     }
     if (ctx.isFull()) {
       addErrorLabel(getTranslation("meetup.join-full"));
-      return;
     }
 
     Button joinBtn = new Button(getTranslation("meetup.join-request"));

@@ -10,9 +10,9 @@
     </parent>
     <groupId>org.bytewright.bgmo</groupId>
     <artifactId>boardgame-meeting-organizer</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
+    <version>1.0.0</version>
     <name>BoardgameMeetingOrganizer</name>
-    <description>desc</description>
+    <description>Meetup management platform with integration of popular messengers</description>
     <url/>
     <licenses>
         <license/>

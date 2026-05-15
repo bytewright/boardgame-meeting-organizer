@@ -18,7 +18,7 @@ import com.vaadin.flow.server.auth.AnonymousAllowed;
 import java.util.*;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
-import org.bytewright.bgmo.adapter.api.frontend.SessionAuthenticationService;
+import org.bytewright.bgmo.adapter.api.frontend.service.SessionInfoService;
 import org.bytewright.bgmo.adapter.api.frontend.view.DashboardView;
 import org.bytewright.bgmo.adapter.api.frontend.view.component.MainLayout;
 import org.bytewright.bgmo.domain.model.MeetupEvent;
@@ -44,7 +44,7 @@ import org.bytewright.bgmo.usecases.MeetupWorkflows;
 @AnonymousAllowed // fine-grained check done in beforeEnter
 public class MeetupAttendeesView extends VerticalLayout implements BeforeEnterObserver {
 
-  private final SessionAuthenticationService authService;
+  private final SessionInfoService authService;
   private final MeetupWorkflows meetupWorkflows;
   private final MeetupDao meetupDao;
   private final RegisteredUserDao userDao;
@@ -52,7 +52,7 @@ public class MeetupAttendeesView extends VerticalLayout implements BeforeEnterOb
   private MeetupEvent meetup;
 
   public MeetupAttendeesView(
-      SessionAuthenticationService authService,
+      SessionInfoService authService,
       MeetupWorkflows meetupWorkflows,
       MeetupDao meetupDao,
       RegisteredUserDao userDao) {

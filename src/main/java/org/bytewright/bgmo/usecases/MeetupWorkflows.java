@@ -7,10 +7,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.bytewright.bgmo.domain.model.MeetupEvent;
-import org.bytewright.bgmo.domain.model.MeetupJoinRequest;
-import org.bytewright.bgmo.domain.model.MeetupVisibility;
-import org.bytewright.bgmo.domain.model.RequestState;
+import org.bytewright.bgmo.domain.model.*;
 import org.bytewright.bgmo.domain.model.user.RegisteredUser;
 import org.bytewright.bgmo.domain.service.InputSanitizer;
 import org.bytewright.bgmo.domain.service.SiteManagementService;
@@ -19,7 +16,6 @@ import org.bytewright.bgmo.domain.service.data.MeetupDao;
 import org.bytewright.bgmo.domain.service.data.ModelDao;
 import org.bytewright.bgmo.domain.service.data.RegisteredUserDao;
 import org.bytewright.bgmo.domain.service.event.EventPublisher;
-import org.bytewright.bgmo.domain.service.notification.NotificationManager;
 import org.springframework.stereotype.Service;
 
 @Slf4j
@@ -27,10 +23,10 @@ import org.springframework.stereotype.Service;
 @Transactional
 @RequiredArgsConstructor
 public class MeetupWorkflows {
+  private final SlotDistributionWorkflows slotDistributionWorkflows;
   private final ModelDao<MeetupJoinRequest> joinRequestModelDao;
   private final AutomationTaskWorkflows automationTaskWorkflows;
   private final SiteManagementService siteManagementService;
-  private final NotificationManager notificationManager;
   private final EventPublisher eventPublisher;
   private final InputSanitizer inputSanitizer;
   private final RegisteredUserDao userDao;
@@ -44,7 +40,10 @@ public class MeetupWorkflows {
       event.setUnlimitedSlots(true);
     }
     log.info("Creating new meetup from: {}", event);
-
+    RegisteredUser creator = event.getCreator();
+    if (creator.getContactInfos().isEmpty()) {
+      throw new IllegalArgumentException("Can't create a meeting without any contact options!");
+    }
     ZonedDateTime registrationClosing =
         ZonedDateTime.of(
             event.getRegistrationClosingDate(),
@@ -56,7 +55,7 @@ public class MeetupWorkflows {
             .description(inputSanitizer.plainText(event.getDescription()))
             .eventDate(event.getEventDate())
             .registrationClosing(registrationClosing)
-            .creatorId(event.getCreator().getId())
+            .creatorId(creator.getId())
             .canceled(false)
             .tsCreation(timeSource.now())
             .joinSlots(event.getJoinSlots() != null ? event.getJoinSlots() : -1)
@@ -71,7 +70,7 @@ public class MeetupWorkflows {
             .build();
     MeetupEvent persisted = meetupDao.createOrUpdate(meetupEvent);
     automationTaskWorkflows.schedule(persisted);
-    eventPublisher.publishAfterTransaction(persisted);
+    eventPublisher.publishMeetupCreatedAfterTransaction(persisted);
     return persisted;
   }
 
@@ -86,7 +85,10 @@ public class MeetupWorkflows {
       MeetupJoinRequest request = existingRequest.get();
       if (request.getRequestState() == RequestState.CANCELED) {
         transitionToRequested(request);
-        notificationManager.addNewJoinRequestCreatedTask(meetupEvent.id(), request.id());
+        if (meetupEvent.getSlotStrategy() == SlotDistributionStrategy.FIRST_COME_FIRST_SERVE) {
+          slotDistributionWorkflows.handleNewJoinRequestFCFS(meetupEvent, request);
+        }
+        eventPublisher.publishJoinRequestCreatedAfterTransaction(request.id());
       } else {
         log.info("User {} tried to join meeting he already has requested to join...", userId);
       }
@@ -109,7 +111,10 @@ public class MeetupWorkflows {
             .findAny()
             .map(MeetupJoinRequest::getId)
             .orElseThrow();
-    notificationManager.addNewJoinRequestCreatedTask(meetupEvent.id(), requestId);
+    if (meetupEvent.getSlotStrategy() == SlotDistributionStrategy.FIRST_COME_FIRST_SERVE) {
+      slotDistributionWorkflows.handleNewJoinRequestFCFS(meetupEvent, request);
+    }
+    eventPublisher.publishJoinRequestCreatedAfterTransaction(requestId);
   }
 
   public void requestToJoinAnon(
@@ -123,7 +128,10 @@ public class MeetupWorkflows {
       MeetupJoinRequest request = existingRequest.get();
       if (request.getRequestState() == RequestState.CANCELED) {
         transitionToRequested(request);
-        notificationManager.addNewJoinRequestCreatedTask(meetupEvent.id(), request.id());
+        if (meetupEvent.getSlotStrategy() == SlotDistributionStrategy.FIRST_COME_FIRST_SERVE) {
+          slotDistributionWorkflows.handleNewJoinRequestFCFS(meetupEvent, request);
+        }
+        eventPublisher.publishJoinRequestCreatedAfterTransaction(request.id());
       } else {
         log.info(
             "Anon '{}' tried to join meeting he already has requested to join...", displayName);
@@ -140,28 +148,31 @@ public class MeetupWorkflows {
             .build();
     meetupEvent.getJoinRequests().add(request);
     log.info("Added join request from anon user to event: {}", meetupEvent.logIdentity());
-    UUID requestId =
+    MeetupJoinRequest persistedRequest =
         meetupDao.createOrUpdate(meetupEvent).getJoinRequests().stream()
             .filter(meetupJoinRequest -> anonToken.equals(meetupJoinRequest.getAnonToken()))
             .findAny()
-            .map(MeetupJoinRequest::getId)
             .orElseThrow();
-    notificationManager.addNewJoinRequestCreatedTask(meetupEvent.id(), requestId);
+    if (meetupEvent.getSlotStrategy() == SlotDistributionStrategy.FIRST_COME_FIRST_SERVE) {
+      slotDistributionWorkflows.handleNewJoinRequestFCFS(meetupEvent, persistedRequest);
+    }
+    eventPublisher.publishJoinRequestCreatedAfterTransaction(persistedRequest.getId());
   }
 
   public MeetupEvent confirmAttendee(UUID meetupId, MeetupJoinRequest joinRequest) {
     MeetupEvent meetupEvent = meetupDao.findOrThrow(meetupId);
-    if (meetupEvent.getJoinRequests().stream().noneMatch(r -> r.equals(joinRequest))) {
+    if (meetupEvent.getJoinRequests().stream()
+        .filter(r -> r.getRequestState() == RequestState.OPEN)
+        .noneMatch(r -> r.equals(joinRequest))) {
       throw new IllegalArgumentException(
-          "Given join request is not persisted with meeting! " + joinRequest);
+          "Given join request is not persisted or state=open for meeting! " + joinRequest);
     }
     if (isFull(meetupEvent)) {
       throw new IllegalStateException(
           "Meeting is already full, can't confirm more requests: " + meetupEvent.logIdentity());
     }
     transitionToAccepted(joinRequest);
-    notificationManager.addJoinRequestApprovedTask(
-        meetupEvent.id(), joinRequest.id(), joinRequest.getUserId());
+    eventPublisher.publishJoinRequestApprovedAfterTransaction(joinRequest.id());
     return meetupDao.findOrThrow(meetupId);
   }
 
@@ -193,6 +204,7 @@ public class MeetupWorkflows {
     MeetupJoinRequest request = joinRequestModelDao.findOrThrow(joinRequestId);
     log.info("User canceled join request for meeting {}", request.getMeetupId());
     transitionToCanceled(request);
+    eventPublisher.publishJoinRequestCanceledAfterTransaction(request.getId());
   }
 
   private void transitionToCanceled(MeetupJoinRequest request) {
@@ -208,7 +220,7 @@ public class MeetupWorkflows {
     log.info("Creator wants to cancel meeting: {}", meetup);
     meetup.setCanceled(true);
     meetupDao.createOrUpdate(meetup);
-    notificationManager.addEventCanceledTask(meetup.getId());
+    eventPublisher.publishMeetupCanceledAfterTransaction(meetup);
   }
 
   public void rescheduleEvent(UUID meetupId, ZonedDateTime newDate, ZonedDateTime newRegClose) {
@@ -217,7 +229,7 @@ public class MeetupWorkflows {
     meetup.setEventDate(newDate);
     meetup.setRegistrationClosing(newRegClose);
     meetupDao.createOrUpdate(meetup);
-    notificationManager.addEventRescheduledTask(meetup.getId());
+    eventPublisher.publishMeetupRescheduledAfterTransaction(meetup);
   }
 
   public int confirmRemainingSlotsRandom(UUID meetupId) {

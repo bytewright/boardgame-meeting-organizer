@@ -18,7 +18,7 @@ import com.vaadin.flow.router.Route;
 import jakarta.annotation.security.PermitAll;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
-import org.bytewright.bgmo.adapter.api.frontend.SessionAuthenticationService;
+import org.bytewright.bgmo.adapter.api.frontend.service.SessionInfoService;
 import org.bytewright.bgmo.adapter.api.frontend.view.LoginView;
 import org.bytewright.bgmo.adapter.api.frontend.view.component.MainLayout;
 import org.bytewright.bgmo.domain.model.user.RegisteredUser;
@@ -31,7 +31,7 @@ import org.bytewright.bgmo.usecases.UserWorkflows;
 @RequiredArgsConstructor
 public class UserSettingsView extends VerticalLayout implements BeforeEnterObserver {
 
-  private final SessionAuthenticationService authService;
+  private final SessionInfoService authService;
   private final UserWorkflows userWorkflows;
 
   @Override

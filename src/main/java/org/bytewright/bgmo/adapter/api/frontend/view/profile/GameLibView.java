@@ -11,7 +11,7 @@ import com.vaadin.flow.router.Route;
 import jakarta.annotation.security.PermitAll;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
-import org.bytewright.bgmo.adapter.api.frontend.SessionAuthenticationService;
+import org.bytewright.bgmo.adapter.api.frontend.service.SessionInfoService;
 import org.bytewright.bgmo.adapter.api.frontend.view.LoginView;
 import org.bytewright.bgmo.adapter.api.frontend.view.component.MainLayout;
 import org.bytewright.bgmo.adapter.api.frontend.view.component.factory.ComponentFactory;
@@ -23,7 +23,7 @@ import org.bytewright.bgmo.domain.model.user.RegisteredUser;
 @RequiredArgsConstructor
 public class GameLibView extends VerticalLayout implements BeforeEnterObserver {
 
-  private final SessionAuthenticationService authService;
+  private final SessionInfoService authService;
   private final ComponentFactory componentFactory;
 
   @Override

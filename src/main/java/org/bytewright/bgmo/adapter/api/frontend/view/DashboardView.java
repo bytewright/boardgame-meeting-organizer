@@ -14,7 +14,7 @@ import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
-import org.bytewright.bgmo.adapter.api.frontend.SessionAuthenticationService;
+import org.bytewright.bgmo.adapter.api.frontend.service.SessionInfoService;
 import org.bytewright.bgmo.adapter.api.frontend.service.i18n.LocaleService;
 import org.bytewright.bgmo.adapter.api.frontend.view.component.GameTimeAndDuration;
 import org.bytewright.bgmo.adapter.api.frontend.view.component.MainLayout;
@@ -34,13 +34,13 @@ import org.bytewright.bgmo.usecases.MeetupWorkflows;
 public class DashboardView extends VerticalLayout implements BeforeEnterObserver {
 
   private final LocaleService localeService;
-  private final SessionAuthenticationService authService;
+  private final SessionInfoService authService;
   private final MeetupWorkflows meetupWorkflows;
   private final RegisteredUserDao registeredUserDao;
 
   public DashboardView(
       LocaleService localeService,
-      SessionAuthenticationService authService,
+      SessionInfoService authService,
       MeetupWorkflows meetupWorkflows,
       RegisteredUserDao registeredUserDao) {
     this.localeService = localeService;

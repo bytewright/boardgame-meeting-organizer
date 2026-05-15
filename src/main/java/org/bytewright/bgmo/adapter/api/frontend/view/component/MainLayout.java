@@ -20,7 +20,7 @@ import com.vaadin.flow.router.RouterLayout;
 import com.vaadin.flow.router.RouterLink;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
 import java.time.Clock;
-import org.bytewright.bgmo.adapter.api.frontend.SessionAuthenticationService;
+import org.bytewright.bgmo.adapter.api.frontend.service.SessionInfoService;
 import org.bytewright.bgmo.adapter.api.frontend.view.*;
 import org.bytewright.bgmo.adapter.api.frontend.view.admin.AdminDashboardView;
 import org.bytewright.bgmo.adapter.api.frontend.view.component.factory.ComponentFactory;
@@ -31,6 +31,7 @@ import org.bytewright.bgmo.adapter.api.frontend.view.meetup.MeetupCreationView;
 import org.bytewright.bgmo.adapter.api.frontend.view.profile.ContactSettingsView;
 import org.bytewright.bgmo.adapter.api.frontend.view.profile.GameLibView;
 import org.bytewright.bgmo.adapter.api.frontend.view.profile.UserSettingsView;
+import org.bytewright.bgmo.domain.model.user.RegisteredUser;
 import org.bytewright.bgmo.domain.service.data.GameDao;
 import org.bytewright.bgmo.usecases.MeetupWorkflows;
 
@@ -38,14 +39,14 @@ import org.bytewright.bgmo.usecases.MeetupWorkflows;
 public class MainLayout extends AppLayout implements RouterLayout {
   public static final String MAX_DISPLAYPORT_WIDTH = "800px"; // Mobile-first reasonable fixed width
   private final ComponentFactory componentFactory;
-  private final SessionAuthenticationService authService;
+  private final SessionInfoService authService;
   private final MeetupWorkflows meetupWorkflows;
   private final GameDao gameDao;
   private final Clock clock;
 
   public MainLayout(
       ComponentFactory componentFactory,
-      SessionAuthenticationService authService,
+      SessionInfoService authService,
       MeetupWorkflows meetupWorkflows,
       GameDao gameDao,
       Clock clock) {
@@ -68,10 +69,13 @@ public class MainLayout extends AppLayout implements RouterLayout {
     logoLink.getElement().setAttribute("aria-label", "Go to dashboard");
     logoLink.setHighlightCondition((routerLink, event) -> false);
 
-    HorizontalLayout header =
-        authService.getCurrentUser().isPresent()
-            ? buildAuthenticatedHeader(logoLink)
-            : buildAnonymousHeader(logoLink);
+    HorizontalLayout header = new HorizontalLayout(logoLink);
+    Component[] components =
+        authService
+            .getCurrentUser()
+            .map(this::buildAuthenticatedHeader)
+            .orElse(buildAnonymousHeader());
+    header.add(components);
 
     header.setDefaultVerticalComponentAlignment(FlexComponent.Alignment.CENTER);
     header.expand(logoLink); // Logo takes remaining space, buttons stay right-aligned
@@ -90,31 +94,27 @@ public class MainLayout extends AppLayout implements RouterLayout {
    * Header for logged-in users: Logo | [+ New Meetup] [👤▾] All secondary navigation (profile,
    * library, contacts, logout, admin) lives in the profile menu.
    */
-  private HorizontalLayout buildAuthenticatedHeader(RouterLink logoLink) {
+  private Component[] buildAuthenticatedHeader(RegisteredUser user) {
     Button createBtn =
         createNavButton(
             getTranslation("navbar.create-meetup"),
             VaadinIcon.PLUS.create(),
             e -> UI.getCurrent().navigate(MeetupCreationView.class));
-
     createBtn.addThemeVariants(ButtonVariant.LUMO_PRIMARY, ButtonVariant.LUMO_SMALL);
-
     MenuBar profileMenu = buildProfileMenuBar();
-
-    return new HorizontalLayout(logoLink, createBtn, profileMenu);
+    return new Component[] {createBtn, profileMenu};
   }
 
   /** Header for anonymous visitors: Logo | [LocalePicker] [Login] */
-  private HorizontalLayout buildAnonymousHeader(RouterLink logoLink) {
+  private Component[] buildAnonymousHeader() {
     Button loginBtn =
         createNavButton(
             getTranslation("navbar.login"),
             VaadinIcon.SIGN_IN.create(),
             e -> UI.getCurrent().navigate(LoginView.class));
     loginBtn.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
-
     LocalePicker localePicker = componentFactory.localePicker();
-    return new HorizontalLayout(logoLink, localePicker, loginBtn);
+    return new Component[] {localePicker, loginBtn};
   }
 
   /**

@@ -1,7 +1,9 @@
 package org.bytewright.bgmo.domain.model.notification;
 
 public enum NotificationType {
-  NEW_EVENT,
+  EVENT_NEW,
+  EVENT_RESCHEDULED,
+  EVENT_CANCELED,
   USER_APPROVED,
   JOIN_REQUEST_CREATED,
   USER_REGISTRATION,

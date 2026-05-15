@@ -36,12 +36,14 @@ import java.time.LocalTime;
 import java.time.ZoneId;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
-import org.bytewright.bgmo.adapter.api.frontend.SessionAuthenticationService;
+import org.bytewright.bgmo.adapter.api.frontend.service.SessionInfoService;
 import org.bytewright.bgmo.adapter.api.frontend.view.DashboardView;
 import org.bytewright.bgmo.adapter.api.frontend.view.LoginView;
 import org.bytewright.bgmo.adapter.api.frontend.view.component.MainLayout;
+import org.bytewright.bgmo.adapter.api.frontend.view.profile.ContactSettingsView;
 import org.bytewright.bgmo.domain.model.*;
 import org.bytewright.bgmo.domain.model.user.RegisteredUser;
+import org.bytewright.bgmo.domain.model.user.UserStatus;
 import org.bytewright.bgmo.domain.service.MeetupLocationService;
 import org.bytewright.bgmo.domain.service.MeetupStrategyService;
 import org.bytewright.bgmo.domain.service.MeetupStrategyService.SlotDistributionStrategyWithLocalization;
@@ -79,7 +81,7 @@ public class MeetupCreationView extends VerticalLayout implements BeforeEnterObs
   private static final LocalTime REGISTRATION_CLOSING_TIME = LocalTime.of(20, 0);
 
   private final Clock clock;
-  private final SessionAuthenticationService authService;
+  private final SessionInfoService authService;
   private final MeetupWorkflows meetupWorkflows;
   private final GameDao gameDao;
   private final MeetupStrategyService meetupStrategyService;
@@ -90,7 +92,7 @@ public class MeetupCreationView extends VerticalLayout implements BeforeEnterObs
 
   public MeetupCreationView(
       Clock clock,
-      SessionAuthenticationService authService,
+      SessionInfoService authService,
       MeetupWorkflows meetupWorkflows,
       GameDao gameDao,
       MeetupStrategyService meetupStrategyService,
@@ -484,16 +486,18 @@ public class MeetupCreationView extends VerticalLayout implements BeforeEnterObs
     return today.plusDays(daysUntilSaturday).atTime(LocalTime.of(18, 0));
   }
 
-  // ── BeforeEnter ───────────────────────────────────────────────────────────
-
   @Override
   public void beforeEnter(BeforeEnterEvent event) {
     authService
         .getCurrentUser()
         .ifPresentOrElse(
             user -> {
-              this.currentUser = user;
-              buildUI();
+              if (user.getStatus() != UserStatus.ACTIVE || user.getContactInfos().isEmpty()) {
+                event.forwardTo(ContactSettingsView.class);
+              } else {
+                this.currentUser = user;
+                buildUI();
+              }
             },
             () -> {
               log.debug(

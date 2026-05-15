@@ -12,7 +12,7 @@ import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
 import lombok.extern.slf4j.Slf4j;
-import org.bytewright.bgmo.adapter.api.frontend.SessionAuthenticationService;
+import org.bytewright.bgmo.adapter.api.frontend.service.SessionInfoService;
 
 @Slf4j
 @Route("login")
@@ -20,9 +20,9 @@ import org.bytewright.bgmo.adapter.api.frontend.SessionAuthenticationService;
 @AnonymousAllowed
 public class LoginView extends VerticalLayout implements BeforeEnterObserver {
 
-  private final SessionAuthenticationService authService;
+  private final SessionInfoService authService;
 
-  public LoginView(SessionAuthenticationService authService) {
+  public LoginView(SessionInfoService authService) {
     this.authService = authService;
 
     addClassName("login-view");

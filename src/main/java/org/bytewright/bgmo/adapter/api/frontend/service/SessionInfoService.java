@@ -1,4 +1,4 @@
-package org.bytewright.bgmo.adapter.api.frontend;
+package org.bytewright.bgmo.adapter.api.frontend.service;
 
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.server.VaadinSession;
@@ -18,7 +18,7 @@ import org.springframework.stereotype.Service;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class SessionAuthenticationService implements CurrentUserAccessor {
+public class SessionInfoService implements CurrentUserAccessor {
   private final RegisteredUserDao registeredUserDao;
 
   @Override

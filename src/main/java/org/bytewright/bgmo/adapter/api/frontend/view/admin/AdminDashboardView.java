@@ -13,7 +13,7 @@ import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import jakarta.annotation.security.RolesAllowed;
 import java.util.Optional;
-import org.bytewright.bgmo.adapter.api.frontend.SessionAuthenticationService;
+import org.bytewright.bgmo.adapter.api.frontend.service.SessionInfoService;
 import org.bytewright.bgmo.adapter.api.frontend.view.LoginView;
 import org.bytewright.bgmo.adapter.api.frontend.view.component.MainLayout;
 import org.bytewright.bgmo.adapter.api.frontend.view.component.NavCardComponent;
@@ -24,10 +24,9 @@ import org.bytewright.bgmo.usecases.AdminWorkflows;
 @PageTitle("Admin | " + APP_NAME_SHORT)
 @RolesAllowed("ADMIN")
 public class AdminDashboardView extends VerticalLayout implements BeforeEnterObserver {
-  private final SessionAuthenticationService authService;
+  private final SessionInfoService authService;
 
-  public AdminDashboardView(
-      SessionAuthenticationService authService, AdminWorkflows adminWorkflows) {
+  public AdminDashboardView(SessionInfoService authService, AdminWorkflows adminWorkflows) {
     this.authService = authService;
     setMaxWidth(MainLayout.MAX_DISPLAYPORT_WIDTH);
     getStyle().set("margin", "0 auto");

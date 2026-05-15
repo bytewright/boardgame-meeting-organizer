@@ -16,7 +16,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
-import org.bytewright.bgmo.adapter.api.frontend.SessionAuthenticationService;
+import org.bytewright.bgmo.adapter.api.frontend.service.SessionInfoService;
 import org.bytewright.bgmo.adapter.api.frontend.view.LoginView;
 import org.bytewright.bgmo.adapter.api.frontend.view.component.MainLayout;
 import org.bytewright.bgmo.adapter.api.frontend.view.component.factory.ComponentFactory;
@@ -31,7 +31,7 @@ import org.bytewright.bgmo.usecases.UserWorkflows;
 @RequiredArgsConstructor
 public class ContactSettingsView extends VerticalLayout implements BeforeEnterObserver {
 
-  private final SessionAuthenticationService authService;
+  private final SessionInfoService authService;
   private final ComponentFactory componentFactory;
   private final UserWorkflows userWorkflows;
 
@@ -60,7 +60,7 @@ public class ContactSettingsView extends VerticalLayout implements BeforeEnterOb
 
     // Show the onboarding banner for users who have not yet added any contact info.
     // The banner disappears automatically on next navigation after PENDING_APPROVAL → ACTIVE.
-    if (user.getStatus() == UserStatus.AFTER_REGISTRATION) {
+    if (user.getStatus() == UserStatus.AFTER_REGISTRATION || user.getContactInfos().isEmpty()) {
       add(buildPendingBanner());
     } else {
       add(buildPrimaryContactSection(user));

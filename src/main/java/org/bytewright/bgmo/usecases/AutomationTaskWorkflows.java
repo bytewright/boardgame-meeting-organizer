@@ -1,8 +1,7 @@
 package org.bytewright.bgmo.usecases;
 
-import java.time.Duration;
-
 import jakarta.transaction.Transactional;
+import java.time.Duration;
 import lombok.Builder;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.jackson.Jacksonized;

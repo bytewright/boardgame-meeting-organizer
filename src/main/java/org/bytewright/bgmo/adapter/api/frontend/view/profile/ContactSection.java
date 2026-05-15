@@ -17,6 +17,7 @@ import java.util.Map;
 import org.bytewright.bgmo.domain.model.user.ContactInfo;
 import org.bytewright.bgmo.domain.model.user.ContactInfoType;
 import org.bytewright.bgmo.domain.model.user.RegisteredUser;
+import org.bytewright.bgmo.domain.model.user.exception.ModifyContactsException;
 import org.bytewright.bgmo.domain.service.data.RegisteredUserDao;
 import org.bytewright.bgmo.domain.service.notification.VerificationCodeService;
 import org.bytewright.bgmo.usecases.UserWorkflows;
@@ -113,12 +114,17 @@ public class ContactSection extends VerticalLayout {
         ButtonVariant.LUMO_ERROR, ButtonVariant.LUMO_TERTIARY, ButtonVariant.LUMO_SMALL);
     unlinkBtn.addClickListener(
         e -> {
-          userWorkflows.removeContact(currentUser.getId(), contact);
-          currentUser.getContactInfos().remove(contact);
-          rebuild();
-          Notification n =
-              Notification.show(ContactInfoLabelUtil.messengerName(type) + " unlinked.");
-          n.addThemeVariants(NotificationVariant.LUMO_CONTRAST);
+          try {
+            userWorkflows.removeContact(currentUser.getId(), contact);
+            currentUser.getContactInfos().remove(contact);
+            rebuild();
+            Notification n =
+                Notification.show(ContactInfoLabelUtil.messengerName(type) + " unlinked.");
+            n.addThemeVariants(NotificationVariant.LUMO_CONTRAST);
+          } catch (ModifyContactsException ex) {
+            Notification n = Notification.show(getTranslation(ex.getMessageKey()));
+            n.addThemeVariants(NotificationVariant.LUMO_ERROR);
+          }
         });
 
     HorizontalLayout row = new HorizontalLayout(handle, verifiedBadge, unlinkBtn);
@@ -203,9 +209,14 @@ public class ContactSection extends VerticalLayout {
     removeBtn.getElement().setAttribute("aria-label", "Remove");
     removeBtn.addClickListener(
         e -> {
-          userWorkflows.removeContact(currentUser.getId(), contact);
-          currentUser.getContactInfos().remove(contact);
-          rebuild();
+          try {
+            userWorkflows.removeContact(currentUser.getId(), contact);
+            currentUser.getContactInfos().remove(contact);
+            rebuild();
+          } catch (ModifyContactsException ex) {
+            Notification n = Notification.show(getTranslation(ex.getMessageKey()));
+            n.addThemeVariants(NotificationVariant.LUMO_ERROR);
+          }
         });
 
     HorizontalLayout row = new HorizontalLayout(value, removeBtn);

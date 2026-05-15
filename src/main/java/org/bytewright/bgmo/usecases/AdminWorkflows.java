@@ -2,6 +2,7 @@ package org.bytewright.bgmo.usecases;
 
 import static org.bytewright.bgmo.domain.service.AdapterSettingsProvider.ValidationResult.VALID;
 
+import jakarta.transaction.Transactional;
 import java.util.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -13,7 +14,7 @@ import org.bytewright.bgmo.domain.model.user.UserStatus;
 import org.bytewright.bgmo.domain.service.AdapterSettingsProvider;
 import org.bytewright.bgmo.domain.service.data.AdapterSettingsDao;
 import org.bytewright.bgmo.domain.service.data.RegisteredUserDao;
-import org.bytewright.bgmo.domain.service.notification.NotificationManager;
+import org.bytewright.bgmo.domain.service.event.EventPublisher;
 import org.bytewright.bgmo.domain.service.security.BgmoUserDetailsService;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -22,18 +23,19 @@ import org.springframework.stereotype.Service;
 
 @Slf4j
 @Service
+@Transactional
 @RequiredArgsConstructor
 public class AdminWorkflows {
   private final Set<AdapterSettingsProvider> adapterSettingsProviders;
   private final BgmoUserDetailsService userDetailsService;
-  private final NotificationManager notificationManager;
   private final AdapterSettingsDao adapterSettingsDao;
+  private final EventPublisher eventPublisher;
   private final RegisteredUserDao userDao;
 
   public void approveUser(UUID adminId, UUID userToApprove) {
     RegisteredUser admin = userDao.findOrThrow(adminId);
     RegisteredUser user = userDao.findOrThrow(userToApprove);
-    notificationManager.addUserApprovedTask(user.getId());
+    eventPublisher.publishUserVerifiedAfterTransaction(user.getId());
     RegisteredUser persisted = transitionStateToApproved(user);
     log.info(
         "Admin '{}' changes state of user {} to {}!",

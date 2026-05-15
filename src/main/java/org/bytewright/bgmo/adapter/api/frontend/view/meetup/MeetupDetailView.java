@@ -16,9 +16,9 @@ import com.vaadin.flow.server.auth.AnonymousAllowed;
 import java.time.ZonedDateTime;
 import java.util.UUID;
 import lombok.extern.slf4j.Slf4j;
-import org.bytewright.bgmo.adapter.api.frontend.SessionAuthenticationService;
 import org.bytewright.bgmo.adapter.api.frontend.service.MeetupDetailContext;
 import org.bytewright.bgmo.adapter.api.frontend.service.MeetupDetailContextBuilder;
+import org.bytewright.bgmo.adapter.api.frontend.service.SessionInfoService;
 import org.bytewright.bgmo.adapter.api.frontend.service.i18n.LocaleService;
 import org.bytewright.bgmo.adapter.api.frontend.view.DashboardView;
 import org.bytewright.bgmo.adapter.api.frontend.view.component.MainLayout;
@@ -56,7 +56,7 @@ public class MeetupDetailView extends VerticalLayout implements BeforeEnterObser
   private static final String ANON_TOKEN_KEY_PREFIX = "anonToken:meetup:";
 
   private final LocaleService localeService;
-  private final SessionAuthenticationService authService;
+  private final SessionInfoService authService;
   private final MeetupWorkflows meetupWorkflows;
   private final MeetupDetailContextBuilder contextBuilder;
   private final MeetupDao meetupDao;
@@ -67,7 +67,7 @@ public class MeetupDetailView extends VerticalLayout implements BeforeEnterObser
 
   public MeetupDetailView(
       LocaleService localeService,
-      SessionAuthenticationService authService,
+      SessionInfoService authService,
       MeetupWorkflows meetupWorkflows,
       MeetupDetailContextBuilder contextBuilder,
       MeetupDao meetupDao) {

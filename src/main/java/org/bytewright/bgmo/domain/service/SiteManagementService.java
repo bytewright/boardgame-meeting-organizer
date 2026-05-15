@@ -8,9 +8,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.jackson.Jacksonized;
 import lombok.extern.slf4j.Slf4j;
 import org.bytewright.bgmo.domain.model.AdapterSettings;
-import org.bytewright.bgmo.domain.model.event.MeetupCreatedEvent;
 import org.bytewright.bgmo.domain.service.data.AdapterSettingsDao;
-import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 import tools.jackson.core.JacksonException;
 import tools.jackson.databind.json.JsonMapper;
@@ -22,12 +20,6 @@ public class SiteManagementService implements AdapterSettingsProvider {
   private static final String ADAPTER_NAME = "core.site-management-service";
   private final JsonMapper mapper = JsonMapperFactory.unRedactedMapper();
   private final AdapterSettingsDao adapterSettingsDao;
-
-  @EventListener
-  public void onMeetupCreatedEvent(MeetupCreatedEvent event) {
-    URI meetup = getBaseUrl().resolve("meetup").resolve(event.id().toString());
-    log.info("New Meeting is available at: {}", meetup);
-  }
 
   public URI getBaseUrl() {
     return URI.create(getSettings().getBaseUrl());

@@ -1,12 +1,15 @@
 package org.bytewright.bgmo.domain.service.notification;
 
+import jakarta.transaction.Transactional;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.bytewright.bgmo.domain.model.event.MeetupCreatedEvent;
+import org.bytewright.bgmo.domain.model.MeetupEvent;
+import org.bytewright.bgmo.domain.model.MeetupJoinRequest;
+import org.bytewright.bgmo.domain.model.event.ModelUpdatedEvents;
 import org.bytewright.bgmo.domain.model.notification.NotificationContext;
 import org.bytewright.bgmo.domain.model.notification.NotificationTargetType;
 import org.bytewright.bgmo.domain.model.notification.NotificationType;
@@ -16,6 +19,7 @@ import org.bytewright.bgmo.domain.model.user.RegisteredUser;
 import org.bytewright.bgmo.domain.model.user.UserRole;
 import org.bytewright.bgmo.domain.service.UrlGenerator;
 import org.bytewright.bgmo.domain.service.data.MeetupDao;
+import org.bytewright.bgmo.domain.service.data.ModelDao;
 import org.bytewright.bgmo.domain.service.data.RegisteredUserDao;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
@@ -28,22 +32,21 @@ import org.springframework.stereotype.Service;
 @Service
 @RequiredArgsConstructor
 public class NotificationManager {
+  private final ModelDao<MeetupJoinRequest> joinRequestDao;
   private final List<NotificationTaskExecutor> executors;
   private final UrlGenerator urlGenerator;
   private final RegisteredUserDao userDao;
   private final MeetupDao meetupDao;
 
   @EventListener
-  public void onMeetupCreatedEvent(MeetupCreatedEvent event) {
-    addNewEventCreatedTask(event.id());
-  }
-
-  private void addNewEventCreatedTask(UUID meetupId) {
+  @Transactional(Transactional.TxType.REQUIRES_NEW)
+  public void onMeetupCreatedEvent(ModelUpdatedEvents.MeetupCreated event) {
+    UUID meetupId = event.id();
     var meetup = meetupDao.findById(meetupId).orElseThrow();
     var context =
         NotificationContext.builder()
-            .notificationType(NotificationType.NEW_EVENT)
-            .messageKey("notification.newMeetup")
+            .notificationType(NotificationType.EVENT_NEW)
+            .messageKey("notification.meetup.created")
             .messageArg(meetup.getTitle())
             .messageArg(urlGenerator.getUrlFor(meetup))
             .notificationTargetType(NotificationTargetType.GROUP)
@@ -53,27 +56,101 @@ public class NotificationManager {
     dispatch(context);
   }
 
-  public void addUserApprovedTask(UUID userId) {
-    // todo add async task to notify user via primary channel that the account is active
+  @EventListener
+  @Transactional(Transactional.TxType.REQUIRES_NEW)
+  public void onJoinRequestCreated(ModelUpdatedEvents.JoinRequestCreated event) {
+    MeetupJoinRequest joinRequest = joinRequestDao.findOrThrow(event.id());
+    MeetupEvent meetup = meetupDao.findOrThrow(joinRequest.getMeetupId());
+    RegisteredUser eventCreator = userDao.findOrThrow(meetup.getCreatorId());
+    var context =
+        NotificationContext.builder()
+            .notificationType(NotificationType.JOIN_REQUEST_CREATED)
+            .messageKey("notification.newJoinRequest")
+            .messageArg(joinRequest.getDisplayName())
+            .messageArg(meetup.getTitle())
+            .messageArg(urlGenerator.getUrlFor(meetup))
+            .notificationTargetType(NotificationTargetType.DIRECT)
+            .userId(eventCreator.getId())
+            .locale(eventCreator.getPreferredLocale())
+            .meetupId(meetup.id())
+            .build();
+    dispatch(context);
   }
 
-  public void addNewJoinRequestCreatedTask(UUID meetupId, UUID requestId) {
-    // todo add async task to notify event creator that a new request was created
+  @EventListener
+  @Transactional(Transactional.TxType.REQUIRES_NEW)
+  public void onJoinRequestApproved(ModelUpdatedEvents.JoinRequestApproved event) {
+    MeetupJoinRequest joinRequest = joinRequestDao.findOrThrow(event.id());
+    MeetupEvent meetup = meetupDao.findOrThrow(joinRequest.getMeetupId());
+    Optional.ofNullable(joinRequest.getUserId())
+        .flatMap(userDao::find)
+        .ifPresent(
+            joiner -> {
+              var context =
+                  NotificationContext.builder()
+                      .notificationType(NotificationType.JOIN_REQUEST_APPROVED)
+                      .messageKey("notification.joinRequestApproved")
+                      .messageArg(meetup.getEventDate())
+                      .messageArg(meetup.getTitle())
+                      .messageArg(urlGenerator.getUrlFor(meetup))
+                      .notificationTargetType(NotificationTargetType.DIRECT)
+                      .userId(joiner.getId())
+                      .locale(joiner.getPreferredLocale())
+                      .meetupId(meetup.id())
+                      .build();
+              dispatch(context);
+            });
   }
 
-  public void addJoinRequestApprovedTask(UUID meetupId, UUID requestId, UUID userId) {
-    // todo add async task to notify user that a request was accepted
+  @EventListener
+  @Transactional(Transactional.TxType.REQUIRES_NEW)
+  public void addMeetupRescheduled(ModelUpdatedEvents.MeetupRescheduled event) {
+    UUID meetupId = event.id();
+    var meetup = meetupDao.findById(meetupId).orElseThrow();
+    for (MeetupJoinRequest joinRequest : meetup.getJoinRequests()) {
+      RegisteredUser joiner = userDao.findOrThrow(joinRequest.getUserId());
+      var context =
+          NotificationContext.builder()
+              .notificationType(NotificationType.EVENT_RESCHEDULED)
+              .messageKey("notification.meetup.rescheduled")
+              .messageArg(meetup.getTitle())
+              .messageArg(meetup.getEventDate())
+              .messageArg(urlGenerator.getUrlFor(meetup))
+              .notificationTargetType(NotificationTargetType.DIRECT)
+              .meetupId(meetupId)
+              .userId(joiner.getId())
+              .locale(joiner.getPreferredLocale())
+              .build();
+      dispatch(context);
+    }
   }
 
-  public void addEventRescheduledTask(UUID meetupId) {
-    // todo add async task to notify users that event was moved
+  @EventListener
+  @Transactional(Transactional.TxType.REQUIRES_NEW)
+  public void onMeetupCanceled(ModelUpdatedEvents.MeetupCanceled event) {
+    UUID meetupId = event.id();
+    var meetup = meetupDao.findById(meetupId).orElseThrow();
+    for (MeetupJoinRequest joinRequest : meetup.getJoinRequests()) {
+      RegisteredUser joiner = userDao.findOrThrow(joinRequest.getUserId());
+      var context =
+          NotificationContext.builder()
+              .notificationType(NotificationType.EVENT_CANCELED)
+              .messageKey("notification.meetup.canceled")
+              .messageArg(meetup.getTitle())
+              .messageArg(urlGenerator.getUrlFor(meetup))
+              .notificationTargetType(NotificationTargetType.DIRECT)
+              .meetupId(meetupId)
+              .userId(joiner.getId())
+              .locale(joiner.getPreferredLocale())
+              .build();
+      dispatch(context);
+    }
   }
 
-  public void addEventCanceledTask(UUID meetupId) {
-    // todo add async task to notify users that event was canceled
-  }
-
-  public void addUserRegistrationTask(UUID userId) {
+  @EventListener
+  @Transactional(Transactional.TxType.REQUIRES_NEW)
+  public void onUserCreated(ModelUpdatedEvents.UserCreated event) {
+    UUID userId = event.id();
     Set<RegisteredUser> siteAdmins = userDao.findAllActiveByRole(UserRole.ADMIN);
     RegisteredUser newUser = userDao.findOrThrow(userId);
     log.info(
@@ -84,13 +161,28 @@ public class NotificationManager {
       var context =
           NotificationContext.builder()
               .notificationType(NotificationType.USER_REGISTRATION)
-              .messageKey("notification.newRegistration")
+              .messageKey("notification.user.new")
               .messageArg(newUser.getDisplayName())
               .notificationTargetType(NotificationTargetType.DIRECT)
               .userId(user.getId())
               .build();
       dispatchToPrimary(user, context);
     }
+  }
+
+  @EventListener
+  @Transactional(Transactional.TxType.REQUIRES_NEW)
+  public void onUserVerified(ModelUpdatedEvents.UserVerified event) {
+    RegisteredUser user = userDao.findOrThrow(event.id());
+    var context =
+        NotificationContext.builder()
+            .notificationType(NotificationType.EVENT_CANCELED)
+            .messageKey("notification.user.approved")
+            .notificationTargetType(NotificationTargetType.DIRECT)
+            .userId(user.getId())
+            .locale(user.getPreferredLocale())
+            .build();
+    dispatch(context);
   }
 
   private void dispatch(NotificationContext context) {

@@ -9,18 +9,17 @@ import lombok.extern.slf4j.Slf4j;
 import org.bytewright.bgmo.domain.model.Game;
 import org.bytewright.bgmo.domain.model.data.HasUUID;
 import org.bytewright.bgmo.domain.model.user.*;
+import org.bytewright.bgmo.domain.model.user.exception.ModifyContactsException;
 import org.bytewright.bgmo.domain.service.InputSanitizer;
 import org.bytewright.bgmo.domain.service.automation.TimeSource;
 import org.bytewright.bgmo.domain.service.data.GameDao;
 import org.bytewright.bgmo.domain.service.data.ModelDao;
 import org.bytewright.bgmo.domain.service.data.RegisteredUserDao;
-import org.bytewright.bgmo.domain.service.notification.NotificationManager;
+import org.bytewright.bgmo.domain.service.event.EventPublisher;
 import org.bytewright.bgmo.domain.service.security.BgmoUserDetailsService;
 import org.bytewright.bgmo.domain.service.security.PasswordRules;
 import org.bytewright.bgmo.domain.service.user.DisplayNameValidationService;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.support.TransactionSynchronization;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 @Slf4j
 @Service
@@ -30,8 +29,8 @@ public class UserWorkflows {
   private final DisplayNameValidationService nameValidationService;
   private final BgmoUserDetailsService userDetailsService;
   private final ModelDao<ContactInfo> contactInfoModelDao;
-  private final NotificationManager notificationManager;
   private final InputSanitizer inputSanitizer;
+  private final EventPublisher eventPublisher;
   private final RegisteredUserDao userDao;
   private final TimeSource timeSource;
   private final GameDao gameDao;
@@ -54,13 +53,7 @@ public class UserWorkflows {
                 .build());
     RegisteredUser refetchedUser = userDao.createOrUpdate(newUser);
     log.info("Created user with id {}: {}", refetchedUser.getId(), refetchedUser);
-    TransactionSynchronizationManager.registerSynchronization(
-        new TransactionSynchronization() {
-          @Override
-          public void afterCommit() {
-            notificationManager.addUserRegistrationTask(refetchedUser.getId());
-          }
-        });
+    eventPublisher.publishUserCreatedAfterTransaction(refetchedUser.getId());
     return refetchedUser;
   }
 
@@ -183,27 +176,18 @@ public class UserWorkflows {
     userDao.createOrUpdate(user);
   }
 
-  public void removeContact(UUID userId, ContactInfo contactInfo) {
+  public void removeContact(UUID userId, ContactInfo contactInfo) throws ModifyContactsException {
     RegisteredUser user = userDao.findById(userId).orElseThrow();
+    if (user.getContactInfos().size() <= 1) {
+      throw ModifyContactsException.lastContact();
+    }
     log.info("User {} removes contact info with id: {}", user.logEntity(), contactInfo.id());
     user.getContactInfos().remove(contactInfo);
     if (Objects.equals(user.getPrimaryContactId(), contactInfo.id())) {
-      user.setPrimaryContactId(null);
+      ContactInfo newPrimary = user.getContactInfos().stream().findAny().orElseThrow();
+      user.setPrimaryContactId(newPrimary.id());
     }
     userDao.createOrUpdate(user);
-  }
-
-  public RegisteredUser refreshUser(RegisteredUser currentUser) {
-    return userDao.findOrThrow(currentUser.getId());
-  }
-
-  public void changeContactInfo(UUID userId, ContactInfo updatedContact) {
-    if (updatedContact.id() == null
-        || userDao.findOrThrow(userId).getContactInfos().stream()
-            .noneMatch(contactInfo -> contactInfo.id().equals(updatedContact.id()))) {
-      throw new IllegalArgumentException("Use addContactInfo on new contacts");
-    }
-    contactInfoModelDao.createOrUpdate(updatedContact.withUserId(userId));
   }
 
   public boolean validateLoginName(String rawName) {

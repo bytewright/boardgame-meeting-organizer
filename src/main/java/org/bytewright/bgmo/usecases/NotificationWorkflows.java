@@ -1,5 +1,6 @@
 package org.bytewright.bgmo.usecases;
 
+import jakarta.transaction.Transactional;
 import java.util.Collection;
 import java.util.Optional;
 import java.util.UUID;
@@ -15,6 +16,7 @@ import org.springframework.stereotype.Service;
 
 @Slf4j
 @Service
+@Transactional
 @RequiredArgsConstructor
 public class NotificationWorkflows {
   private final RegisteredUserDao userDao;

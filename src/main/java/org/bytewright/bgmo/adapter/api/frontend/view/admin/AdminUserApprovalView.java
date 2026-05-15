@@ -13,7 +13,7 @@ import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.Route;
 import jakarta.annotation.security.RolesAllowed;
 import java.util.Optional;
-import org.bytewright.bgmo.adapter.api.frontend.SessionAuthenticationService;
+import org.bytewright.bgmo.adapter.api.frontend.service.SessionInfoService;
 import org.bytewright.bgmo.adapter.api.frontend.view.LoginView;
 import org.bytewright.bgmo.adapter.api.frontend.view.component.MainLayout;
 import org.bytewright.bgmo.domain.model.user.RegisteredUser;
@@ -22,13 +22,12 @@ import org.bytewright.bgmo.usecases.AdminWorkflows;
 @Route(value = "admin/approvals", layout = MainLayout.class)
 @RolesAllowed("ADMIN")
 public class AdminUserApprovalView extends VerticalLayout implements BeforeEnterObserver {
-  private final SessionAuthenticationService authService;
+  private final SessionInfoService authService;
   private final AdminWorkflows adminWorkflows;
   private RegisteredUser currentUser;
   private final Grid<RegisteredUser> grid = new Grid<>(RegisteredUser.class, false);
 
-  public AdminUserApprovalView(
-      SessionAuthenticationService authService, AdminWorkflows adminWorkflows) {
+  public AdminUserApprovalView(SessionInfoService authService, AdminWorkflows adminWorkflows) {
     this.authService = authService;
     this.adminWorkflows = adminWorkflows;
 
