@@ -9,4 +9,8 @@ import lombok.extern.jackson.Jacksonized;
 @Jacksonized
 public class TelegramSettings {
   @Builder.Default private boolean enabled = true;
+  @Builder.Default private String iconLink = "assets/images/poweredByBggLogo.webp";
+  @Builder.Default private String tutorialStep1Link = "assets/images/telegram-help-1.jpg";
+  @Builder.Default private String tutorialStep2Link = "assets/images/telegram-help-2.jpg";
+  @Builder.Default private String tutorialStep3Link = "assets/images/telegram-help-3.jpg";
 }

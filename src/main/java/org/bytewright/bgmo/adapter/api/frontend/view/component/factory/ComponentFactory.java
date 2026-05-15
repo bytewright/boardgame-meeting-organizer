@@ -6,10 +6,9 @@ import java.util.function.BiConsumer;
 import lombok.RequiredArgsConstructor;
 import org.bytewright.bgmo.adapter.api.frontend.service.i18n.LocaleService;
 import org.bytewright.bgmo.adapter.api.frontend.view.component.LocalePicker;
-import org.bytewright.bgmo.adapter.api.frontend.view.profile.AddGameDialog;
-import org.bytewright.bgmo.adapter.api.frontend.view.profile.ContactSection;
-import org.bytewright.bgmo.adapter.api.frontend.view.profile.GameLibSection;
+import org.bytewright.bgmo.adapter.api.frontend.view.profile.*;
 import org.bytewright.bgmo.domain.model.Game;
+import org.bytewright.bgmo.domain.model.notification.MessengerLinkContext;
 import org.bytewright.bgmo.domain.model.user.ContactInfoType;
 import org.bytewright.bgmo.domain.model.user.RegisteredUser;
 import org.bytewright.bgmo.domain.service.GameInformationProvider;
@@ -30,8 +29,7 @@ public class ComponentFactory {
   private final GameDao gameDao;
 
   public ContactSection contactSection(RegisteredUser currentUser) {
-    Map<ContactInfoType, String> botHandles = verificationService.getBotHandles();
-    return new ContactSection(verificationService, userWorkflows, userDao, currentUser, botHandles);
+    return new ContactSection(this, userWorkflows, userDao, currentUser);
   }
 
   public LocalePicker localePicker() {
@@ -57,5 +55,11 @@ public class ComponentFactory {
         };
     AddGameDialog addGameDialog = new AddGameDialog(list, currentUser, saveConsumer);
     return addGameDialog;
+  }
+
+  public MessengerLinkDialog messengerLinkDialog(
+      UUID currentUserId, ContactInfoType type, Runnable runnable) {
+    MessengerLinkContext ctx = verificationService.buildLinkContext(currentUserId, type);
+    return new MessengerLinkDialog(ctx, currentUserId, userDao, runnable);
   }
 }

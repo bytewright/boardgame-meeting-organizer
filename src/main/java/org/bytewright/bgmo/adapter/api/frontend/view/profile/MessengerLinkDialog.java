@@ -1,8 +1,12 @@
 package org.bytewright.bgmo.adapter.api.frontend.view.profile;
 
+import com.vaadin.flow.component.Component;
+import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
+import com.vaadin.flow.component.details.Details;
 import com.vaadin.flow.component.dialog.Dialog;
+import com.vaadin.flow.component.html.Image;
 import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.VaadinIcon;
@@ -11,97 +15,190 @@ import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextField;
-import org.bytewright.bgmo.domain.model.user.ContactInfoType;
-import org.bytewright.bgmo.domain.model.user.RegisteredUser;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+import org.bytewright.bgmo.domain.model.notification.MessengerLinkContext;
+import org.bytewright.bgmo.domain.model.notification.VerificationStep;
 import org.bytewright.bgmo.domain.service.data.RegisteredUserDao;
 
 /**
- * Dialog that guides a user through linking a messenger account. Shows the verification code and
- * instructions, plus a refresh button to check if the bot has confirmed the linking.
+ * Dialog that guides a user through linking a messenger account.
+ *
+ * <p>Shows the bot handle (copyable + optional direct-open link), the verification code (copyable),
+ * optional step-by-step tutorial panels, and a refresh button to check if the bot has confirmed the
+ * linking.
+ *
+ * <p>Stays deliberately dumb: all data arrives pre-built in a {@link MessengerLinkContext}.
  */
 public class MessengerLinkDialog extends Dialog {
 
-  private final RegisteredUser currentUser;
+  private final MessengerLinkContext ctx;
+  private final UUID currentUserId;
   private final RegisteredUserDao userDao;
   private final Runnable onLinked;
 
   public MessengerLinkDialog(
-      ContactInfoType type,
-      String verificationCode,
-      String botHandle,
-      RegisteredUser currentUser,
-      RegisteredUserDao userDao,
-      Runnable onLinked) {
-    this.currentUser = currentUser;
+      MessengerLinkContext ctx, UUID currentUserId, RegisteredUserDao userDao, Runnable onLinked) {
+    this.ctx = ctx;
+    this.currentUserId = currentUserId;
     this.userDao = userDao;
     this.onLinked = onLinked;
 
-    setHeaderTitle(messengerName(type));
-    setWidth("400px");
+    setHeaderTitle(getTranslation(ctx.type().getNameMessageKey()));
+    setWidth("420px");
     setCloseOnOutsideClick(true);
 
     VerticalLayout content = new VerticalLayout();
     content.setPadding(false);
     content.setSpacing(true);
 
-    // Instruction text
-    Paragraph instruction = new Paragraph();
-    instruction
-        .getElement()
-        .setProperty(
-            "innerHTML",
-            "To link your %s account, open <b>%s</b> in %s and send it the following code:"
-                .formatted(messengerName(type), botHandle, messengerName(type)));
-    instruction.getStyle().set("margin", "0");
+    content.add(buildBotHandleRow());
+    content.add(buildCodeRow());
+    buildStepsSection().ifPresent(content::add);
+    content.add(buildStatusRow());
 
-    // Code display field with copy button
-    TextField codeField = new TextField();
-    codeField.setValue(verificationCode);
+    add(content);
+
+    Button closeBtn = new Button(VaadinIcon.CLOSE.create(), e -> close());
+    closeBtn.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
+    getHeader().add(closeBtn);
+  }
+
+  // ---------------------------------------------------------------------------
+  // Bot handle row
+  // ---------------------------------------------------------------------------
+
+  private Component buildBotHandleRow() {
+    TextField handleField = new TextField(getTranslation("messenger.link.bot.field.label"));
+    handleField.setValue(ctx.botHandle());
+    handleField.setReadOnly(true);
+    handleField.setWidthFull();
+
+    Button copyBtn = copyButton(ctx.botHandle(), "messenger.link.handle.copied");
+    handleField.setSuffixComponent(copyBtn);
+
+    // If a deep link exists, place the "Open in …" button beside the field
+
+    // Return a wrapper so deep-link row can be added inline
+    VerticalLayout wrapper = new VerticalLayout();
+    wrapper.setPadding(false);
+    wrapper.setSpacing(false);
+    wrapper.add(handleField);
+    Optional<String> deeplinkOpt = ctx.botDeepLink();
+    if (deeplinkOpt.isPresent()) {
+      String url = deeplinkOpt.get();
+      Button openBtn =
+          new Button(
+              getTranslation("messenger.link.bot.open.button"), VaadinIcon.EXTERNAL_LINK.create());
+      openBtn.addThemeVariants(ButtonVariant.LUMO_PRIMARY, ButtonVariant.LUMO_SMALL);
+      openBtn.addClickListener(e -> UI.getCurrent().getPage().open(url, "_blank"));
+      wrapper.add(openBtn);
+    }
+    return wrapper;
+  }
+
+  private Component buildCodeRow() {
+    TextField codeField = new TextField(getTranslation("messenger.link.code.field.label"));
+    codeField.setValue(ctx.verificationCode());
     codeField.setReadOnly(true);
     codeField.setWidthFull();
-    codeField
+    codeField.getStyle().set("font-size", "var(--lumo-font-size-xl)").set("font-weight", "bold");
+
+    codeField.setSuffixComponent(copyButton(ctx.verificationCode(), "messenger.link.code.copied"));
+    return codeField;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Tutorial steps
+  // ---------------------------------------------------------------------------
+
+  private Optional<Component> buildStepsSection() {
+    List<VerificationStep> steps = ctx.steps();
+    if (steps.isEmpty()) return Optional.empty();
+    VerticalLayout section = new VerticalLayout();
+    section.setPadding(false);
+    section.setSpacing(false);
+
+    Span sectionLabel =
+        new Span(getTranslation("messenger.link.steps.section.label", steps.size()));
+    sectionLabel
         .getStyle()
-        .set("font-size", "var(--lumo-font-size-xl)")
-        .set("font-weight", "bold")
-        .set("letter-spacing", "0.15em");
+        .set("font-size", "var(--lumo-font-size-s)")
+        .set("font-weight", "600")
+        .set("color", "var(--lumo-secondary-text-color)")
+        .set("text-transform", "uppercase")
+        .set("letter-spacing", "0.05em")
+        .set("padding-top", "var(--lumo-space-s)")
+        .set("display", "block");
+    section.add(sectionLabel);
 
-    Button copyBtn = new Button(VaadinIcon.COPY.create());
-    copyBtn.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
-    copyBtn.addClickListener(
-        e -> {
-          codeField
-              .getElement()
-              .executeJs("window.navigator.clipboard.writeText($0)", verificationCode);
-          Notification.show("Code copied!");
-        });
-    codeField.setSuffixComponent(copyBtn);
+    for (int i = 0; i < steps.size(); i++) {
+      section.add(buildStepPanel(steps.get(i), i));
+    }
+    return Optional.of(section);
+  }
 
-    // Status line
-    Span statusLine = new Span("Waiting for confirmation...");
+  private Details buildStepPanel(VerificationStep step, int index) {
+    Details details = new Details();
+    details.setSummaryText(getTranslation("messenger.link.step.label", index + 1));
+    details.setOpened(index == 0);
+    details.setWidthFull();
+
+    VerticalLayout stepContent = new VerticalLayout();
+    stepContent.setPadding(true);
+    stepContent.setSpacing(true);
+
+    Paragraph text = new Paragraph(getTranslation(step.messageKey()));
+    text.getStyle().set("margin", "0");
+    stepContent.add(text);
+
+    Optional.ofNullable(step.pictureUrl())
+        .ifPresent(
+            url -> {
+              Image img =
+                  new Image(url, getTranslation("messenger.link.step.image.alt", index + 1));
+              img.setMaxWidth("375px");
+              img.setWidth("100%");
+              img.getStyle().set("border-radius", "var(--lumo-border-radius-m)");
+              stepContent.add(img);
+            });
+
+    details.add(stepContent);
+    return details;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Status / refresh row
+  // ---------------------------------------------------------------------------
+
+  private Component buildStatusRow() {
+    Span statusLine = new Span(getTranslation("messenger.link.status.waiting"));
     statusLine
         .getStyle()
         .set("color", "var(--lumo-secondary-text-color)")
         .set("font-size", "var(--lumo-font-size-s)");
 
-    // Refresh button — re-checks whether the bot has confirmed
-    Button refreshBtn = new Button("Check status", VaadinIcon.REFRESH.create());
+    Button refreshBtn =
+        new Button(getTranslation("messenger.link.refresh.button"), VaadinIcon.REFRESH.create());
     refreshBtn.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
     refreshBtn.addClickListener(
         e -> {
           boolean nowLinked =
               userDao
-                  .find(currentUser.getId())
+                  .find(currentUserId)
                   .map(
                       u ->
                           u.getContactInfos().stream()
-                              .anyMatch(c -> c.type() == type && c.isVerified()))
+                              .anyMatch(c -> c.type() == ctx.type() && c.isVerified()))
                   .orElse(false);
 
           if (nowLinked) {
             close();
             onLinked.run();
           } else {
-            statusLine.setText("Not confirmed yet — make sure you sent the code to " + botHandle);
+            statusLine.setText(
+                getTranslation("messenger.link.status.not.confirmed", ctx.botHandle()));
             statusLine.getStyle().set("color", "var(--lumo-error-color)");
           }
         });
@@ -110,21 +207,22 @@ public class MessengerLinkDialog extends Dialog {
     footer.setAlignItems(FlexComponent.Alignment.CENTER);
     footer.setJustifyContentMode(FlexComponent.JustifyContentMode.BETWEEN);
     footer.setWidthFull();
-
-    content.add(instruction, codeField, footer);
-    add(content);
-
-    // Close button in dialog header
-    Button closeBtn = new Button(VaadinIcon.CLOSE.create(), e -> close());
-    closeBtn.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
-    getHeader().add(closeBtn);
+    return footer;
   }
 
-  private static String messengerName(ContactInfoType type) {
-    return switch (type) {
-      case TELEGRAM -> "Telegram";
-      case SIGNAL -> "Signal";
-      default -> type.name();
-    };
+  // ---------------------------------------------------------------------------
+  // Shared helpers
+  // ---------------------------------------------------------------------------
+
+  /** Read-only copy-to-clipboard icon button for the given value. */
+  private Button copyButton(String value, String confirmationKey) {
+    Button btn = new Button(VaadinIcon.COPY.create());
+    btn.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
+    btn.addClickListener(
+        e -> {
+          btn.getElement().executeJs("window.navigator.clipboard.writeText($0)", value);
+          Notification.show(getTranslation(confirmationKey));
+        });
+    return btn;
   }
 }

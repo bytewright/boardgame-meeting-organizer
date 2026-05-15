@@ -8,6 +8,8 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.bytewright.bgmo.domain.model.notification.MessengerLinkContext;
+import org.bytewright.bgmo.domain.model.notification.VerificationStep;
 import org.bytewright.bgmo.domain.model.user.ContactInfoType;
 import org.bytewright.bgmo.usecases.NotificationWorkflows;
 import org.springframework.stereotype.Service;
@@ -57,5 +59,20 @@ public class VerificationCodeService {
                         .map(ChatBotNotificationTaskExecutor::botChatDisplayName)
                         .orElseThrow()))
         .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+  }
+
+  public MessengerLinkContext buildLinkContext(UUID currentUserId, ContactInfoType type) {
+    Optional<ChatBotNotificationTaskExecutor> botAdapter =
+        chatBots.stream().filter(bot -> bot.isContactHandlerFor(type)).findAny();
+    String botDisplayName =
+        botAdapter.map(ChatBotNotificationTaskExecutor::botChatDisplayName).orElse("N/A");
+    Optional<String> deeplink =
+        botAdapter.flatMap(ChatBotNotificationTaskExecutor::generateBotDeepLink);
+    List<VerificationStep> verificationSteps =
+        botAdapter
+            .map(ChatBotNotificationTaskExecutor::generateVerificationSteps)
+            .orElse(List.of());
+    return new MessengerLinkContext(
+        type, generateCode(currentUserId), botDisplayName, deeplink, verificationSteps);
   }
 }

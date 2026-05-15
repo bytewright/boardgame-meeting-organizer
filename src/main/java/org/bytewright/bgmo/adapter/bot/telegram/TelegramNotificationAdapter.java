@@ -3,12 +3,14 @@ package org.bytewright.bgmo.adapter.bot.telegram;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.bytewright.bgmo.domain.model.AdapterSettings;
 import org.bytewright.bgmo.domain.model.notification.NotificationContext;
 import org.bytewright.bgmo.domain.model.notification.NotificationTargetType;
+import org.bytewright.bgmo.domain.model.notification.VerificationStep;
 import org.bytewright.bgmo.domain.model.user.ContactInfo;
 import org.bytewright.bgmo.domain.model.user.ContactInfoType;
 import org.bytewright.bgmo.domain.model.user.RegisteredUser;
@@ -163,9 +165,35 @@ public class TelegramNotificationAdapter
     return adapterProperties.getBotDisplayName();
   }
 
+  @Override
+  public Optional<String> generateBotDeepLink() {
+    return Optional.of("https://t.me/bgmo_jena_bot");
+  }
+
+  @Override
+  public List<VerificationStep> generateVerificationSteps() {
+    TelegramSettings settings = getSettings();
+    return List.of(
+        VerificationStep.builder().messageKey("adapter.telegram.tutorial.step1").build(),
+        VerificationStep.builder()
+            .messageKey("adapter.telegram.tutorial.step2")
+            .pictureUrl(settings.getTutorialStep2Link())
+            .build(),
+        VerificationStep.builder()
+            .messageKey("adapter.telegram.tutorial.step3")
+            .pictureUrl(settings.getTutorialStep3Link())
+            .build());
+  }
+
   private TelegramSettings getSettings() {
-    AdapterSettings adapterSettings = adapterSettingsDao.findByAdapter(getAdapterInfo());
-    return objectMapper.readValue(adapterSettings.getAdapterSettings(), TelegramSettings.class);
+    try {
+      AdapterSettings adapterSettings = adapterSettingsDao.findByAdapter(getAdapterInfo());
+      return objectMapper.readValue(adapterSettings.getAdapterSettings(), TelegramSettings.class);
+    } catch (Exception e) {
+      log.error(
+          "Error while fetching adapter settings, falling back to default! {}", e.getMessage());
+      return TelegramSettings.builder().build();
+    }
   }
 
   @Override

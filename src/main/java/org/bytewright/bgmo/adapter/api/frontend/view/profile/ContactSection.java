@@ -13,13 +13,12 @@ import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextField;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Map;
+import org.bytewright.bgmo.adapter.api.frontend.view.component.factory.ComponentFactory;
 import org.bytewright.bgmo.domain.model.user.ContactInfo;
 import org.bytewright.bgmo.domain.model.user.ContactInfoType;
 import org.bytewright.bgmo.domain.model.user.RegisteredUser;
 import org.bytewright.bgmo.domain.model.user.exception.ModifyContactsException;
 import org.bytewright.bgmo.domain.service.data.RegisteredUserDao;
-import org.bytewright.bgmo.domain.service.notification.VerificationCodeService;
 import org.bytewright.bgmo.usecases.UserWorkflows;
 
 /**
@@ -31,25 +30,20 @@ import org.bytewright.bgmo.usecases.UserWorkflows;
  */
 public class ContactSection extends VerticalLayout {
 
-  private final VerificationCodeService verificationService;
+  private final ComponentFactory componentFactory;
   private final UserWorkflows userWorkflows;
   private final RegisteredUserDao userDao;
   private final RegisteredUser currentUser;
-  private final String telegramBotHandle;
-  private final String signalBotHandle;
 
   public ContactSection(
-      VerificationCodeService verificationService,
+      ComponentFactory componentFactory,
       UserWorkflows userWorkflows,
       RegisteredUserDao userDao,
-      RegisteredUser currentUser,
-      Map<ContactInfoType, String> botHandles) {
-    this.verificationService = verificationService;
+      RegisteredUser currentUser) {
+    this.componentFactory = componentFactory;
     this.userWorkflows = userWorkflows;
     this.userDao = userDao;
     this.currentUser = currentUser;
-    this.telegramBotHandle = botHandles.get(ContactInfoType.TELEGRAM);
-    this.signalBotHandle = botHandles.get(ContactInfoType.SIGNAL);
 
     setPadding(false);
     setSpacing(false);
@@ -64,9 +58,9 @@ public class ContactSection extends VerticalLayout {
         currentUser.getContactInfos().stream()
             .sorted(Comparator.comparing(c -> c.type().name()))
             .toList();
-    add(buildMessengerSection(contacts, ContactInfoType.TELEGRAM, telegramBotHandle));
+    add(buildMessengerSection(contacts, ContactInfoType.TELEGRAM));
     add(new Hr());
-    add(buildMessengerSection(contacts, ContactInfoType.SIGNAL, signalBotHandle));
+    add(buildMessengerSection(contacts, ContactInfoType.SIGNAL));
     add(new Hr());
     add(buildFreeformSection(contacts, ContactInfoType.EMAIL));
     add(new Hr());
@@ -79,8 +73,7 @@ public class ContactSection extends VerticalLayout {
   // Messenger section (one per type, link-via-bot only)
   // -------------------------------------------------------------------------
 
-  private Component buildMessengerSection(
-      List<ContactInfo> contacts, ContactInfoType type, String botHandle) {
+  private Component buildMessengerSection(List<ContactInfo> contacts, ContactInfoType type) {
     String typeLabel = ContactInfoLabelUtil.messengerName(type);
     VerticalLayout section = new VerticalLayout();
     section.setPadding(false);
@@ -92,7 +85,7 @@ public class ContactSection extends VerticalLayout {
         .findFirst()
         .ifPresentOrElse(
             linked -> section.add(buildLinkedMessengerRow(linked, type)),
-            () -> section.add(buildLinkButton(type, botHandle)));
+            () -> section.add(buildLinkButton(type)));
 
     return section;
   }
@@ -135,7 +128,7 @@ public class ContactSection extends VerticalLayout {
     return row;
   }
 
-  private Component buildLinkButton(ContactInfoType type, String botHandle) {
+  private Component buildLinkButton(ContactInfoType type) {
     Button linkBtn =
         new Button(
             "Link " + ContactInfoLabelUtil.messengerName(type) + " account",
@@ -143,14 +136,10 @@ public class ContactSection extends VerticalLayout {
     linkBtn.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
     linkBtn.addClickListener(
         e -> {
-          String code = verificationService.generateCode(currentUser.getId());
           MessengerLinkDialog dialog =
-              new MessengerLinkDialog(
+              componentFactory.messengerLinkDialog(
+                  currentUser.getId(),
                   type,
-                  code,
-                  botHandle,
-                  currentUser,
-                  userDao,
                   () -> {
                     userDao
                         .find(currentUser.getId())
@@ -179,20 +168,15 @@ public class ContactSection extends VerticalLayout {
 
     section.add(sectionLabel(ContactInfoLabelUtil.labelFor(type)));
 
-    // Existing entries
     contacts.stream().filter(c -> c.type() == type).forEach(c -> section.add(buildFreeformRow(c)));
 
-    // Inline add form (hidden until button clicked)
     VerticalLayout addForm = buildAddForm(type);
     addForm.setVisible(false);
 
     Button addBtn = new Button(getTranslation(ContactInfoLabelUtil.translationKeyForAdd(type)));
     addBtn.addThemeVariants(ButtonVariant.LUMO_TERTIARY, ButtonVariant.LUMO_SMALL);
     addBtn.getStyle().set("margin-top", "var(--lumo-space-xs)");
-    addBtn.addClickListener(
-        e -> {
-          addForm.setVisible(true);
-        });
+    addBtn.addClickListener(e -> addForm.setVisible(true));
 
     section.add(addBtn, addForm);
     return section;
@@ -286,7 +270,9 @@ public class ContactSection extends VerticalLayout {
         TextField zip = new TextField("ZIP");
         TextField city = new TextField("City");
         TextField comment = new TextField("Comment (optional)");
-        for (var f : List.of(nameOnBell, street, zip, city, comment)) f.setWidthFull();
+        for (var f : List.of(nameOnBell, street, zip, city, comment)) {
+          f.setWidthFull();
+        }
         form.add(
             new Span(
                 getTranslation(
