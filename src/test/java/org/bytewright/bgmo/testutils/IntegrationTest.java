@@ -1,5 +1,6 @@
 package org.bytewright.bgmo.testutils;
 
+import org.bytewright.bgmo.domain.service.data.RegisteredUserDao;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -10,4 +11,5 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public abstract class IntegrationTest {
   @Autowired protected TestHelper helper;
+  @Autowired protected RegisteredUserDao userDao;
 }

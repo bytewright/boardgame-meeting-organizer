@@ -10,7 +10,6 @@ import org.bytewright.bgmo.domain.model.user.ContactInfo;
 import org.bytewright.bgmo.domain.model.user.ContactInfoType;
 import org.bytewright.bgmo.domain.model.user.ContactOption;
 import org.bytewright.bgmo.domain.model.user.RegisteredUser;
-import org.bytewright.bgmo.domain.service.data.ModelDao;
 import org.bytewright.bgmo.domain.service.data.RegisteredUserDao;
 import org.springframework.stereotype.Service;
 
@@ -19,7 +18,6 @@ import org.springframework.stereotype.Service;
 @Transactional
 @RequiredArgsConstructor
 public class NotificationWorkflows {
-  private final ModelDao<ContactOption> contactInfoDao;
   private final UserWorkflows userWorkflows;
   private final RegisteredUserDao userDao;
 
@@ -54,7 +52,6 @@ public class NotificationWorkflows {
               throw new IllegalArgumentException(
                   "Type %s can't be verified! User: %s".formatted(type, userId));
         };
-    var persisted = userWorkflows.addContactInfo(userId, newContactInfo, true);
-    return persisted.getValue().getId();
+    return userWorkflows.addContactInfo(userId, newContactInfo, true);
   }
 }

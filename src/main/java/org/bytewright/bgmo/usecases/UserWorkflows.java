@@ -108,8 +108,7 @@ public class UserWorkflows {
    *
    * @return persisted user and new contactInfo
    */
-  public Map.Entry<RegisteredUser, ContactOption> addContactInfo(
-      UUID userId, ContactInfo contactInfo, boolean verified) {
+  public UUID addContactInfo(UUID userId, ContactInfo contactInfo, boolean verified) {
     ContactOption newContact =
         ContactOption.builder()
             .contactInfo(contactInfo)
@@ -120,10 +119,9 @@ public class UserWorkflows {
 
     ContactOption persistedContact = contactOptionDao.createOrUpdate(newContact);
     RegisteredUser user = userDao.findOrThrow(userId);
-    Set<ContactOption> existingContacts = user.getContactOptions();
 
     // First contact automatically becomes the primary contact
-    if (existingContacts.isEmpty()) {
+    if (user.getPrimaryContactId() == null) {
       user.setPrimaryContactId(persistedContact.id());
     }
 
@@ -131,8 +129,8 @@ public class UserWorkflows {
       user.setStatus(UserStatus.ACTIVE);
       log.info("User {} promoted to ACTIVE after adding contact info", user.logEntity());
     }
-    RegisteredUser updatedUser = userDao.createOrUpdate(user);
-    return Map.entry(updatedUser, persistedContact);
+    userDao.createOrUpdate(user);
+    return persistedContact.id();
   }
 
   public void removeGameFromLibrary(UUID gameId) {

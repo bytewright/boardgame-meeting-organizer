@@ -3,26 +3,32 @@ package org.bytewright.bgmo.usecases;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.Set;
+import java.util.UUID;
 import org.bytewright.bgmo.domain.model.Game;
 import org.bytewright.bgmo.domain.model.user.ContactInfo;
+import org.bytewright.bgmo.domain.model.user.ContactOption;
 import org.bytewright.bgmo.domain.model.user.RegisteredUser;
 import org.bytewright.bgmo.domain.model.user.UserStatus;
+import org.bytewright.bgmo.domain.service.data.ModelDao;
 import org.bytewright.bgmo.testutils.IntegrationTest;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 class UserWorkflowsTest extends IntegrationTest {
   @Autowired private UserWorkflows userWorkflows;
+  @Autowired private ModelDao<ContactOption> contactOptionModelDao;
 
   @Test
   void testAddGame() {
     // ARRANGE
     RegisteredUser user = helper.user();
-    Game game = Game.builder().name("Testgame").build();
+    Game.Creation game = Game.Creation.builder().name("Testgame").build();
     // ACT
-    Game persisted = userWorkflows.updateGameInLibrary(user.getId(), game);
+    Game persisted = userWorkflows.addGameToLibrary(user.getId(), game);
     // ASSERT
     assertThat(persisted.getId()).isNotNull();
+    assertThat(persisted.getName()).isEqualTo("Testgame");
+    assertThat(persisted.getOwnerId()).isEqualTo(user.getId());
   }
 
   @Test
@@ -33,20 +39,20 @@ class UserWorkflowsTest extends IntegrationTest {
     ContactInfo.EmailContact emailContact =
         ContactInfo.EmailContact.builder().email("someEmail@mail.com").build();
     // ACT
-    var persisted = userWorkflows.addContactInfo(user.getId(), emailContact, false);
+    UUID uuid = userWorkflows.addContactInfo(user.getId(), emailContact, false);
     // ASSERT
-    Set<ContactInfo> contactInfos = persisted.getKey().getContactOptions();
+    user = userDao.findOrThrow(user.getId());
+    Set<ContactOption> contactInfos = user.getContactOptions();
     assertThat(contactInfos).hasSize(1);
-    assertThat(persisted.getKey()).returns(UserStatus.ACTIVE, RegisteredUser::getStatus);
-    ContactInfo contactInfo = persisted.getValue();
+    assertThat(user).returns(UserStatus.ACTIVE, RegisteredUser::getStatus);
+    ContactOption contactInfo = contactOptionModelDao.findOrThrow(uuid);
 
     assertThat(user).returns(contactInfo.id(), RegisteredUser::getPrimaryContactId);
-    assertThat(contactInfo).isInstanceOf(ContactInfo.EmailContact.class);
-    ContactInfo.EmailContact emailContactPersisted = (ContactInfo.EmailContact) contactInfo;
+    assertThat(contactInfo.getContactInfo()).isInstanceOf(ContactInfo.EmailContact.class);
+    ContactInfo.EmailContact emailContactPersisted =
+        (ContactInfo.EmailContact) contactInfo.getContactInfo();
     assertThat(emailContactPersisted)
-        .returns(user.getId(), ContactInfo.EmailContact::userId)
         .returns("someEmail@mail.com", ContactInfo.EmailContact::email)
-        .extracting(ContactInfo.EmailContact::id)
         .isNotNull();
   }
 }
