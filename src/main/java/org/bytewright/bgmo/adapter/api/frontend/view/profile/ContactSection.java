@@ -13,9 +13,11 @@ import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextField;
 import java.util.Comparator;
 import java.util.List;
+import java.util.UUID;
 import org.bytewright.bgmo.adapter.api.frontend.view.component.factory.ComponentFactory;
 import org.bytewright.bgmo.domain.model.user.ContactInfo;
 import org.bytewright.bgmo.domain.model.user.ContactInfoType;
+import org.bytewright.bgmo.domain.model.user.ContactOption;
 import org.bytewright.bgmo.domain.model.user.RegisteredUser;
 import org.bytewright.bgmo.domain.model.user.exception.ModifyContactsException;
 import org.bytewright.bgmo.domain.service.data.RegisteredUserDao;
@@ -33,31 +35,31 @@ public class ContactSection extends VerticalLayout {
   private final ComponentFactory componentFactory;
   private final UserWorkflows userWorkflows;
   private final RegisteredUserDao userDao;
-  private final RegisteredUser currentUser;
+  private final Runnable runnable;
+  private RegisteredUser currentUser;
 
   public ContactSection(
       ComponentFactory componentFactory,
       UserWorkflows userWorkflows,
       RegisteredUserDao userDao,
-      RegisteredUser currentUser) {
+      RegisteredUser currentUser,
+      Runnable runnable) {
     this.componentFactory = componentFactory;
     this.userWorkflows = userWorkflows;
     this.userDao = userDao;
-    this.currentUser = currentUser;
+    this.runnable = runnable;
 
     setPadding(false);
     setSpacing(false);
 
-    rebuild();
+    rebuild(currentUser.getId());
   }
 
-  private void rebuild() {
+  private void rebuild(UUID userId) {
     removeAll();
+    currentUser = userDao.findOrThrow(userId);
 
-    List<ContactInfo> contacts =
-        currentUser.getContactInfos().stream()
-            .sorted(Comparator.comparing(c -> c.type().name()))
-            .toList();
+    List<ContactOption> contacts = List.copyOf(currentUser.getContactOptions());
     add(buildMessengerSection(contacts, ContactInfoType.TELEGRAM));
     add(new Hr());
     add(buildMessengerSection(contacts, ContactInfoType.SIGNAL));
@@ -73,25 +75,25 @@ public class ContactSection extends VerticalLayout {
   // Messenger section (one per type, link-via-bot only)
   // -------------------------------------------------------------------------
 
-  private Component buildMessengerSection(List<ContactInfo> contacts, ContactInfoType type) {
+  private Component buildMessengerSection(List<ContactOption> contacts, ContactInfoType type) {
     String typeLabel = ContactInfoLabelUtil.messengerName(type);
     VerticalLayout section = new VerticalLayout();
     section.setPadding(false);
     section.setSpacing(false);
     section.add(sectionLabel(typeLabel));
 
-    contacts.stream()
-        .filter(c -> c.type() == type)
-        .findFirst()
-        .ifPresentOrElse(
-            linked -> section.add(buildLinkedMessengerRow(linked, type)),
-            () -> section.add(buildLinkButton(type)));
-
+    Component component =
+        contacts.stream()
+            .filter(c -> c.getType() == type)
+            .findFirst()
+            .map(linked -> buildLinkedMessengerRow(linked, type))
+            .orElse(buildLinkButton(type));
+    section.add(component);
     return section;
   }
 
-  private Component buildLinkedMessengerRow(ContactInfo contact, ContactInfoType type) {
-    Span handle = new Span(ContactInfoLabelUtil.displayValue(contact));
+  private Component buildLinkedMessengerRow(ContactOption contact, ContactInfoType type) {
+    Span handle = new Span(ContactInfoLabelUtil.displayValue(contact.getContactInfo()));
     handle.getStyle().set("font-weight", "500");
 
     Span verifiedBadge = new Span(contact.isVerified() ? " ✓ Verified" : " ⚠ Unverified");
@@ -109,11 +111,10 @@ public class ContactSection extends VerticalLayout {
         e -> {
           try {
             userWorkflows.removeContact(currentUser.getId(), contact);
-            currentUser.getContactInfos().remove(contact);
-            rebuild();
             Notification n =
                 Notification.show(ContactInfoLabelUtil.messengerName(type) + " unlinked.");
             n.addThemeVariants(NotificationVariant.LUMO_CONTRAST);
+            runnable.run();
           } catch (ModifyContactsException ex) {
             Notification n = Notification.show(getTranslation(ex.getMessageKey()));
             n.addThemeVariants(NotificationVariant.LUMO_ERROR);
@@ -141,15 +142,11 @@ public class ContactSection extends VerticalLayout {
                   currentUser.getId(),
                   type,
                   () -> {
-                    userDao
-                        .find(currentUser.getId())
-                        .ifPresent(
-                            updated -> currentUser.setContactInfos(updated.getContactInfos()));
-                    rebuild();
                     Notification n =
                         Notification.show(
                             ContactInfoLabelUtil.messengerName(type) + " linked successfully!");
                     n.addThemeVariants(NotificationVariant.LUMO_SUCCESS);
+                    runnable.run();
                   });
           dialog.open();
         });
@@ -161,14 +158,17 @@ public class ContactSection extends VerticalLayout {
   // Freeform section (Email, Phone, Address — multiple allowed)
   // -------------------------------------------------------------------------
 
-  private Component buildFreeformSection(List<ContactInfo> contacts, ContactInfoType type) {
+  private Component buildFreeformSection(List<ContactOption> contacts, ContactInfoType type) {
     VerticalLayout section = new VerticalLayout();
     section.setPadding(false);
     section.setSpacing(false);
 
     section.add(sectionLabel(ContactInfoLabelUtil.labelFor(type)));
 
-    contacts.stream().filter(c -> c.type() == type).forEach(c -> section.add(buildFreeformRow(c)));
+    contacts.stream()
+        .filter(c -> c.getType() == type)
+        .sorted(Comparator.comparing(ContactOption::getTsCreation))
+        .forEach(c -> section.add(buildFreeformRow(c)));
 
     VerticalLayout addForm = buildAddForm(type);
     addForm.setVisible(false);
@@ -182,8 +182,8 @@ public class ContactSection extends VerticalLayout {
     return section;
   }
 
-  private Component buildFreeformRow(ContactInfo contact) {
-    Span value = new Span(ContactInfoLabelUtil.displayValue(contact));
+  private Component buildFreeformRow(ContactOption contact) {
+    Span value = new Span(ContactInfoLabelUtil.displayValue(contact.getContactInfo()));
     value.getStyle().set("font-size", "var(--lumo-font-size-s)").set("word-break", "break-all");
 
     Button removeBtn = new Button(VaadinIcon.TRASH.create());
@@ -195,8 +195,7 @@ public class ContactSection extends VerticalLayout {
         e -> {
           try {
             userWorkflows.removeContact(currentUser.getId(), contact);
-            currentUser.getContactInfos().remove(contact);
-            rebuild();
+            rebuild(currentUser.getId());
           } catch (ModifyContactsException ex) {
             Notification n = Notification.show(getTranslation(ex.getMessageKey()));
             n.addThemeVariants(NotificationVariant.LUMO_ERROR);
@@ -235,12 +234,9 @@ public class ContactSection extends VerticalLayout {
                 () -> {
                   userWorkflows.addContactInfo(
                       currentUser.getId(),
-                      ContactInfo.EmailContact.builder()
-                          .userId(currentUser.getId())
-                          .email(emailField.getValue())
-                          .isVerified(false)
-                          .build());
-                  afterSave();
+                      ContactInfo.EmailContact.builder().email(emailField.getValue()).build(),
+                      false);
+                  rebuild(currentUser.getId());
                 },
                 () -> form.setVisible(false)));
       }
@@ -256,11 +252,9 @@ public class ContactSection extends VerticalLayout {
                 () -> {
                   userWorkflows.addContactInfo(
                       currentUser.getId(),
-                      ContactInfo.PhoneContact.builder()
-                          .userId(currentUser.getId())
-                          .phoneNr(phoneField.getValue())
-                          .build());
-                  afterSave();
+                      ContactInfo.PhoneContact.builder().phoneNr(phoneField.getValue()).build(),
+                      false);
+                  rebuild(currentUser.getId());
                 },
                 () -> form.setVisible(false)));
       }
@@ -287,14 +281,14 @@ public class ContactSection extends VerticalLayout {
                   userWorkflows.addContactInfo(
                       currentUser.getId(),
                       ContactInfo.AddressContact.builder()
-                          .userId(currentUser.getId())
                           .nameOnBell(nameOnBell.getValue())
                           .street(street.getValue())
                           .zipCode(zip.getValue())
                           .city(city.getValue())
                           .comment(comment.getValue())
-                          .build());
-                  afterSave();
+                          .build(),
+                      false);
+                  rebuild(currentUser.getId());
                 },
                 () -> form.setVisible(false)));
       }
@@ -318,15 +312,6 @@ public class ContactSection extends VerticalLayout {
     cancelBtn.addClickListener(e -> onCancel.run());
 
     return new HorizontalLayout(saveBtn, cancelBtn);
-  }
-
-  private void afterSave() {
-    userDao
-        .find(currentUser.getId())
-        .ifPresent(updated -> currentUser.setContactInfos(updated.getContactInfos()));
-    rebuild();
-    Notification n = Notification.show("Saved.");
-    n.addThemeVariants(NotificationVariant.LUMO_SUCCESS);
   }
 
   // -------------------------------------------------------------------------

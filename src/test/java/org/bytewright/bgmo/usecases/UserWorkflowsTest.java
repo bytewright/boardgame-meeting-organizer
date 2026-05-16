@@ -6,6 +6,7 @@ import java.util.Set;
 import org.bytewright.bgmo.domain.model.Game;
 import org.bytewright.bgmo.domain.model.user.ContactInfo;
 import org.bytewright.bgmo.domain.model.user.RegisteredUser;
+import org.bytewright.bgmo.domain.model.user.UserStatus;
 import org.bytewright.bgmo.testutils.IntegrationTest;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,14 +29,18 @@ class UserWorkflowsTest extends IntegrationTest {
   void testAddContactInfos() {
     // ARRANGE
     RegisteredUser user = helper.user();
+    assertThat(user).returns(UserStatus.AFTER_REGISTRATION, RegisteredUser::getStatus);
     ContactInfo.EmailContact emailContact =
         ContactInfo.EmailContact.builder().email("someEmail@mail.com").build();
     // ACT
-    RegisteredUser persisted = userWorkflows.addContactInfo(user.getId(), emailContact);
+    var persisted = userWorkflows.addContactInfo(user.getId(), emailContact, false);
     // ASSERT
-    Set<ContactInfo> contactInfos = persisted.getContactInfos();
+    Set<ContactInfo> contactInfos = persisted.getKey().getContactOptions();
     assertThat(contactInfos).hasSize(1);
-    ContactInfo contactInfo = contactInfos.stream().findFirst().orElseThrow();
+    assertThat(persisted.getKey()).returns(UserStatus.ACTIVE, RegisteredUser::getStatus);
+    ContactInfo contactInfo = persisted.getValue();
+
+    assertThat(user).returns(contactInfo.id(), RegisteredUser::getPrimaryContactId);
     assertThat(contactInfo).isInstanceOf(ContactInfo.EmailContact.class);
     ContactInfo.EmailContact emailContactPersisted = (ContactInfo.EmailContact) contactInfo;
     assertThat(emailContactPersisted)

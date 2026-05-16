@@ -2,7 +2,6 @@
 
 - i18n for legal pages
 - anonview: "erstelle einen Account" should be link to register page
-- adding messenger as first contact does not approve account
 
 # ToDos - Features
 - mousecursor does not show whats clickable, with mobile in mind: how to better promote clickability of stuff

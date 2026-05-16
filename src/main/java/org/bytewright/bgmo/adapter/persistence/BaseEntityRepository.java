@@ -29,11 +29,6 @@ public class BaseEntityRepository {
     return findNullsafe(GameEntity.class, uuid);
   }
 
-  // todo I don't think this works with mapstruct
-  public <T extends HasUUID> T getReferenceById(Class<T> type, UUID id) {
-    return entityManager.getReference(type, id);
-  }
-
   public UUID mapEntityToId(HasUUID hasUUID) {
     return hasUUID == null ? null : hasUUID.getId();
   }

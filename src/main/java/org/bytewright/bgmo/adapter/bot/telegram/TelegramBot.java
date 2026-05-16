@@ -6,6 +6,7 @@ import java.util.UUID;
 import java.util.function.BiConsumer;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import org.bytewright.bgmo.domain.model.notification.VerificationAttempt;
 import org.bytewright.bgmo.domain.model.user.ContactInfoType;
 import org.bytewright.bgmo.domain.service.notification.VerificationCodeService;
 import org.springframework.stereotype.Service;
@@ -46,19 +47,36 @@ public class TelegramBot implements LongPollingSingleThreadUpdateConsumer {
     String text = message.getText();
     log.info("Received message from {}: {}", message.getFrom(), message);
     if (text.startsWith(APP_NAME_SHORT + "-")) {
-      boolean success =
-          verificationService.attemptVerification(
-              text, ContactInfoType.TELEGRAM, message.getChatId().toString());
-      if (success) {
-        try {
-          telegramClient.execute(
-              SendMessage.builder()
-                  .chatId(message.getChatId())
-                  .text("Account linked successfully!")
-                  .build());
-        } catch (TelegramApiException e) {
-          log.error("Failed to send user verification confirmation!");
+      var result =
+          verificationService.attemptMessengerVerification(
+              text,
+              ContactInfoType.TELEGRAM,
+              message.getChatId().toString(),
+              message.getChat().getUserName());
+      try {
+        switch (result) {
+          case VerificationAttempt.Failed ignore -> {
+            log.error("Failed to send user verification confirmation!");
+            telegramClient.execute(
+                SendMessage.builder()
+                    .chatId(message.getChatId())
+                    .text(
+                        "Account linked did not work, maybe the code you sent is too old? Maybe try it with a fresh one from the website!")
+                    .build());
+          }
+          case VerificationAttempt.Success success -> {
+            // todo use locale of user
+            telegramClient.execute(
+                SendMessage.builder()
+                    .chatId(message.getChatId())
+                    .text(
+                        "Thanks %s, your account is now linked successfully!"
+                            .formatted(success.user().getDisplayName()))
+                    .build());
+          }
         }
+      } catch (TelegramApiException e) {
+        log.error("Error when sending user verification result message!", e);
       }
     }
   }

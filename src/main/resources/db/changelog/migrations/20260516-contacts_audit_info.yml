@@ -1,0 +1,24 @@
+databaseChangeLog:
+  - changeSet:
+      id: 20260516-1
+      author: bytewright
+      changes:
+        - addColumn:
+            tableName: user_contact_infos
+            columns:
+              - column:
+                  name: created_at
+                  type: timestamp(6) with time zone
+                  defaultValueComputed: now()
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: modified_at
+                  type: timestamp(6) with time zone
+                  constraints:
+                    nullable: true
+
+        - renameTable:
+            oldTableName: user_contact_infos
+            newTableName: user_contact_options

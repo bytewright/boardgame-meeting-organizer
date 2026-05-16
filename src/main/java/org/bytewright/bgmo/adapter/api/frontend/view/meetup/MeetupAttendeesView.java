@@ -131,7 +131,10 @@ public class MeetupAttendeesView extends VerticalLayout implements BeforeEnterOb
               if (req.getContactInfo() != null) {
                 return req.getContactInfo();
               }
-              return userDao.findById(req.getUserId()).map(RegisteredUser::getContactInfos).stream()
+              return userDao
+                  .findById(req.getUserId())
+                  .map(RegisteredUser::getContactOptions)
+                  .stream()
                   .flatMap(Collection::stream)
                   .map(Objects::toString)
                   .collect(Collectors.joining(", "));

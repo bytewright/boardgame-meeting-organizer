@@ -6,6 +6,8 @@ import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.html.*;
 import com.vaadin.flow.component.icon.VaadinIcon;
+import com.vaadin.flow.component.notification.Notification;
+import com.vaadin.flow.component.notification.NotificationVariant;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
@@ -20,9 +22,7 @@ import org.bytewright.bgmo.adapter.api.frontend.service.SessionInfoService;
 import org.bytewright.bgmo.adapter.api.frontend.view.LoginView;
 import org.bytewright.bgmo.adapter.api.frontend.view.component.MainLayout;
 import org.bytewright.bgmo.adapter.api.frontend.view.component.factory.ComponentFactory;
-import org.bytewright.bgmo.domain.model.user.ContactInfo;
-import org.bytewright.bgmo.domain.model.user.RegisteredUser;
-import org.bytewright.bgmo.domain.model.user.UserStatus;
+import org.bytewright.bgmo.domain.model.user.*;
 import org.bytewright.bgmo.usecases.UserWorkflows;
 
 @Route(value = "profile/contacts", layout = MainLayout.class)
@@ -45,6 +45,10 @@ public class ContactSettingsView extends VerticalLayout implements BeforeEnterOb
     buildView(userOpt.get());
   }
 
+  private void rebuildView() {
+    buildView(authService.getCurrentUser().orElseThrow());
+  }
+
   private void buildView(RegisteredUser user) {
     removeAll();
     setAlignItems(Alignment.CENTER);
@@ -60,13 +64,13 @@ public class ContactSettingsView extends VerticalLayout implements BeforeEnterOb
 
     // Show the onboarding banner for users who have not yet added any contact info.
     // The banner disappears automatically on next navigation after PENDING_APPROVAL → ACTIVE.
-    if (user.getStatus() == UserStatus.AFTER_REGISTRATION || user.getContactInfos().isEmpty()) {
+    if (user.getStatus() == UserStatus.AFTER_REGISTRATION || user.getContactOptions().isEmpty()) {
       add(buildPendingBanner());
     } else {
       add(buildPrimaryContactSection(user));
     }
 
-    ContactSection contactSection = componentFactory.contactSection(user);
+    ContactSection contactSection = componentFactory.contactSection(user, this::rebuildView);
     contactSection
         .getStyle()
         .set("max-width", MainLayout.MAX_DISPLAYPORT_WIDTH)
@@ -91,12 +95,12 @@ public class ContactSettingsView extends VerticalLayout implements BeforeEnterOb
     heading.getStyle().set("margin", "0 0 var(--lumo-space-s) 0");
     section.add(heading);
 
-    List<ContactInfo> filteredOptions =
-        user.getContactInfos().stream()
-            .filter(contactInfo -> contactInfo.type().isCanBePrimary())
-            .sorted(Comparator.comparing(contactInfo -> contactInfo.type().ordinal()))
+    List<ContactOption> filteredOptions =
+        user.getContactOptions().stream()
+            .filter(contactOption -> contactOption.getType().isCanBePrimary())
+            .sorted(Comparator.comparing(contactInfo -> contactInfo.getType().ordinal()))
             .toList();
-    ComboBox<ContactInfo> comboBox = new ComboBox<>();
+    ComboBox<ContactOption> comboBox = new ComboBox<>();
     comboBox.setWidthFull();
     comboBox.setItems(filteredOptions);
     filteredOptions.stream()
@@ -108,15 +112,18 @@ public class ContactSettingsView extends VerticalLayout implements BeforeEnterOb
     comboBox.addValueChangeListener(
         e -> {
           userWorkflows.changePrimaryContactInfo(user.getId(), e.getValue());
-          buildView(user);
+          Notification n = Notification.show("Primary updated.");
+          n.addThemeVariants(NotificationVariant.LUMO_CONTRAST);
+          rebuildView();
         });
     section.add(comboBox);
     return section;
   }
 
-  private String generateComboBoxLabel(ContactInfo contactInfo) {
-    String label = ContactInfoLabelUtil.labelFor(contactInfo.type());
-    return "%s: %s".formatted(label, ContactInfoLabelUtil.displayValue(contactInfo));
+  private String generateComboBoxLabel(ContactOption contactOption) {
+    String label = ContactInfoLabelUtil.labelFor(contactOption.getType());
+    return "%s: %s"
+        .formatted(label, ContactInfoLabelUtil.displayValue(contactOption.getContactInfo()));
   }
 
   /**

@@ -27,8 +27,9 @@ import org.bytewright.bgmo.usecases.MeetupWorkflows;
 
 @Slf4j
 @Route(value = "dashboard", layout = MainLayout.class)
-@RouteAlias("")
-@RouteAlias("home")
+@RouteAlias(value = "/", layout = MainLayout.class)
+@RouteAlias(value = "", layout = MainLayout.class)
+@RouteAlias(value = "home", layout = MainLayout.class)
 @PageTitle("Dashboard | Boardgame Meeting Organizer")
 @PermitAll
 public class DashboardView extends VerticalLayout implements BeforeEnterObserver {

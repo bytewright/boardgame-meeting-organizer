@@ -26,7 +26,7 @@ public abstract class MeetupEntityMapper extends BaseEntityMapper<MeetupEvent, M
     implements MeetupDao {
   private MeetupRepository repository;
 
-  @Mapping(source = "creatorId", target = "creator.id")
+  @Mapping(source = "creatorId", target = "creator")
   @Mapping(source = "offeredGames", target = "offeredGames")
   @Mapping(source = "registrationClosing", target = "registrationClosing")
   @Override

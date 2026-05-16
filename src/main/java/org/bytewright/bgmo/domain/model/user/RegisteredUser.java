@@ -25,7 +25,7 @@ public class RegisteredUser implements HasUUID {
   @Builder.Default private UserStatus status = UserStatus.AFTER_REGISTRATION;
   @Builder.Default private UserRole role = UserRole.USER;
   @Nullable private UUID primaryContactId;
-  @ToString.Exclude @Builder.Default private Set<ContactInfo> contactInfos = new HashSet<>();
+  @ToString.Exclude @Builder.Default private Set<ContactOption> contactOptions = new HashSet<>();
   @Builder.Default private Set<UUID> ownedGames = new HashSet<>();
 
   public String logEntity() {

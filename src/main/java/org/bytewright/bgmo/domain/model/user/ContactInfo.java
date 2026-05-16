@@ -1,117 +1,67 @@
 package org.bytewright.bgmo.domain.model.user;
 
-import java.util.UUID;
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import lombok.Builder;
-import lombok.extern.jackson.Jacksonized;
-import org.bytewright.bgmo.domain.model.data.HasUUID;
 
-public sealed interface ContactInfo extends HasUUID
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
+@JsonSubTypes({
+  @JsonSubTypes.Type(value = ContactInfo.PhoneContact.class, name = "PHONE"),
+  @JsonSubTypes.Type(value = ContactInfo.EmailContact.class, name = "EMAIL"),
+  @JsonSubTypes.Type(value = ContactInfo.AddressContact.class, name = "ADR"),
+  @JsonSubTypes.Type(value = ContactInfo.SignalContact.class, name = "MESSENGER_SIGNAL"),
+  @JsonSubTypes.Type(value = ContactInfo.TelegramContact.class, name = "MESSENGER_TELEGRAM")
+})
+public sealed interface ContactInfo
     permits ContactInfo.PhoneContact,
         ContactInfo.EmailContact,
         ContactInfo.AddressContact,
         ContactInfo.SignalContact,
         ContactInfo.TelegramContact {
-  UUID id();
-
-  UUID userId();
 
   ContactInfoType type();
 
-  ContactInfo withUserId(UUID userId);
-
-  boolean isVerified();
-
-  @Jacksonized
   @Builder(toBuilder = true)
-  record EmailContact(UUID id, UUID userId, String email, boolean isVerified)
-      implements ContactInfo {
-    public EmailContact(String email) {
-      this(null, null, email, false);
-    }
+  record EmailContact(String email) implements ContactInfo {
 
     @Override
     public ContactInfoType type() {
       return ContactInfoType.EMAIL;
-    }
-
-    @Override
-    public ContactInfo withUserId(UUID userId) {
-      return toBuilder().userId(userId).build();
     }
   }
 
   /** deprecated, app doesn't need this and should be removed */
   @Builder(toBuilder = true)
   record AddressContact(
-      UUID id,
-      UUID userId,
-      String nameOnBell,
-      String street,
-      String zipCode,
-      String city,
-      String comment)
+      String nameOnBell, String street, String zipCode, String city, String comment)
       implements ContactInfo {
     @Override
     public ContactInfoType type() {
       return ContactInfoType.ADDRESS;
     }
-
-    @Override
-    public ContactInfo withUserId(UUID userId) {
-      return toBuilder().userId(userId).build();
-    }
-
-    @Override
-    public boolean isVerified() {
-      // App does not validate
-      return true;
-    }
   }
 
   @Builder(toBuilder = true)
-  record SignalContact(UUID id, UUID userId, String signalHandle, boolean isVerified)
-      implements ContactInfo {
+  record SignalContact(String signalHandle) implements ContactInfo {
     @Override
     public ContactInfoType type() {
       return ContactInfoType.SIGNAL;
     }
-
-    @Override
-    public ContactInfo withUserId(UUID userId) {
-      return toBuilder().userId(userId).build();
-    }
   }
 
   @Builder(toBuilder = true)
-  record TelegramContact(UUID id, UUID userId, String chatId, boolean isVerified)
-      implements ContactInfo {
+  record TelegramContact(String chatId, String telegramUsername) implements ContactInfo {
     @Override
     public ContactInfoType type() {
       return ContactInfoType.TELEGRAM;
     }
-
-    @Override
-    public ContactInfo withUserId(UUID userId) {
-      return toBuilder().userId(userId).build();
-    }
   }
 
   @Builder(toBuilder = true)
-  record PhoneContact(UUID id, UUID userId, String phoneNr) implements ContactInfo {
+  record PhoneContact(String phoneNr) implements ContactInfo {
     @Override
     public ContactInfoType type() {
       return ContactInfoType.PHONE;
-    }
-
-    @Override
-    public ContactInfo withUserId(UUID userId) {
-      return toBuilder().userId(userId).build();
-    }
-
-    @Override
-    public boolean isVerified() {
-      // App does not validate
-      return true;
     }
   }
 }

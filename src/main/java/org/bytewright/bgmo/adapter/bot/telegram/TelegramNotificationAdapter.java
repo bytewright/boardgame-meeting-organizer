@@ -13,6 +13,7 @@ import org.bytewright.bgmo.domain.model.notification.NotificationTargetType;
 import org.bytewright.bgmo.domain.model.notification.VerificationStep;
 import org.bytewright.bgmo.domain.model.user.ContactInfo;
 import org.bytewright.bgmo.domain.model.user.ContactInfoType;
+import org.bytewright.bgmo.domain.model.user.ContactOption;
 import org.bytewright.bgmo.domain.model.user.RegisteredUser;
 import org.bytewright.bgmo.domain.service.AdapterSettingsProvider;
 import org.bytewright.bgmo.domain.service.data.AdapterSettingsDao;
@@ -107,7 +108,8 @@ public class TelegramNotificationAdapter
       case DIRECT -> {
         RegisteredUser user = userDao.findOrThrow(context.userId());
         List<ContactInfo.TelegramContact> infos =
-            user.getContactInfos().stream()
+            user.getContactOptions().stream()
+                .map(ContactOption::getContactInfo)
                 .filter(ContactInfo.TelegramContact.class::isInstance)
                 .map(ContactInfo.TelegramContact.class::cast)
                 .toList();

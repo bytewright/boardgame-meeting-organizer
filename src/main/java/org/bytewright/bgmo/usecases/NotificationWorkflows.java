@@ -6,9 +6,9 @@ import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.NotImplementedException;
 import org.bytewright.bgmo.domain.model.user.ContactInfo;
 import org.bytewright.bgmo.domain.model.user.ContactInfoType;
+import org.bytewright.bgmo.domain.model.user.ContactOption;
 import org.bytewright.bgmo.domain.model.user.RegisteredUser;
 import org.bytewright.bgmo.domain.service.data.ModelDao;
 import org.bytewright.bgmo.domain.service.data.RegisteredUserDao;
@@ -19,74 +19,42 @@ import org.springframework.stereotype.Service;
 @Transactional
 @RequiredArgsConstructor
 public class NotificationWorkflows {
+  private final ModelDao<ContactOption> contactInfoDao;
+  private final UserWorkflows userWorkflows;
   private final RegisteredUserDao userDao;
-  private final ModelDao<ContactInfo> contactInfoDao;
 
-  /**
-   * Marks a user contact info as verified for a specific ContactInfoType
-   *
-   * @return
-   */
-  public UUID verifyContactInfo(UUID userId, ContactInfoType type, String chatId) {
-    Optional<ContactInfo> contactInfoToVerify =
-        userDao.find(userId).map(RegisteredUser::getContactInfos).stream()
+  public UUID verifyMessengerContact(
+      UUID userId, ContactInfoType type, String chatId, String userName) {
+    Optional<ContactOption> contactInfoToVerify =
+        userDao.find(userId).map(RegisteredUser::getContactOptions).stream()
             .flatMap(Collection::stream)
-            .filter(contactInfo -> contactInfo.type() == type)
+            .filter(contact -> contact.getType() == type)
             .findAny();
-    if (contactInfoToVerify.isPresent()) {
-      ContactInfo contactInfo = contactInfoToVerify.get();
-      log.info(
-          "Verifying exiting contactInfo of type {} for user {}, id: {}",
-          type,
-          userId,
-          contactInfo.id());
-      ContactInfo verifiedContact =
-          switch (contactInfo) {
-            case ContactInfo.AddressContact addressContact -> addressContact; // no verification
-            case ContactInfo.PhoneContact phoneContact -> phoneContact; // no verification
-            case ContactInfo.EmailContact emailContact ->
-                emailContact.toBuilder().isVerified(true).build();
-            case ContactInfo.SignalContact signalContact ->
-                signalContact.toBuilder().isVerified(true).build();
-            case ContactInfo.TelegramContact telegramContact -> {
-              var newVerifiedContact = telegramContact.toBuilder().isVerified(true);
-              if (!telegramContact.chatId().equals(chatId)) {
-                newVerifiedContact.chatId(chatId);
-              }
-              yield newVerifiedContact.build();
-            }
-          };
-      return contactInfoDao.createOrUpdate(verifiedContact).getId();
+    if (contactInfoToVerify.isPresent()
+        && contactInfoToVerify.get().getType().isSingletonContact()) {
+      log.info("User reverified his account...?");
+      return contactInfoToVerify.get().id();
     } else {
-      log.info(
-          "Received valid token for type {} for user {}, creating new contact info...",
-          type,
-          userId);
-      ContactInfo newContactInfo =
-          switch (type) {
-            case EMAIL ->
-                ContactInfo.EmailContact.builder()
-                    .userId(userId)
-                    .email(chatId)
-                    .isVerified(true)
-                    .build();
-            case TELEGRAM ->
-                ContactInfo.TelegramContact.builder()
-                    .userId(userId)
-                    .chatId(chatId)
-                    .isVerified(true)
-                    .build();
-            case SIGNAL ->
-                ContactInfo.SignalContact.builder()
-                    .userId(userId)
-                    .signalHandle(chatId)
-                    .isVerified(true)
-                    .build();
-            default ->
-                throw new NotImplementedException(
-                    "Type %s can't be verified! User: %s".formatted(type, userId));
-          };
-      return contactInfoDao.createOrUpdate(newContactInfo).getId();
+      return createNewVerifiedSingletonContact(userId, type, chatId, userName);
     }
+  }
+
+  private UUID createNewVerifiedSingletonContact(
+      UUID userId, ContactInfoType type, String chatId, String userName) {
+    log.info("Creating new verified messenger contact info of type {} for userId {}", type, userId);
+    ContactInfo newContactInfo =
+        switch (type) {
+          case TELEGRAM ->
+              ContactInfo.TelegramContact.builder()
+                  .chatId(chatId)
+                  .telegramUsername(userName)
+                  .build();
+          case SIGNAL -> ContactInfo.SignalContact.builder().signalHandle(chatId).build();
+          default ->
+              throw new IllegalArgumentException(
+                  "Type %s can't be verified! User: %s".formatted(type, userId));
+        };
+    var persisted = userWorkflows.addContactInfo(userId, newContactInfo, true);
+    return persisted.getValue().getId();
   }
 }

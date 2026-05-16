@@ -189,8 +189,8 @@ public class MessengerLinkDialog extends Dialog {
                   .find(currentUserId)
                   .map(
                       u ->
-                          u.getContactInfos().stream()
-                              .anyMatch(c -> c.type() == ctx.type() && c.isVerified()))
+                          u.getContactOptions().stream()
+                              .anyMatch(c -> c.getType() == ctx.type() && c.isVerified()))
                   .orElse(false);
 
           if (nowLinked) {

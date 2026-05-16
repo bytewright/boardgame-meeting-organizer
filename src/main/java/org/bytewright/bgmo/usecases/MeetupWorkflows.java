@@ -41,7 +41,7 @@ public class MeetupWorkflows {
     }
     log.info("Creating new meetup from: {}", event);
     RegisteredUser creator = event.getCreator();
-    if (creator.getContactInfos().isEmpty()) {
+    if (creator.getContactOptions().isEmpty()) {
       throw new IllegalArgumentException("Can't create a meeting without any contact options!");
     }
     ZonedDateTime registrationClosing =

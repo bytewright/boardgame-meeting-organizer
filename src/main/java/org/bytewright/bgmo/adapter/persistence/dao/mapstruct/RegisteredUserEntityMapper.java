@@ -27,7 +27,7 @@ public abstract class RegisteredUserEntityMapper
     extends BaseEntityMapper<RegisteredUser, RegisteredUserEntity> implements RegisteredUserDao {
   private RegisteredUserRepository userRepository;
 
-  @Mapping(target = "contactInfos", source = "contactInfos")
+  @Mapping(target = "contactInfos", source = "contactOptions")
   @Mapping(target = "registrationIntroText", ignore = true)
   @Override
   public abstract void updateEntity(

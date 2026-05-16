@@ -28,7 +28,7 @@ import org.springframework.stereotype.Service;
 public class UserWorkflows {
   private final DisplayNameValidationService nameValidationService;
   private final BgmoUserDetailsService userDetailsService;
-  private final ModelDao<ContactInfo> contactInfoModelDao;
+  private final ModelDao<ContactOption> contactOptionDao;
   private final InputSanitizer inputSanitizer;
   private final EventPublisher eventPublisher;
   private final RegisteredUserDao userDao;
@@ -105,25 +105,34 @@ public class UserWorkflows {
    *
    * <p>If the user is in {@link UserStatus#AFTER_REGISTRATION} and had no prior contact info, their
    * status is promoted to {@link UserStatus#ACTIVE} within the same transaction.
+   *
+   * @return persisted user and new contactInfo
    */
-  public RegisteredUser addContactInfo(UUID userId, ContactInfo contactInfo) {
-    ContactInfo contactInfoWithId =
-        contactInfoModelDao.createOrUpdate(contactInfo.withUserId(userId));
+  public Map.Entry<RegisteredUser, ContactOption> addContactInfo(
+      UUID userId, ContactInfo contactInfo, boolean verified) {
+    ContactOption newContact =
+        ContactOption.builder()
+            .contactInfo(contactInfo)
+            .type(contactInfo.type())
+            .userId(userId)
+            .verified(verified)
+            .build();
+
+    ContactOption persistedContact = contactOptionDao.createOrUpdate(newContact);
     RegisteredUser user = userDao.findOrThrow(userId);
-    Set<ContactInfo> existingContacts = user.getContactInfos();
+    Set<ContactOption> existingContacts = user.getContactOptions();
 
     // First contact automatically becomes the primary contact
     if (existingContacts.isEmpty()) {
-      user.setPrimaryContactId(contactInfoWithId.id());
+      user.setPrimaryContactId(persistedContact.id());
     }
 
-    // Promote from PENDING_APPROVAL to ACTIVE on first contact info
-    if (user.getStatus() == AFTER_REGISTRATION && existingContacts.isEmpty()) {
+    if (user.getStatus() == AFTER_REGISTRATION) {
       user.setStatus(UserStatus.ACTIVE);
-      log.info("User {} promoted to ACTIVE after adding first contact info", user.logEntity());
+      log.info("User {} promoted to ACTIVE after adding contact info", user.logEntity());
     }
-
-    return userDao.createOrUpdate(user);
+    RegisteredUser updatedUser = userDao.createOrUpdate(user);
+    return Map.entry(updatedUser, persistedContact);
   }
 
   public void removeGameFromLibrary(UUID gameId) {
@@ -168,23 +177,25 @@ public class UserWorkflows {
     userDao.createOrUpdate(user);
   }
 
-  public void changePrimaryContactInfo(UUID userId, ContactInfo contactInfo) {
-    RegisteredUser user = userDao.findById(userId).orElseThrow();
-    if (Objects.equals(user.getPrimaryContactId(), contactInfo.id())) return;
-    log.info("User {} changes his primary contact info to {}", user.logEntity(), contactInfo.id());
-    user.setPrimaryContactId(contactInfo.id());
+  public void changePrimaryContactInfo(UUID userId, ContactOption contactOption) {
+    RegisteredUser user = userDao.findOrThrow(userId);
+    ContactOption refetchedOption = contactOptionDao.findOrThrow(contactOption.id());
+    if (Objects.equals(user.getPrimaryContactId(), refetchedOption.id())) return;
+    log.info(
+        "User {} changes his primary contact info to {}", user.logEntity(), refetchedOption.id());
+    user.setPrimaryContactId(refetchedOption.id());
     userDao.createOrUpdate(user);
   }
 
-  public void removeContact(UUID userId, ContactInfo contactInfo) throws ModifyContactsException {
+  public void removeContact(UUID userId, ContactOption contact) throws ModifyContactsException {
     RegisteredUser user = userDao.findById(userId).orElseThrow();
-    if (user.getContactInfos().size() <= 1) {
+    if (user.getContactOptions().size() <= 1) {
       throw ModifyContactsException.lastContact();
     }
-    log.info("User {} removes contact info with id: {}", user.logEntity(), contactInfo.id());
-    user.getContactInfos().remove(contactInfo);
-    if (Objects.equals(user.getPrimaryContactId(), contactInfo.id())) {
-      ContactInfo newPrimary = user.getContactInfos().stream().findAny().orElseThrow();
+    log.info("User {} removes contact info with id: {}", user.logEntity(), contact.id());
+    user.getContactOptions().remove(contact);
+    if (Objects.equals(user.getPrimaryContactId(), contact.id())) {
+      ContactOption newPrimary = user.getContactOptions().stream().findAny().orElseThrow();
       user.setPrimaryContactId(newPrimary.id());
     }
     userDao.createOrUpdate(user);

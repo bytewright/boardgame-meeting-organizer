@@ -26,7 +26,7 @@ public abstract class GameEntityMapper extends BaseEntityMapper<Game, GameEntity
     implements GameDao {
   private GameRepository gameRepository;
 
-  @Mapping(target = "owner.id", source = "ownerId")
+  @Mapping(target = "owner", source = "ownerId")
   @Override
   public abstract void updateEntity(@MappingTarget GameEntity currentEntity, Game model);
 

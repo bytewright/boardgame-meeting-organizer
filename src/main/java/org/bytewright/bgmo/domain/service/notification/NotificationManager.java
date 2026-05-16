@@ -13,10 +13,7 @@ import org.bytewright.bgmo.domain.model.event.ModelUpdatedEvents;
 import org.bytewright.bgmo.domain.model.notification.NotificationContext;
 import org.bytewright.bgmo.domain.model.notification.NotificationTargetType;
 import org.bytewright.bgmo.domain.model.notification.NotificationType;
-import org.bytewright.bgmo.domain.model.user.ContactInfo;
-import org.bytewright.bgmo.domain.model.user.ContactInfoType;
-import org.bytewright.bgmo.domain.model.user.RegisteredUser;
-import org.bytewright.bgmo.domain.model.user.UserRole;
+import org.bytewright.bgmo.domain.model.user.*;
 import org.bytewright.bgmo.domain.service.UrlGenerator;
 import org.bytewright.bgmo.domain.service.data.MeetupDao;
 import org.bytewright.bgmo.domain.service.data.ModelDao;
@@ -190,16 +187,16 @@ public class NotificationManager {
   }
 
   private void dispatchToPrimary(RegisteredUser user, NotificationContext context) {
-    Optional<ContactInfo> primaryContactOpt = getPrimaryContact(user);
+    Optional<ContactOption> primaryContactOpt = getPrimaryContact(user);
     if (primaryContactOpt.isPresent()) {
-      ContactInfo contactInfo = primaryContactOpt.get();
+      ContactOption contact = primaryContactOpt.get();
       log.info(
           "Dispatching {} notification to user {} over channel {}",
           context.notificationType(),
           user.logEntity(),
-          contactInfo.type());
+          contact.getType());
       executors.stream()
-          .filter(e -> e.isContactHandlerFor(contactInfo.type()))
+          .filter(e -> e.isContactHandlerFor(contact.getType()))
           .filter(e -> e.supports(context))
           .findAny()
           .ifPresent(notificationTaskExecutor -> notificationTaskExecutor.execute(context));
@@ -211,17 +208,17 @@ public class NotificationManager {
     }
   }
 
-  private Optional<ContactInfo> getPrimaryContact(RegisteredUser user) {
+  private Optional<ContactOption> getPrimaryContact(RegisteredUser user) {
     UUID primaryContactId = user.getPrimaryContactId();
     if (primaryContactId != null) {
-      return user.getContactInfos().stream()
-          .filter(contactInfo -> primaryContactId.equals(contactInfo.id()))
+      return user.getContactOptions().stream()
+          .filter(contact -> primaryContactId.equals(contact.id()))
           .findAny();
     }
     Set<ContactInfoType> activeTypes = Set.of(ContactInfoType.TELEGRAM);
-    if (user.getContactInfos().size() == 1) {
-      return user.getContactInfos().stream()
-          .filter(contactInfo -> activeTypes.contains(contactInfo.type()))
+    if (user.getContactOptions().size() == 1) {
+      return user.getContactOptions().stream()
+          .filter(contactInfo -> activeTypes.contains(contactInfo.getType()))
           .findAny();
     }
     return Optional.empty();

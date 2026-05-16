@@ -492,7 +492,7 @@ public class MeetupCreationView extends VerticalLayout implements BeforeEnterObs
         .getCurrentUser()
         .ifPresentOrElse(
             user -> {
-              if (user.getStatus() != UserStatus.ACTIVE || user.getContactInfos().isEmpty()) {
+              if (user.getStatus() != UserStatus.ACTIVE || user.getContactOptions().isEmpty()) {
                 event.forwardTo(ContactSettingsView.class);
               } else {
                 this.currentUser = user;

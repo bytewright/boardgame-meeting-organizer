@@ -1,6 +1,7 @@
 package org.bytewright.bgmo.adapter.persistence.entity.user;
 
 import jakarta.persistence.*;
+import java.time.Instant;
 import java.util.UUID;
 import lombok.*;
 import org.bytewright.bgmo.adapter.persistence.entity.AbstractEntity;
@@ -8,10 +9,12 @@ import org.bytewright.bgmo.domain.model.user.ContactInfoType;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.UuidGenerator;
 import org.hibernate.type.SqlTypes;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 @Entity
-@Table(name = "user_contact_infos")
+@Table(name = "user_contact_options")
 @Getter
 @Setter
 @Builder
@@ -24,6 +27,14 @@ public class ContactInfoEntity extends AbstractEntity<UUID> {
   @UuidGenerator(style = UuidGenerator.Style.TIME)
   @Column(nullable = false, updatable = false)
   private UUID id;
+
+  @CreatedDate
+  @Column(name = "created_at", nullable = false, updatable = false)
+  private Instant tsCreation;
+
+  @LastModifiedDate
+  @Column(name = "modified_at")
+  private Instant tsModified;
 
   @Column(nullable = false)
   private boolean verified;

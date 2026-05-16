@@ -28,8 +28,8 @@ public class ComponentFactory {
   private final RegisteredUserDao userDao;
   private final GameDao gameDao;
 
-  public ContactSection contactSection(RegisteredUser currentUser) {
-    return new ContactSection(this, userWorkflows, userDao, currentUser);
+  public ContactSection contactSection(RegisteredUser currentUser, Runnable runnable) {
+    return new ContactSection(this, userWorkflows, userDao, currentUser, runnable);
   }
 
   public LocalePicker localePicker() {
