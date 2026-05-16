@@ -21,9 +21,12 @@ import com.vaadin.flow.data.binder.Binder;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.router.RouterLink;
+import com.vaadin.flow.server.VaadinServletRequest;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
 import java.time.Duration;
 import java.time.Instant;
+
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.bytewright.bgmo.adapter.api.frontend.view.component.LocalePicker;
 import org.bytewright.bgmo.adapter.api.frontend.view.component.MainLayout;
@@ -34,6 +37,8 @@ import org.bytewright.bgmo.domain.model.user.RegisteredUser;
 import org.bytewright.bgmo.domain.service.security.AutoLoginService;
 import org.bytewright.bgmo.domain.service.security.PasswordRules;
 import org.bytewright.bgmo.usecases.UserWorkflows;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 
 @Slf4j
 @Route("register")
@@ -297,14 +302,14 @@ public class RegistrationView extends VerticalLayout {
     // Auto-login so the user lands directly on the contact settings page
     try {
       autoLoginService.loginAfterRegister(registeredUser, password.getValue());
-      /*
-            HttpServletRequest request = VaadinServletRequest.getCurrent().getHttpServletRequest();
-            request
-                .getSession(true)
-                .setAttribute(
-                    HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY,
-                    SecurityContextHolder.getContext());
-      */
+
+      HttpServletRequest request = VaadinServletRequest.getCurrent().getHttpServletRequest();
+      request
+          .getSession(true)
+          .setAttribute(
+              HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY,
+              SecurityContextHolder.getContext());
+
       UI.getCurrent().navigate(ContactSettingsView.class);
 
     } catch (Exception ex) {

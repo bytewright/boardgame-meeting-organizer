@@ -6,7 +6,6 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
 import com.vaadin.flow.component.details.Details;
-import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.Image;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.VaadinIcon;
@@ -44,9 +43,8 @@ public class GameLibSection extends VerticalLayout {
     setAlignItems(Alignment.CENTER);
     setPadding(true);
     setSpacing(true);
-    getStyle().set("max-width", MainLayout.MAX_DISPLAYPORT_WIDTH).set("margin", "0 auto");
-
-    H2 title = new H2(getTranslation("gamelib.title"));
+    setMaxWidth(MainLayout.MAX_DISPLAYPORT_WIDTH);
+    getStyle().set("margin", "0 auto");
 
     Button addGameBtn =
         new Button(
@@ -60,7 +58,7 @@ public class GameLibSection extends VerticalLayout {
     listContainer.setPadding(false);
     listContainer.setWidthFull();
 
-    add(title, addGameBtn, listContainer);
+    add(addGameBtn, listContainer);
     refreshLibrary();
   }
 
