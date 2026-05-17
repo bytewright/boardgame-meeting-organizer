@@ -1,15 +1,13 @@
 package org.bytewright.bgmo.adapter.api.frontend.view.meetup.component;
 
-import com.vaadin.flow.component.Unit;
 import com.vaadin.flow.component.html.*;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
-import java.time.ZonedDateTime;
 import org.bytewright.bgmo.adapter.api.frontend.service.MeetupDetailContext;
 import org.bytewright.bgmo.adapter.api.frontend.service.i18n.LocaleService;
-import org.bytewright.bgmo.adapter.api.frontend.view.component.GameTimeAndDuration;
+import org.bytewright.bgmo.adapter.api.frontend.view.component.MeetupBasicsInfo;
 import org.bytewright.bgmo.domain.model.MeetupEvent;
 
 /**
@@ -38,44 +36,8 @@ public class MeetupInfoHeader extends VerticalLayout {
           .set("font-size", "1.1em");
       add(canceledBadge);
     }
-
-    // ── Title ────────────────────────────────────────────────────────────────
-    add(new H2(meetup.getTitle()));
-
-    // ── Date row ─────────────────────────────────────────────────────────────
-    ZonedDateTime eventDate = meetup.getEventDate();
-    Icon calendarIcon = VaadinIcon.CALENDAR.create();
-    calendarIcon.setSize("var(--lumo-icon-size-s)");
-    calendarIcon.getStyle().set("color", "var(--lumo-secondary-text-color)");
-    Span dateSpan = new Span(eventDate.format(localeService.getDateFormatter()));
-    dateSpan.setMinWidth(200, Unit.PIXELS);
-
-    HorizontalLayout dateRow = new HorizontalLayout(calendarIcon, dateSpan);
-    dateRow.setAlignItems(Alignment.CENTER);
-    dateRow.setSpacing(false);
-    dateRow.getStyle().set("gap", "var(--lumo-space-s)");
-    add(dateRow);
-
-    // ── Time + duration row ───────────────────────────────────────────────────
-    String timeStr = eventDate.format(localeService.getTimeFormatter());
-    add(new GameTimeAndDuration(timeStr, meetup.getDurationHours()));
-
-    // ── Creator + slots row ───────────────────────────────────────────────────
-    Icon personIcon = VaadinIcon.USER.create();
-    personIcon.setSize("var(--lumo-icon-size-s)");
-    personIcon.getStyle().set("color", "var(--lumo-secondary-text-color)");
-    Span creatorSpan = new Span(ctx.creatorDisplayName());
-    creatorSpan.setMinWidth(200, Unit.PIXELS);
-
-    Icon slotsIcon = VaadinIcon.USERS.create();
-    slotsIcon.setSize("var(--lumo-icon-size-s)");
-    slotsIcon.getStyle().set("color", "var(--lumo-secondary-text-color)");
-    Span slotsSpan = new Span(buildSlotsText(ctx));
-
-    HorizontalLayout creatorAndSlots =
-        new HorizontalLayout(personIcon, creatorSpan, slotsIcon, slotsSpan);
-    creatorAndSlots.setAlignItems(Alignment.CENTER);
-    add(creatorAndSlots);
+    MeetupBasicsInfo meetupBasicsInfo = new MeetupBasicsInfo(localeService, meetup, ctx.creator());
+    add(meetupBasicsInfo);
 
     // ── Address block ─────────────────────────────────────────────────────────
     if (ctx.showFullAddress()) {

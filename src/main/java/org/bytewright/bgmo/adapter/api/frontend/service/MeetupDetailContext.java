@@ -23,7 +23,7 @@ import org.bytewright.bgmo.domain.model.user.RegisteredUser;
  * @param myRequest the visitor's own join request, if any
  * @param isFull whether all slots are taken (false when slots are unlimited)
  * @param offeredGames fully hydrated game objects (empty list when none offered)
- * @param creatorDisplayName display name of the organiser, fallback to UUID string
+ * @param creator the organiser of the meetup
  */
 public record MeetupDetailContext(
     MeetupEvent meetup,
@@ -32,7 +32,7 @@ public record MeetupDetailContext(
     Optional<MeetupJoinRequest> myRequest,
     boolean isFull,
     List<Game> offeredGames,
-    String creatorDisplayName) {
+    RegisteredUser creator) {
 
   /** Everyone sees the zip code when the organiser has an address on file. */
   public boolean showZipCode() {

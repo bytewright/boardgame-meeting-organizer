@@ -50,11 +50,7 @@ public class MeetupDetailContextBuilder {
 
     boolean isFull = meetupWorkflows.isFull(meetup);
 
-    String creatorDisplayName =
-        userDao
-            .findById(meetup.getCreatorId())
-            .map(RegisteredUser::getDisplayName)
-            .orElseGet(() -> meetup.getCreatorId().toString());
+    RegisteredUser creator = userDao.findOrThrow(meetup.getCreatorId());
 
     // ── Determine viewer role ────────────────────────────────────────────────
     ViewerRole role;
@@ -97,6 +93,6 @@ public class MeetupDetailContextBuilder {
     }
 
     return new MeetupDetailContext(
-        meetup, currentUser, role, myRequest, isFull, offeredGames, creatorDisplayName);
+        meetup, currentUser, role, myRequest, isFull, offeredGames, creator);
   }
 }
