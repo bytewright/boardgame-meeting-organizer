@@ -9,24 +9,20 @@ import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.dom.Style;
 import java.time.ZonedDateTime;
 import java.util.Optional;
+import lombok.Builder;
+import lombok.RequiredArgsConstructor;
 import org.bytewright.bgmo.adapter.api.frontend.service.i18n.LocaleService;
 import org.bytewright.bgmo.domain.model.MeetupEvent;
 import org.bytewright.bgmo.domain.model.RequestState;
 import org.bytewright.bgmo.domain.model.user.RegisteredUser;
 
+@RequiredArgsConstructor
 public class MeetupBasicsInfo extends Div {
   private final LocaleService localeService;
-  private final MeetupEvent meetup;
-  private final RegisteredUser creator;
 
-  public MeetupBasicsInfo(LocaleService localeService, MeetupEvent meetup, RegisteredUser creator) {
-    this.localeService = localeService;
-    this.meetup = meetup;
-    this.creator = creator;
-    buildComponent();
-  }
-
-  private void buildComponent() {
+  public void buildComponent(Context context) {
+    MeetupEvent meetup = context.meetup();
+    RegisteredUser creator = context.creator();
     setWidthFull();
     getStyle()
         .setBorder("2px solid var(--lumo-contrast-20pct)")
@@ -34,8 +30,10 @@ public class MeetupBasicsInfo extends Div {
         .setPadding("var(--lumo-space-m)")
         .setBoxSizing(Style.BoxSizing.BORDER_BOX)
         .setTransition("background-color 0.15s ease")
-        .setCursor("pointer")
         .setPadding("var(--lumo-space-m)");
+    if (context.changeCursor()) {
+      getStyle().setCursor("pointer");
+    }
 
     Span title = new Span(meetup.getTitle());
     title
@@ -48,7 +46,13 @@ public class MeetupBasicsInfo extends Div {
     // ── Row 2: Date ───────────────────────────────────────────────────────────
     ZonedDateTime eventDate = meetup.getEventDate();
     String dateStr = eventDate.format(localeService.getDateFormatter());
-    HorizontalLayout dateRow = buildIconRow(VaadinIcon.CALENDAR, dateStr);
+    Icon icon = VaadinIcon.CALENDAR.create();
+    icon.setSize("var(--lumo-icon-size-s)");
+    icon.getStyle().set("color", "var(--lumo-secondary-text-color)");
+
+    HorizontalLayout dateRow = new HorizontalLayout(icon, new Span(dateStr));
+    dateRow.setSpacing(true);
+    dateRow.setAlignItems(FlexComponent.Alignment.CENTER);
 
     // ── Row 3: Time + Duration ────────────────────────────────────────────────
     String timeStr = eventDate.format(localeService.getTimeFormatter());
@@ -98,18 +102,6 @@ public class MeetupBasicsInfo extends Div {
     add(title, dateRow, timeRow, bottomRow);
   }
 
-  /** Helper: single icon + text in a horizontal row. */
-  private HorizontalLayout buildIconRow(VaadinIcon vaadinIcon, String text) {
-    Icon icon = vaadinIcon.create();
-    icon.setSize("var(--lumo-icon-size-s)");
-    icon.getStyle().set("color", "var(--lumo-secondary-text-color)");
-
-    HorizontalLayout row = new HorizontalLayout(icon, new Span(text));
-    row.setSpacing(true);
-    row.setAlignItems(FlexComponent.Alignment.CENTER);
-    return row;
-  }
-
   static class GameTimeAndDuration extends HorizontalLayout {
 
     public GameTimeAndDuration(String timeStr, int durationHours) {
@@ -141,4 +133,7 @@ public class MeetupBasicsInfo extends Div {
       getStyle().setFlexWrap(Style.FlexWrap.WRAP);
     }
   }
+
+  @Builder
+  public record Context(MeetupEvent meetup, RegisteredUser creator, boolean changeCursor) {}
 }

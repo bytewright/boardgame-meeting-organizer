@@ -88,8 +88,14 @@ public class DashboardView extends VerticalLayout implements BeforeEnterObserver
 
   private Div buildMeetupCard(MeetupEvent meetup) {
     RegisteredUser creator = registeredUserDao.findOrThrow(meetup.getCreatorId());
-    MeetupBasicsInfo card = new MeetupBasicsInfo(localeService, meetup, creator);
-
+    MeetupBasicsInfo card = new MeetupBasicsInfo(localeService);
+    MeetupBasicsInfo.Context context =
+        MeetupBasicsInfo.Context.builder()
+            .meetup(meetup)
+            .creator(creator)
+            .changeCursor(true)
+            .build();
+    card.buildComponent(context);
     // Hover highlight using JS — lightweight approach with style toggle
     card.getElement()
         .addEventListener(

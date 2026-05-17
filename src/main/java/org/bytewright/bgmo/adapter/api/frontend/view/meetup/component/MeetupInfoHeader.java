@@ -1,5 +1,8 @@
 package org.bytewright.bgmo.adapter.api.frontend.view.meetup.component;
 
+import com.vaadin.flow.component.UI;
+import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.html.*;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
@@ -36,7 +39,36 @@ public class MeetupInfoHeader extends VerticalLayout {
           .set("font-size", "1.1em");
       add(canceledBadge);
     }
-    MeetupBasicsInfo meetupBasicsInfo = new MeetupBasicsInfo(localeService, meetup, ctx.creator());
+    Button shareBtn = new Button(getTranslation("meetup.share"), VaadinIcon.SHARE.create());
+    shareBtn.addThemeVariants(ButtonVariant.LUMO_TERTIARY, ButtonVariant.LUMO_ICON);
+    shareBtn.setAriaLabel(getTranslation("meetup.share"));
+    shareBtn.addClickListener(
+        e ->
+            UI.getCurrent()
+                .getPage()
+                .executeJs(
+                    """
+        if (navigator.share) {
+            navigator.share({ title: $0, url: window.location.href });
+        } else {
+            navigator.clipboard.writeText(window.location.href);
+        }
+    """,
+                    meetup.getTitle()));
+    H2 title = new H2(getTranslation("meetup.details.title"));
+    HorizontalLayout titleRow = new HorizontalLayout(title, shareBtn);
+    titleRow.setWidthFull();
+    titleRow.setAlignItems(Alignment.CENTER);
+    titleRow.expand(title);
+    add(titleRow);
+    MeetupBasicsInfo meetupBasicsInfo = new MeetupBasicsInfo(localeService);
+    MeetupBasicsInfo.Context context =
+        MeetupBasicsInfo.Context.builder()
+            .meetup(meetup)
+            .creator(ctx.creator())
+            .changeCursor(false)
+            .build();
+    meetupBasicsInfo.buildComponent(context);
     add(meetupBasicsInfo);
 
     // ── Address block ─────────────────────────────────────────────────────────
@@ -67,19 +99,6 @@ public class MeetupInfoHeader extends VerticalLayout {
         .set("word-break", "break-word") // no overflow on long unbroken strings
         .set("font-family", "inherit");
     add(descDiv);
-  }
-
-  private String buildSlotsText(MeetupDetailContext ctx) {
-    MeetupEvent meetup = ctx.meetup();
-    if (meetup.isUnlimitedSlots()) {
-      return getTranslation("meetup.unlimitedSlots");
-    }
-    long accepted =
-        meetup.getJoinRequests().stream()
-            .filter(
-                r -> r.getRequestState() == org.bytewright.bgmo.domain.model.RequestState.ACCEPTED)
-            .count();
-    return getTranslation("meetup.slotsFilled", accepted, meetup.getJoinSlots());
   }
 
   private VerticalLayout buildFullAddressBlock(MeetupDetailContext ctx) {
