@@ -1,0 +1,16 @@
+/* ── Logo ──────────────────────────────────────────────────────────── */
+.bgmo-logo-banner {
+  height: 75px;
+  transition: height 0.15s ease;
+}
+@media (max-width: 479px) {
+  .bgmo-logo-banner { height: 48px !important; }
+}
+
+/* ── Create-meetup button ───────────────────────────────────────────── */
+.bgmo-create-icon { display: none; }
+
+@media (max-width: 479px) {
+  .bgmo-create-full { display: none; }
+  .bgmo-create-icon { display: inline-flex; }
+}
