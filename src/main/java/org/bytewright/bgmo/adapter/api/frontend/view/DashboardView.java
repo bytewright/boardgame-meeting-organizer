@@ -3,6 +3,8 @@ package org.bytewright.bgmo.adapter.api.frontend.view;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.Unit;
 import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.component.html.H3;
+import com.vaadin.flow.component.html.Hr;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
@@ -13,6 +15,7 @@ import jakarta.annotation.security.PermitAll;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import lombok.extern.slf4j.Slf4j;
 import org.bytewright.bgmo.adapter.api.frontend.service.SessionInfoService;
 import org.bytewright.bgmo.adapter.api.frontend.service.i18n.LocaleService;
@@ -52,21 +55,40 @@ public class DashboardView extends VerticalLayout implements BeforeEnterObserver
     setWidthFull();
     setPadding(true);
     setSpacing(true);
-    getStyle().set("max-width", MainLayout.MAX_DISPLAYPORT_WIDTH).set("margin", "0 auto");
+    setMaxWidth(MainLayout.MAX_DISPLAYPORT_WIDTH);
+    getStyle().set("margin", "0 auto");
   }
 
-  private void buildUI() {
+  private void buildUI(UUID currentUserId) {
     removeAll();
+    List<MeetupEvent> meetupsFromCurrentUser =
+        meetupWorkflows.findMeetupsByOrganizer(currentUserId);
+    List<MeetupEvent> upcomingMeetups =
+        meetupWorkflows.findPubliclyListed().stream()
+            .filter(meetupEvent -> !meetupsFromCurrentUser.contains(meetupEvent))
+            .toList();
 
-    List<MeetupEvent> upcomingMeetups = meetupWorkflows.findPubliclyListed();
-
-    if (upcomingMeetups.isEmpty()) {
+    if (meetupsFromCurrentUser.isEmpty() && upcomingMeetups.isEmpty()) {
       add(new Span(getTranslation("dashboard.no-meetups")));
-      return;
-    }
+    } else {
+      if (!meetupsFromCurrentUser.isEmpty()) {
+        add(new H3(getTranslation("dashboard.meetups-current-user-is-owner")));
+        Span helperSpan =
+            new Span(getTranslation("dashboard.meetups-current-user-is-owner.helper"));
+        helperSpan.getStyle().set("font-size", "var(--lumo-font-size-s)");
+        add(helperSpan);
 
-    for (MeetupEvent meetup : upcomingMeetups) {
-      add(buildMeetupCard(meetup));
+        for (MeetupEvent meetup : meetupsFromCurrentUser) {
+          add(buildMeetupCard(meetup));
+        }
+      }
+      if (!meetupsFromCurrentUser.isEmpty() && !upcomingMeetups.isEmpty()) add(new Hr());
+      if (!upcomingMeetups.isEmpty()) {
+        add(new H3(getTranslation("dashboard.meetups-list-public")));
+        for (MeetupEvent meetup : upcomingMeetups) {
+          add(buildMeetupCard(meetup));
+        }
+      }
     }
   }
 
@@ -179,6 +201,6 @@ public class DashboardView extends VerticalLayout implements BeforeEnterObserver
       event.forwardTo(LoginView.class);
       return;
     }
-    buildUI();
+    buildUI(userOpt.get().getId());
   }
 }
