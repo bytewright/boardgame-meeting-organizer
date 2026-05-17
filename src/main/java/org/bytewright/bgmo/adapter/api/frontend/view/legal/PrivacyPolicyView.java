@@ -13,7 +13,7 @@ import org.bytewright.bgmo.adapter.api.frontend.view.component.MainLayout;
 import org.bytewright.bgmo.domain.model.user.ContactInfo;
 import org.bytewright.bgmo.domain.service.SiteOperatorInfoService;
 
-@Route(value = "datenschutz", layout = MainLayout.class)
+@Route(value = "privacy", layout = MainLayout.class)
 @PageTitle("Datenschutzerklärung | " + APP_NAME_SHORT)
 @AnonymousAllowed
 public class PrivacyPolicyView extends VerticalLayout {

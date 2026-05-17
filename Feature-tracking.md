@@ -30,6 +30,7 @@
   - change role manually
   - suspend user
   - broadcast to all through bot
+- Sites should use com.vaadin.flow.router.HasDynamicTitle and i18n
 
 # ToDos - app improvements
 

@@ -260,4 +260,8 @@ public class MeetupWorkflows {
         .sorted(Comparator.comparing(MeetupEvent::getEventDate))
         .toList();
   }
+
+  public List<MeetupEvent> findMeetupsByOrganizer(UUID currentUserId) {
+    return meetupDao.findAllByOrganizer(currentUserId);
+  }
 }

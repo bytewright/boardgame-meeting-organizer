@@ -2,6 +2,8 @@ package org.bytewright.bgmo.adapter.persistence.dao.mapstruct;
 
 import jakarta.transaction.Transactional;
 import java.time.ZonedDateTime;
+import java.util.Comparator;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -54,5 +56,14 @@ public abstract class MeetupEntityMapper extends BaseEntityMapper<MeetupEvent, M
   @Override
   public Stream<MeetupEvent> findNotExpired(ZonedDateTime now) {
     return repository.findByEventDateAfterAndCanceledFalseOrderByEventDateAsc(now).map(this::toDto);
+  }
+
+  @Override
+  public List<MeetupEvent> findAllByOrganizer(UUID currentUserId) {
+    return repository
+        .findByCreator_Id(currentUserId)
+        .map(this::toDto)
+        .sorted(Comparator.comparing(MeetupEvent::getEventDate))
+        .toList();
   }
 }

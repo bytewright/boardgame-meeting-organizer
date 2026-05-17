@@ -14,7 +14,7 @@ import org.bytewright.bgmo.adapter.api.frontend.view.component.MainLayout;
 import org.bytewright.bgmo.domain.model.user.ContactInfo;
 import org.bytewright.bgmo.domain.service.SiteOperatorInfoService;
 
-@Route(value = "impressum", layout = MainLayout.class)
+@Route(value = "about", layout = MainLayout.class)
 @PageTitle("Impressum | " + APP_NAME_SHORT)
 @AnonymousAllowed
 public class AboutSiteView extends VerticalLayout {
