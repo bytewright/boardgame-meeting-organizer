@@ -17,9 +17,9 @@ import org.bytewright.bgmo.domain.service.SiteOperatorInfoService;
 @Route(value = "impressum", layout = MainLayout.class)
 @PageTitle("Impressum | " + APP_NAME_SHORT)
 @AnonymousAllowed
-public class ImpressumView extends VerticalLayout {
+public class AboutSiteView extends VerticalLayout {
 
-  public ImpressumView(SiteOperatorInfoService operatorInfoService) {
+  public AboutSiteView(SiteOperatorInfoService operatorInfoService) {
     setMaxWidth(MainLayout.MAX_DISPLAYPORT_WIDTH);
     getStyle().set("margin", "0 auto");
     setPadding(true);

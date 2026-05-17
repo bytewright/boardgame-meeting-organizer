@@ -16,9 +16,9 @@ import org.bytewright.bgmo.domain.service.SiteOperatorInfoService;
 @Route(value = "datenschutz", layout = MainLayout.class)
 @PageTitle("Datenschutzerklärung | " + APP_NAME_SHORT)
 @AnonymousAllowed
-public class DatenschutzView extends VerticalLayout {
+public class PrivacyPolicyView extends VerticalLayout {
 
-  public DatenschutzView(SiteOperatorInfoService operatorInfoService) {
+  public PrivacyPolicyView(SiteOperatorInfoService operatorInfoService) {
     setMaxWidth(MainLayout.MAX_DISPLAYPORT_WIDTH);
     getStyle().set("margin", "0 auto");
     setPadding(true);

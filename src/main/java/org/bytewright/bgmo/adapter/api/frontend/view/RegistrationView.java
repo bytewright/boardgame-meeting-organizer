@@ -23,15 +23,14 @@ import com.vaadin.flow.router.Route;
 import com.vaadin.flow.router.RouterLink;
 import com.vaadin.flow.server.VaadinServletRequest;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
+import jakarta.servlet.http.HttpServletRequest;
 import java.time.Duration;
 import java.time.Instant;
-
-import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.bytewright.bgmo.adapter.api.frontend.view.component.LocalePicker;
 import org.bytewright.bgmo.adapter.api.frontend.view.component.MainLayout;
 import org.bytewright.bgmo.adapter.api.frontend.view.component.factory.ComponentFactory;
-import org.bytewright.bgmo.adapter.api.frontend.view.legal.DatenschutzView;
+import org.bytewright.bgmo.adapter.api.frontend.view.legal.PrivacyPolicyView;
 import org.bytewright.bgmo.adapter.api.frontend.view.profile.ContactSettingsView;
 import org.bytewright.bgmo.domain.model.user.RegisteredUser;
 import org.bytewright.bgmo.domain.service.security.AutoLoginService;
@@ -181,7 +180,7 @@ public class RegistrationView extends VerticalLayout {
     Paragraph privacyRef = new Paragraph();
     privacyRef.add(new Text(getTranslation("register.privacy.ref.before")));
     RouterLink privacyLink =
-        new RouterLink(getTranslation("register.privacy.ref.link"), DatenschutzView.class);
+        new RouterLink(getTranslation("register.privacy.ref.link"), PrivacyPolicyView.class);
     privacyLink.getElement().setAttribute("target", "_blank");
     privacyRef.add(privacyLink);
     privacyRef.add(new Text(getTranslation("register.privacy.ref.after")));

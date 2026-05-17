@@ -102,15 +102,10 @@ public class MeetupWorkflows {
             .displayName(user.getDisplayName())
             .tsCreation(timeSource.now())
             .build();
-    meetupEvent.getJoinRequests().add(request);
+    MeetupJoinRequest joinRequest = joinRequestModelDao.createOrUpdate(request);
     log.info(
         "Added join request from user {} to event: {}", user.getId(), meetupEvent.logIdentity());
-    UUID requestId =
-        meetupDao.createOrUpdate(meetupEvent).getJoinRequests().stream()
-            .filter(meetupJoinRequest -> user.getId().equals(meetupJoinRequest.getUserId()))
-            .findAny()
-            .map(MeetupJoinRequest::getId)
-            .orElseThrow();
+    UUID requestId = joinRequest.getId();
     if (meetupEvent.getSlotStrategy() == SlotDistributionStrategy.FIRST_COME_FIRST_SERVE) {
       slotDistributionWorkflows.handleNewJoinRequestFCFS(meetupEvent, request);
     }

@@ -83,6 +83,7 @@ public class AnonPanel extends VerticalLayout {
                         onRefresh.run();
                       })
                   .open());
+      joinBtn.setDisableOnClick(true);
       add(joinBtn);
     } else {
       joinBtn.setEnabled(false);

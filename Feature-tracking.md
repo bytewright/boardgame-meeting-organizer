@@ -2,9 +2,17 @@
 
 - i18n for legal pages
 - anonview: "erstelle einen Account" should be link to register page
+- organizer of meetings needs better attendee list
+- footer on mobile needs to be 2 rows
+- header on mobile needs to be smaller/reactive
+- admin needs same powers as organizers+delete join requests
+- telegram messages don't work with arguments
+- telegram in-app
+- max width on mobile strange with horizontal scrolling
+- even confirmed=>msg shown "waiting for slot approval"
+-users can create duplicate requests
 
 # ToDos - Features
-- mousecursor does not show whats clickable, with mobile in mind: how to better promote clickability of stuff
 - on dashboard: display own meetups on top
 - meetup MeetupEditView
   - Reschedule events
@@ -21,6 +29,7 @@
   - change status manually
   - change role manually
   - suspend user
+  - broadcast to all through bot
 
 # ToDos - app improvements
 

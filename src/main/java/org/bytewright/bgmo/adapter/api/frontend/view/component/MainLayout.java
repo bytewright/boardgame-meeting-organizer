@@ -19,42 +19,28 @@ import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.RouterLayout;
 import com.vaadin.flow.router.RouterLink;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
-import java.time.Clock;
 import org.bytewright.bgmo.adapter.api.frontend.service.SessionInfoService;
 import org.bytewright.bgmo.adapter.api.frontend.view.*;
 import org.bytewright.bgmo.adapter.api.frontend.view.admin.AdminDashboardView;
 import org.bytewright.bgmo.adapter.api.frontend.view.component.factory.ComponentFactory;
-import org.bytewright.bgmo.adapter.api.frontend.view.legal.DatenschutzView;
-import org.bytewright.bgmo.adapter.api.frontend.view.legal.ImpressumView;
+import org.bytewright.bgmo.adapter.api.frontend.view.legal.AboutSiteView;
+import org.bytewright.bgmo.adapter.api.frontend.view.legal.PrivacyPolicyView;
 import org.bytewright.bgmo.adapter.api.frontend.view.legal.TermsOfUseView;
 import org.bytewright.bgmo.adapter.api.frontend.view.meetup.MeetupCreationView;
 import org.bytewright.bgmo.adapter.api.frontend.view.profile.ContactSettingsView;
 import org.bytewright.bgmo.adapter.api.frontend.view.profile.GameLibView;
 import org.bytewright.bgmo.adapter.api.frontend.view.profile.UserSettingsView;
 import org.bytewright.bgmo.domain.model.user.RegisteredUser;
-import org.bytewright.bgmo.domain.service.data.GameDao;
-import org.bytewright.bgmo.usecases.MeetupWorkflows;
 
 @AnonymousAllowed
 public class MainLayout extends AppLayout implements RouterLayout {
   public static final String MAX_DISPLAYPORT_WIDTH = "800px"; // Mobile-first reasonable fixed width
   private final ComponentFactory componentFactory;
   private final SessionInfoService authService;
-  private final MeetupWorkflows meetupWorkflows;
-  private final GameDao gameDao;
-  private final Clock clock;
 
-  public MainLayout(
-      ComponentFactory componentFactory,
-      SessionInfoService authService,
-      MeetupWorkflows meetupWorkflows,
-      GameDao gameDao,
-      Clock clock) {
+  public MainLayout(ComponentFactory componentFactory, SessionInfoService authService) {
     this.componentFactory = componentFactory;
     this.authService = authService;
-    this.meetupWorkflows = meetupWorkflows;
-    this.gameDao = gameDao;
-    this.clock = clock;
 
     createHeader();
   }
@@ -241,14 +227,14 @@ public class MainLayout extends AppLayout implements RouterLayout {
     setContent(wrapper);
   }
 
-  /**
-   * Footer with legal links and the locale picker. Locale switcher lives here — it's a "meta"
-   * setting, rarely changed, and this keeps the header uncluttered.
-   */
+  /** Footer with legal links and the locale picker */
   private Component createFooter() {
-    RouterLink impressum = new RouterLink("Impressum", ImpressumView.class);
-    RouterLink datenschutz = new RouterLink("Datenschutz", DatenschutzView.class);
-    RouterLink tos = new RouterLink("Nutzungsbedingungen", TermsOfUseView.class);
+    RouterLink impressum =
+        new RouterLink(getTranslation("main.footer.about-site"), AboutSiteView.class);
+    RouterLink datenschutz =
+        new RouterLink(getTranslation("main.footer.privacy-policy"), PrivacyPolicyView.class);
+    RouterLink tos =
+        new RouterLink(getTranslation("main.footer.terms-of-service"), TermsOfUseView.class);
     LocalePicker localePicker = componentFactory.localePicker();
 
     HorizontalLayout footer =
@@ -260,9 +246,7 @@ public class MainLayout extends AppLayout implements RouterLayout {
     footer
         .getStyle()
         .set("border-top", "1px solid var(--lumo-contrast-10pct)")
-        .set("padding", "var(--lumo-space-s)")
-        .set("font-size", "var(--lumo-font-size-s)")
-        .set("color", "var(--lumo-secondary-text-color)");
+        .set("font-size", "var(--lumo-font-size-s)");
     return footer;
   }
 }

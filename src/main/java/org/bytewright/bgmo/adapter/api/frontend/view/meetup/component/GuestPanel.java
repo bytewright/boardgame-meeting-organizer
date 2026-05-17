@@ -99,6 +99,7 @@ public class GuestPanel extends VerticalLayout {
             });
     joinBtn.addThemeVariants(ButtonVariant.LUMO_PRIMARY, ButtonVariant.LUMO_SUCCESS);
     joinBtn.setEnabled(!isFull);
+    joinBtn.setDisableOnClick(true);
     add(joinBtn);
   }
 
