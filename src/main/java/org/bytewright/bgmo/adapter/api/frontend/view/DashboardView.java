@@ -1,7 +1,6 @@
 package org.bytewright.bgmo.adapter.api.frontend.view;
 
 import com.vaadin.flow.component.UI;
-import com.vaadin.flow.component.Unit;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H3;
 import com.vaadin.flow.component.html.Hr;
@@ -10,6 +9,7 @@ import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
+import com.vaadin.flow.dom.Style;
 import com.vaadin.flow.router.*;
 import jakarta.annotation.security.PermitAll;
 import java.time.ZonedDateTime;
@@ -109,7 +109,7 @@ public class DashboardView extends VerticalLayout implements BeforeEnterObserver
             "mouseover", e -> card.getStyle().set("background-color", "var(--lumo-contrast-5pct)"));
     card.getElement().addEventListener("mouseout", e -> card.getStyle().remove("background-color"));
 
-    // ── Row 1: Title ─────────────────────────────────────────────────────────
+    // ── Row 1: Title ──────────────────────────────────────────────────────────
     Span title = new Span(meetup.getTitle());
     title
         .getStyle()
@@ -119,7 +119,6 @@ public class DashboardView extends VerticalLayout implements BeforeEnterObserver
         .set("margin-bottom", "var(--lumo-space-xs)");
 
     // ── Row 2: Date ───────────────────────────────────────────────────────────
-    // Derive locale from the existing combined formatter so no new LocaleService method is needed.
     ZonedDateTime eventDate = meetup.getEventDate();
     String dateStr = eventDate.format(localeService.getDateFormatter());
     HorizontalLayout dateRow = buildIconRow(VaadinIcon.CALENDAR, dateStr);
@@ -148,21 +147,30 @@ public class DashboardView extends VerticalLayout implements BeforeEnterObserver
     Icon personIcon = VaadinIcon.USER.create();
     personIcon.setSize("var(--lumo-icon-size-s)");
     personIcon.getStyle().set("color", "var(--lumo-secondary-text-color)");
-
     Span creatorSpan = new Span(creatorName);
-    creatorSpan.setMinWidth(200, Unit.PIXELS);
+
     Icon slotsIcon = VaadinIcon.USERS.create();
     slotsIcon.setSize("var(--lumo-icon-size-s)");
     slotsIcon.getStyle().set("color", "var(--lumo-secondary-text-color)");
-
     Span slotsSpan = new Span(slotsText);
 
-    HorizontalLayout bottomRow =
-        new HorizontalLayout(personIcon, creatorSpan, slotsIcon, slotsSpan);
+    // Each icon+label pair is its own flex item, so they wrap together as a unit
+    HorizontalLayout creatorGroup = new HorizontalLayout(personIcon, creatorSpan);
+    creatorGroup.setSpacing(true);
+    creatorGroup.setAlignItems(Alignment.CENTER);
+    creatorGroup.getStyle().set("flex", "1 1 0").set("min-width", "140px");
+
+    HorizontalLayout slotsGroup = new HorizontalLayout(slotsIcon, slotsSpan);
+    slotsGroup.setSpacing(true);
+    slotsGroup.setAlignItems(Alignment.CENTER);
+    slotsGroup.getStyle().set("flex", "1 1 0").set("min-width", "140px");
+
+    HorizontalLayout bottomRow = new HorizontalLayout(creatorGroup, slotsGroup);
     bottomRow.setSpacing(true);
     bottomRow.setAlignItems(Alignment.CENTER);
+    bottomRow.getStyle().setFlexWrap(Style.FlexWrap.WRAP);
 
-    // ── Divider between rows ──────────────────────────────────────────────────
+    // ── Divider ───────────────────────────────────────────────────────────────
     Div divider = new Div();
     divider
         .getStyle()
@@ -171,7 +179,6 @@ public class DashboardView extends VerticalLayout implements BeforeEnterObserver
 
     card.add(title, dateRow, divider, timeRow, bottomRow);
 
-    // ── Navigate to detail on click ───────────────────────────────────────────
     card.addClickListener(
         e ->
             UI.getCurrent()
