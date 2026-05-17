@@ -4,13 +4,10 @@
 - anonview: "erstelle einen Account" should be link to register page
 - organizer of meetings needs better attendee list
 - admin needs same powers as organizers+delete join requests
-- telegram messages don't work with arguments
-- telegram in-app keyboard needs adjusting
 - even confirmed=>msg shown "waiting for slot approval"
 - users can create duplicate requests
 
 # ToDos - Features
-- on dashboard: display own meetups on top
 - meetup MeetupEditView
   - Reschedule events
 - meetup details expanded

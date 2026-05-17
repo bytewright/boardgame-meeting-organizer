@@ -3,10 +3,10 @@ package org.bytewright.bgmo.adapter.bot.telegram;
 import static org.bytewright.bgmo.domain.service.CoreAppContextConfig.APP_NAME_SHORT;
 
 import java.util.UUID;
-import java.util.function.BiConsumer;
+import lombok.AccessLevel;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-import org.bytewright.bgmo.domain.model.notification.VerificationAttempt;
+import org.bytewright.bgmo.domain.model.notification.*;
 import org.bytewright.bgmo.domain.model.user.ContactInfoType;
 import org.bytewright.bgmo.domain.service.notification.VerificationCodeService;
 import org.springframework.stereotype.Service;
@@ -23,9 +23,11 @@ import org.telegram.telegrambots.meta.generics.TelegramClient;
 @Slf4j
 @Service
 public class TelegramBot implements LongPollingSingleThreadUpdateConsumer {
+  @Setter(AccessLevel.PACKAGE)
+  private TelegramNotificationAdapter adapter;
+
   private final TelegramClient telegramClient;
   private final VerificationCodeService verificationService;
-  @Setter private BiConsumer<UUID, String> meetUpJoinRequestHandler;
 
   public TelegramBot(
       TelegramAdapterProperties adapterProperties, VerificationCodeService verificationService) {
@@ -65,14 +67,17 @@ public class TelegramBot implements LongPollingSingleThreadUpdateConsumer {
                     .build());
           }
           case VerificationAttempt.Success success -> {
-            // todo use locale of user
-            telegramClient.execute(
-                SendMessage.builder()
-                    .chatId(message.getChatId())
-                    .text(
-                        "Thanks %s, your account is now linked successfully!"
-                            .formatted(success.user().getDisplayName()))
-                    .build());
+            NotificationContext response =
+                NotificationContext.builder()
+                    .notificationTargetType(NotificationTargetType.DIRECT)
+                    .payload(
+                        NotificationPayload.UserMessengerLinked.builder()
+                            .username(success.user().getDisplayName())
+                            .build())
+                    .userId(success.user().getId())
+                    .locale(success.user().getPreferredLocale())
+                    .build();
+            adapter.execute(response, Long.toString(message.getChatId()));
           }
         }
       } catch (TelegramApiException e) {
@@ -85,7 +90,7 @@ public class TelegramBot implements LongPollingSingleThreadUpdateConsumer {
     if (query.getData().startsWith("join:")) {
       UUID meetupId = UUID.fromString(query.getData().split(":")[1]);
       String id = query.getFrom().getId().toString();
-      meetUpJoinRequestHandler.accept(meetupId, id);
+      adapter.handleJoinRequestFromChat(meetupId, id);
       AnswerCallbackQuery answer = new AnswerCallbackQuery(query.getId());
       answer.setText("Join request sent!");
       try {

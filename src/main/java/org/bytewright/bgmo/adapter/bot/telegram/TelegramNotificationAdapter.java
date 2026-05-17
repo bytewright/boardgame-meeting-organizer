@@ -1,6 +1,5 @@
 package org.bytewright.bgmo.adapter.bot.telegram;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
@@ -9,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.bytewright.bgmo.domain.model.AdapterSettings;
 import org.bytewright.bgmo.domain.model.notification.NotificationContext;
+import org.bytewright.bgmo.domain.model.notification.NotificationPayload;
 import org.bytewright.bgmo.domain.model.notification.NotificationTargetType;
 import org.bytewright.bgmo.domain.model.notification.VerificationStep;
 import org.bytewright.bgmo.domain.model.user.ContactInfo;
@@ -23,7 +23,6 @@ import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.ApplicationListener;
-import org.springframework.context.MessageSource;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.longpolling.TelegramBotsLongPollingApplication;
@@ -32,6 +31,7 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMa
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardRow;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
+import tools.jackson.core.JacksonException;
 import tools.jackson.databind.json.JsonMapper;
 
 @Slf4j
@@ -45,8 +45,8 @@ public class TelegramNotificationAdapter
         ApplicationListener<ApplicationReadyEvent> {
   private static final String ADAPTER_NAME = "Telegram-ChatBotNotificationTaskExecutor-integration";
   private final TelegramAdapterProperties adapterProperties;
+  private final TelegramTemplateService templateService;
   private final AdapterSettingsDao adapterSettingsDao;
-  private final MessageSource messageSource;
   private final TelegramBot telegramBot;
   private final RegisteredUserDao userDao;
   private final JsonMapper objectMapper;
@@ -66,28 +66,26 @@ public class TelegramNotificationAdapter
   @Override
   @Async
   public void execute(NotificationContext context) {
+    String messageKey = context.payload().messageKey();
     if (!isEnabled()) {
-      log.info("Telegram integration is disabled, skipping execution of: {}", context.messageKey());
+      log.info("Telegram integration is disabled, skipping execution of: {}", messageKey);
       return;
     }
+    execute(context, getChatId(context));
+  }
+
+  void execute(NotificationContext context, String chatId) {
     Locale targetLocale = context.locale() != null ? context.locale() : Locale.GERMAN;
-    String rawMessage =
-        messageSource.getMessage(
-            context.messageKey(), context.messageArgs().toArray(new Object[0]), targetLocale);
-    String formattedMessage = escapeMarkdown(rawMessage);
+    String renderedMessage = templateService.render(targetLocale, context.payload());
     SendMessage message =
-        SendMessage.builder()
-            .chatId(getChatId(context))
-            .text(formattedMessage)
-            .parseMode("MarkdownV2")
-            .build();
+        SendMessage.builder().chatId(chatId).text(renderedMessage).parseMode("MarkdownV2").build();
 
     // Adding the "Join" button if a meetupId is present
-    if (context.meetupId() != null) {
+    if (context.payload() instanceof NotificationPayload.MeetupCreated meetupCreated) {
       var button =
           InlineKeyboardButton.builder()
               .text("Join Meetup 🎲")
-              .callbackData("join:" + context.meetupId())
+              .callbackData("join:" + meetupCreated.meetupId())
               .build();
       message.setReplyMarkup(
           InlineKeyboardMarkup.builder()
@@ -122,18 +120,13 @@ public class TelegramNotificationAdapter
     };
   }
 
-  private String escapeMarkdown(String text) {
-    // Telegram requires escaping chars like . - ! in MarkdownV2
-    return text.replaceAll("([_\\*\\[\\]\\(\\)~`>#\\+\\-=|\\.!\\{\\}])", "\\\\$1");
-  }
-
   @Override
   public void afterPropertiesSet() {
-    telegramBot.setMeetUpJoinRequestHandler(this::handleJoinRequestFromChat);
+    telegramBot.setAdapter(this);
     botsApp = new TelegramBotsLongPollingApplication();
   }
 
-  private void handleJoinRequestFromChat(UUID meetupId, String telegramChatId) {
+  void handleJoinRequestFromChat(UUID meetupId, String telegramChatId) {
     log.info(
         "Received a join request from telegram for meetup {} from chatId {}",
         meetupId,
@@ -199,7 +192,7 @@ public class TelegramNotificationAdapter
   }
 
   @Override
-  public String getDefaultSettings() throws JsonProcessingException {
+  public String getDefaultSettings() throws JacksonException {
     return objectMapper.writeValueAsString(TelegramSettings.builder().build());
   }
 
