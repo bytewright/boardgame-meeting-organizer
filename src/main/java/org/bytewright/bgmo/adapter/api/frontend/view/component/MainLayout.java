@@ -6,6 +6,7 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.contextmenu.MenuItem;
 import com.vaadin.flow.component.contextmenu.SubMenu;
+import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Hr;
 import com.vaadin.flow.component.html.Image;
 import com.vaadin.flow.component.html.Span;
@@ -34,7 +35,15 @@ import org.bytewright.bgmo.domain.model.user.RegisteredUser;
 
 @AnonymousAllowed
 public class MainLayout extends AppLayout implements RouterLayout {
-  public static final String MAX_DISPLAYPORT_WIDTH = "800px"; // Mobile-first reasonable fixed width
+
+  public static final String MAX_DISPLAYPORT_WIDTH = "800px";
+
+  // CSS class names — kept as constants so they stay in sync with the injected stylesheet
+  private static final String STYLE_TAG_ID = "bgmo-main-layout-styles";
+  private static final String CSS_LOGO = "bgmo-logo-banner";
+  private static final String CSS_CREATE_FULL = "bgmo-create-full";
+  private static final String CSS_CREATE_ICON = "bgmo-create-icon";
+
   private final ComponentFactory componentFactory;
   private final SessionInfoService authService;
 
@@ -49,9 +58,15 @@ public class MainLayout extends AppLayout implements RouterLayout {
     // Logo — clicking always navigates to dashboard
     RouterLink logoLink = new RouterLink("", DashboardView.class);
     Image banner = new Image("assets/images/banner.png", "Site banner");
+    banner.addClassName(CSS_LOGO);
     banner.setHeight(75, Unit.PIXELS);
     logoLink.add(banner);
-    logoLink.getStyle().set("text-decoration", "none").set("color", "inherit").setMarginTop("8px");
+    logoLink
+        .getStyle()
+        .set("text-decoration", "none")
+        .set("color", "inherit")
+        .setMarginTop("var(--lumo-space-s)")
+        .setMarginLeft("var(--lumo-space-s)");
     logoLink.getElement().setAttribute("aria-label", "Go to dashboard");
     logoLink.setHighlightCondition((routerLink, event) -> false);
 
@@ -77,18 +92,36 @@ public class MainLayout extends AppLayout implements RouterLayout {
   }
 
   /**
-   * Header for logged-in users: Logo | [+ New Meetup] [👤▾] All secondary navigation (profile,
-   * library, contacts, logout, admin) lives in the profile menu.
+   * Header for logged-in users: Logo | [+ New Meetup / +] [👤▾]
+   *
+   * <p>Two create buttons are rendered; CSS shows exactly one depending on viewport width:
+   *
+   * <ul>
+   *   <li>{@code bgmo-create-full} — full text + icon, shown on ≥ 480 px
+   *   <li>{@code bgmo-create-icon} — icon-only, shown on &lt; 480 px
+   * </ul>
    */
   private Component[] buildAuthenticatedHeader(RegisteredUser user) {
-    Button createBtn =
+    ComponentEventListener<ClickEvent<Button>> goToCreate =
+        e -> UI.getCurrent().navigate(MeetupCreationView.class);
+
+    // Full-text button (desktop)
+    Button createBtnFull =
         createNavButton(
-            getTranslation("navbar.create-meetup"),
-            VaadinIcon.PLUS.create(),
-            e -> UI.getCurrent().navigate(MeetupCreationView.class));
-    createBtn.addThemeVariants(ButtonVariant.LUMO_PRIMARY, ButtonVariant.LUMO_SMALL);
+            getTranslation("navbar.create-meetup"), VaadinIcon.PLUS.create(), goToCreate);
+    createBtnFull.addThemeVariants(ButtonVariant.LUMO_PRIMARY, ButtonVariant.LUMO_SMALL);
+    createBtnFull.addClassName(CSS_CREATE_FULL);
+
+    // Icon-only button (mobile) — LUMO_ICON makes Vaadin render it as a square pill
+    Button createBtnIcon = new Button(VaadinIcon.PLUS.create(), goToCreate);
+    createBtnIcon.addThemeVariants(
+        ButtonVariant.LUMO_PRIMARY, ButtonVariant.LUMO_SMALL, ButtonVariant.LUMO_ICON);
+    createBtnIcon.addClassName(CSS_CREATE_ICON);
+    // aria-label is essential because there is no visible text
+    createBtnIcon.getElement().setAttribute("aria-label", getTranslation("navbar.create-meetup"));
+
     MenuBar profileMenu = buildProfileMenuBar();
-    return new Component[] {createBtn, profileMenu};
+    return new Component[] {createBtnFull, createBtnIcon, profileMenu};
   }
 
   /** Header for anonymous visitors: Logo | [LocalePicker] [Login] */
@@ -110,15 +143,13 @@ public class MainLayout extends AppLayout implements RouterLayout {
    */
   private MenuBar buildProfileMenuBar() {
     MenuBar menuBar = new MenuBar();
-    // Drop LUMO_ICON so the item isn't stripped of padding;
-    // LUMO_TERTIARY keeps it ghost-style but we add our own tint below.
     menuBar.addThemeVariants(MenuBarVariant.LUMO_TERTIARY);
     menuBar
         .getStyle()
         .set("background-color", "var(--lumo-contrast-10pct)")
-        .set("border-radius", "var(--lumo-border-radius-m)");
+        .set("border-radius", "var(--lumo-border-radius-m)")
+        .setMarginRight("var(--lumo-space-s)");
 
-    // --- Trigger: person icon + down chevron ---
     Icon userIcon = VaadinIcon.USER.create();
     userIcon
         .getStyle()
@@ -142,7 +173,6 @@ public class MainLayout extends AppLayout implements RouterLayout {
     MenuItem root = menuBar.addItem(trigger);
     SubMenu sub = root.getSubMenu();
 
-    // --- Logout first (users who need it should find it quickly) ---
     sub.addItem(
         menuItemContent(VaadinIcon.EXIT, getTranslation("navbar.logout")),
         e -> {
@@ -152,7 +182,6 @@ public class MainLayout extends AppLayout implements RouterLayout {
 
     sub.addComponent(new Hr());
 
-    // --- Navigation items ---
     sub.addItem(
         menuItemContent(VaadinIcon.GAMEPAD, getTranslation("navbar.game-library")),
         e -> UI.getCurrent().navigate(GameLibView.class));
@@ -165,7 +194,6 @@ public class MainLayout extends AppLayout implements RouterLayout {
         menuItemContent(VaadinIcon.ENVELOPE, getTranslation("navbar.contact-settings")),
         e -> UI.getCurrent().navigate(ContactSettingsView.class));
 
-    // --- Admin (conditional) ---
     if (authService.isCurrentUserAdmin()) {
       sub.addComponent(new Hr());
       sub.addItem(
@@ -205,6 +233,10 @@ public class MainLayout extends AppLayout implements RouterLayout {
     return btn;
   }
 
+  // ---------------------------------------------------------------------------
+  // Content wrapper
+  // ---------------------------------------------------------------------------
+
   @Override
   public void showRouterLayoutContent(HasElement content) {
     Component target = null;
@@ -227,26 +259,39 @@ public class MainLayout extends AppLayout implements RouterLayout {
     setContent(wrapper);
   }
 
-  /** Footer with legal links and the locale picker */
+  /**
+   * Footer layout: legal links stacked vertically on the left, locale picker pinned to the right.
+   */
   private Component createFooter() {
-    RouterLink impressum =
+    RouterLink aboutSite =
         new RouterLink(getTranslation("main.footer.about-site"), AboutSiteView.class);
-    RouterLink datenschutz =
+    RouterLink privacyPolicy =
         new RouterLink(getTranslation("main.footer.privacy-policy"), PrivacyPolicyView.class);
     RouterLink tos =
         new RouterLink(getTranslation("main.footer.terms-of-service"), TermsOfUseView.class);
     LocalePicker localePicker = componentFactory.localePicker();
 
-    HorizontalLayout footer =
-        new HorizontalLayout(
-            impressum, new Span("·"), datenschutz, new Span("·"), tos, new Span("·"), localePicker);
-    footer.setWidthFull();
-    footer.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
-    footer.setDefaultVerticalComponentAlignment(FlexComponent.Alignment.CENTER);
-    footer
+    // Left column: links stacked vertically
+    VerticalLayout links = new VerticalLayout(aboutSite, privacyPolicy, tos);
+    links.setPadding(false);
+    links.setSpacing(false);
+    links.getStyle().set("gap", "var(--lumo-space-xs)");
+
+    // Inner row: links on the left, picker on the right
+    HorizontalLayout inner = new HorizontalLayout(links, localePicker);
+    inner.setWidthFull();
+    inner.setMaxWidth(450, Unit.PIXELS);
+    inner.setJustifyContentMode(FlexComponent.JustifyContentMode.BETWEEN);
+    inner.getStyle().set("margin", "0 auto");
+
+    // Outer shell: full-width separator line + comfortable padding
+    Div outer = new Div(inner);
+    outer.setWidth(90, Unit.PERCENTAGE);
+    outer
         .getStyle()
         .set("border-top", "1px solid var(--lumo-contrast-10pct)")
-        .set("font-size", "var(--lumo-font-size-s)");
-    return footer;
+        .set("font-size", "var(--lumo-font-size-xs)")
+        .set("padding", "var(--lumo-space-s) var(--lumo-space-m)");
+    return outer;
   }
 }

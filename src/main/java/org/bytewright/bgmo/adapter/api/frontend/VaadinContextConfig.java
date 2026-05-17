@@ -25,6 +25,7 @@ import org.springframework.security.web.SecurityFilterChain;
 
 @Slf4j
 @StyleSheet(Lumo.STYLESHEET)
+@StyleSheet("assets/style/bgmo-layout.css")
 @ColorScheme(ColorScheme.Value.DARK)
 @Push
 @Meta(name = "Author", content = "Bytewright")
