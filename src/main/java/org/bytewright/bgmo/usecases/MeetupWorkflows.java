@@ -25,7 +25,6 @@ import org.springframework.stereotype.Service;
 public class MeetupWorkflows {
   private final SlotDistributionWorkflows slotDistributionWorkflows;
   private final ModelDao<MeetupJoinRequest> joinRequestModelDao;
-  private final AutomationTaskWorkflows automationTaskWorkflows;
   private final SiteManagementService siteManagementService;
   private final EventPublisher eventPublisher;
   private final InputSanitizer inputSanitizer;
@@ -69,7 +68,6 @@ public class MeetupWorkflows {
             .slotStrategy(event.getSlotStrategy())
             .build();
     MeetupEvent persisted = meetupDao.createOrUpdate(meetupEvent);
-    automationTaskWorkflows.schedule(persisted);
     eventPublisher.publishMeetupCreatedAfterTransaction(persisted);
     return persisted;
   }
@@ -101,6 +99,7 @@ public class MeetupWorkflows {
             .userId(user.getId())
             .displayName(user.getDisplayName())
             .tsCreation(timeSource.now())
+            .comment(comment)
             .build();
     MeetupJoinRequest joinRequest = joinRequestModelDao.createOrUpdate(request);
     log.info(
@@ -263,5 +262,22 @@ public class MeetupWorkflows {
 
   public List<MeetupEvent> findMeetupsByOrganizer(UUID currentUserId) {
     return meetupDao.findAllByOrganizer(currentUserId);
+  }
+
+  public void removeExpiredMeetup(UUID meetupId) {
+    Optional<MeetupEvent> meetupEvent = meetupDao.find(meetupId);
+    if (meetupEvent.isEmpty()) {
+      log.info("Should remove meetup {} but couldn't find it in db - manually deleted?", meetupId);
+      return;
+    }
+    if (meetupEvent.get().getEventDate().isBefore(timeSource.nowZDT())) {
+      log.error("Given meetup {} is not expired!", meetupId);
+      return;
+    }
+    log.info(
+        "Deleting meetup '{}' because its eventdate is in the past, ID: {}",
+        meetupEvent.get().getTitle(),
+        meetupId);
+    meetupDao.delete(meetupEvent.get());
   }
 }

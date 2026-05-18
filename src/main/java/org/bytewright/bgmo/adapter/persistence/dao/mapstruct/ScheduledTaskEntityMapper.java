@@ -1,7 +1,11 @@
 package org.bytewright.bgmo.adapter.persistence.dao.mapstruct;
 
+import static org.bytewright.bgmo.domain.model.automation.ScheduledTask.TaskState.*;
+
 import jakarta.transaction.Transactional;
+import java.time.Instant;
 import java.util.List;
+import java.util.UUID;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.bytewright.bgmo.adapter.persistence.dao.BaseEntityMapper;
@@ -10,7 +14,7 @@ import org.bytewright.bgmo.adapter.persistence.dao.repository.ScheduledTaskRepos
 import org.bytewright.bgmo.adapter.persistence.entity.ScheduledTaskEntity;
 import org.bytewright.bgmo.adapter.persistence.entity.ScheduledTaskEntity_;
 import org.bytewright.bgmo.domain.model.automation.ScheduledTask;
-import org.bytewright.bgmo.domain.model.automation.ScheduledTaskPayload;
+import org.bytewright.bgmo.domain.model.automation.TaskPayload;
 import org.bytewright.bgmo.domain.service.data.AutomationTaskDao;
 import org.mapstruct.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -40,12 +44,12 @@ public abstract class ScheduledTaskEntityMapper
     return ScheduledTaskEntity.class;
   }
 
-  protected String serializeTaskPayload(ScheduledTaskPayload value) {
+  protected String serializeTaskPayload(TaskPayload value) {
     return objectMapper.writeValueAsString(value);
   }
 
-  protected ScheduledTaskPayload deserializePayload(String payload) {
-    return objectMapper.readValue(payload, ScheduledTaskPayload.class);
+  protected TaskPayload deserializePayload(String payload) {
+    return objectMapper.readValue(payload, TaskPayload.class);
   }
 
   @Override
@@ -63,5 +67,34 @@ public abstract class ScheduledTaskEntityMapper
     List<ScheduledTask> dtos = taskEntityPage.stream().map(this::toDto).toList();
     return new ScheduledTaskPage(
         taskEntityPage.getTotalElements(), pageNumber, pageSize, sorting, direction, dtos);
+  }
+
+  @Override
+  public List<ScheduledTask> findTasksToComplete(int limit, Instant now) {
+    List<ScheduledTaskEntity> claimabledTasks = taskRepository.claimableTasks(limit, now);
+    for (ScheduledTaskEntity task : claimabledTasks) {
+      task.setTaskState(EXECUTING);
+      taskRepository.save(task);
+    }
+    return claimabledTasks.stream().map(this::toDto).toList();
+  }
+
+  @Override
+  public void markError(UUID taskId) {
+    ScheduledTaskEntity scheduledTaskEntity = taskRepository.findById(taskId).orElseThrow();
+    scheduledTaskEntity.setTaskState(ERROR);
+    taskRepository.save(scheduledTaskEntity);
+  }
+
+  @Override
+  public void markFinished(UUID taskId) {
+    ScheduledTaskEntity scheduledTaskEntity = taskRepository.findById(taskId).orElseThrow();
+    scheduledTaskEntity.setTaskState(FINISHED);
+    taskRepository.save(scheduledTaskEntity);
+  }
+
+  @Override
+  public List<ScheduledTask> findExecutingTasks() {
+    return taskRepository.findByTaskState(EXECUTING).map(this::toDto).toList();
   }
 }

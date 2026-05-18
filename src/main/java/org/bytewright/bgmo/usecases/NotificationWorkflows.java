@@ -54,4 +54,6 @@ public class NotificationWorkflows {
         };
     return userWorkflows.addContactInfo(userId, newContactInfo, true);
   }
+
+  public void triggerUpcomingMeetingNotifications(UUID meetupId) {}
 }

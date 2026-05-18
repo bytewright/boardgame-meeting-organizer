@@ -1,6 +1,6 @@
 package org.bytewright.bgmo.usecases;
 
-import static org.bytewright.bgmo.domain.model.user.UserStatus.AFTER_REGISTRATION;
+import static org.bytewright.bgmo.domain.model.user.UserStatus.*;
 
 import jakarta.transaction.Transactional;
 import java.util.*;
@@ -212,5 +212,16 @@ public class UserWorkflows {
       }
       case ValidationResult.Success ignored -> true;
     };
+  }
+
+  public void liftUserSuspension(UUID userId) {
+    Optional<RegisteredUser> userOpt =
+        userDao.findById(userId).filter(user -> user.getStatus() == SUSPENDED);
+    if (userOpt.isPresent()) {
+      RegisteredUser user = userOpt.get();
+      log.info("Reinstating user to status ACTIVE, suspension lifted for {}", user.logEntity());
+      user.setStatus(ACTIVE);
+      userDao.createOrUpdate(user);
+    }
   }
 }

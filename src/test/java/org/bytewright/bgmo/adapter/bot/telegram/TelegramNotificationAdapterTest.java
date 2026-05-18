@@ -15,7 +15,6 @@ import org.bytewright.bgmo.domain.model.AdapterSettings;
 import org.bytewright.bgmo.domain.model.notification.NotificationContext;
 import org.bytewright.bgmo.domain.model.notification.NotificationPayload;
 import org.bytewright.bgmo.domain.model.notification.NotificationTargetType;
-import org.bytewright.bgmo.domain.model.notification.NotificationType;
 import org.bytewright.bgmo.domain.model.user.ContactInfo;
 import org.bytewright.bgmo.domain.model.user.ContactOption;
 import org.bytewright.bgmo.domain.model.user.RegisteredUser;
@@ -65,15 +64,14 @@ class TelegramNotificationAdapterTest {
     UUID meetupId = UUID.randomUUID();
     NotificationContext context =
         NotificationContext.builder()
-            .notificationType(NotificationType.EVENT_NEW)
             .notificationTargetType(NotificationTargetType.GROUP)
             .payload(
                 NotificationPayload.MeetupCreated.builder()
                     .meetupUrl(URI.create("https://some.url.de/path/to-meetup/").toURL())
+                    .meetupId(meetupId)
                     .title("Board Game Night")
                     .build())
             .locale(Locale.ENGLISH)
-            .meetupId(meetupId)
             .build();
 
     String groupChatId = "-100123456789";
@@ -104,7 +102,6 @@ class TelegramNotificationAdapterTest {
     NotificationContext context =
         NotificationContext.builder()
             .payload(NotificationPayload.UserApproved.builder().build())
-            .notificationType(NotificationType.USER_APPROVED)
             .notificationTargetType(NotificationTargetType.DIRECT)
             .locale(Locale.GERMAN)
             .userId(userId)

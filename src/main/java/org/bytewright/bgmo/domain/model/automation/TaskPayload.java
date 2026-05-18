@@ -8,32 +8,28 @@ import lombok.Builder;
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
 @JsonSubTypes({
   @JsonSubTypes.Type(
-      value = ScheduledTaskPayload.MeetupSlotDistributionPayload.class,
+      value = TaskPayload.MeetupSlotDistribution.class,
       name = "MEETUP_SLOT_DISTRIBUTION"),
+  @JsonSubTypes.Type(value = TaskPayload.MeetupCleanup.class, name = "MEETUP_CLEANUP"),
   @JsonSubTypes.Type(
-      value = ScheduledTaskPayload.MeetupCleanupPayload.class,
-      name = "MEETUP_CLEANUP"),
-  @JsonSubTypes.Type(
-      value = ScheduledTaskPayload.MeetupUpcomingNotificationPayload.class,
+      value = TaskPayload.MeetupUpcomingNotification.class,
       name = "MEETUP_UPCOMING_NOTIFICATION"),
-  @JsonSubTypes.Type(
-      value = ScheduledTaskPayload.LiftUserSuspensionPayload.class,
-      name = "LIFT_SUSPENSION"),
-  @JsonSubTypes.Type(value = ScheduledTaskPayload.AdapterTaskPayload.class, name = "ADAPTER")
+  @JsonSubTypes.Type(value = TaskPayload.LiftUserSuspension.class, name = "LIFT_SUSPENSION"),
+  @JsonSubTypes.Type(value = TaskPayload.AdapterTask.class, name = "ADAPTER")
 })
-public sealed interface ScheduledTaskPayload
-    permits ScheduledTaskPayload.MeetupSlotDistributionPayload,
-        ScheduledTaskPayload.MeetupCleanupPayload,
-        ScheduledTaskPayload.MeetupUpcomingNotificationPayload,
-        ScheduledTaskPayload.LiftUserSuspensionPayload,
-        ScheduledTaskPayload.AdapterTaskPayload {
+public sealed interface TaskPayload
+    permits TaskPayload.MeetupSlotDistribution,
+        TaskPayload.MeetupCleanup,
+        TaskPayload.MeetupUpcomingNotification,
+        TaskPayload.LiftUserSuspension,
+        TaskPayload.AdapterTask {
 
   String discriminator(); // stable string for DB
 
   String getIdempotencyKey();
 
   @Builder
-  record MeetupSlotDistributionPayload(UUID meetupId) implements ScheduledTaskPayload {
+  record MeetupSlotDistribution(UUID meetupId) implements TaskPayload {
 
     public String discriminator() {
       return "MEETUP_SLOT_DISTRIBUTION";
@@ -46,7 +42,7 @@ public sealed interface ScheduledTaskPayload
   }
 
   @Builder
-  record MeetupCleanupPayload(UUID meetupId) implements ScheduledTaskPayload {
+  record MeetupCleanup(UUID meetupId) implements TaskPayload {
 
     public String discriminator() {
       return "MEETUP_CLEANUP";
@@ -59,7 +55,7 @@ public sealed interface ScheduledTaskPayload
   }
 
   @Builder
-  record MeetupUpcomingNotificationPayload(UUID meetupId) implements ScheduledTaskPayload {
+  record MeetupUpcomingNotification(UUID meetupId) implements TaskPayload {
 
     public String discriminator() {
       return "MEETUP_UPCOMING_NOTIFICATION";
@@ -72,7 +68,7 @@ public sealed interface ScheduledTaskPayload
   }
 
   @Builder
-  record LiftUserSuspensionPayload(UUID userId) implements ScheduledTaskPayload {
+  record LiftUserSuspension(UUID userId) implements TaskPayload {
 
     public String discriminator() {
       return "LIFT_SUSPENSION";
@@ -86,8 +82,8 @@ public sealed interface ScheduledTaskPayload
 
   @Builder
   // Escape hatch for adapter tasks that shouldn't need core knowledge
-  record AdapterTaskPayload(String adapterName, String taskKey, String innerPayload)
-      implements ScheduledTaskPayload {
+  record AdapterTask(String adapterName, String taskKey, String innerPayload)
+      implements TaskPayload {
 
     public String discriminator() {
       return "ADAPTER_" + adapterName;

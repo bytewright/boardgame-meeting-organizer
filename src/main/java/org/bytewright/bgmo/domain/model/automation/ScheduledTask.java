@@ -17,7 +17,7 @@ public class ScheduledTask implements HasUUID {
   private ZonedDateTime tsDueDate;
   private Duration stuckTimeout;
   private TaskState taskState;
-  private ScheduledTaskPayload payload;
+  private TaskPayload payload;
 
   public enum TaskState {
     PENDING,
