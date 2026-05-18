@@ -11,7 +11,7 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class LoginTimestampHandler implements ApplicationListener<AuthenticationSuccessEvent> {
 
-  private final UserWorkflows userWorkflows; // use case, not DAO directly
+  private final UserWorkflows userWorkflows;
 
   @Override
   public void onApplicationEvent(AuthenticationSuccessEvent event) {

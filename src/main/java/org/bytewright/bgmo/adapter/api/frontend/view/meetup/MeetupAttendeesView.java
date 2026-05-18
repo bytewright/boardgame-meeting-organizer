@@ -229,9 +229,9 @@ public class MeetupAttendeesView extends VerticalLayout implements BeforeEnterOb
       return;
     }
 
-    if (!meetup.getCreatorId().equals(currentUser.getId())) {
+    if (!authService.isCurrentUserAdmin() && !meetup.getCreatorId().equals(currentUser.getId())) {
       log.warn(
-          "Non-organiser {} attempted to access attendees view for meetup {}",
+          "Non-organiser and non-admin {} attempted to access attendees view for meetup {}",
           currentUser.logEntity(),
           meetup.logIdentity());
       event.forwardTo(DashboardView.class);
