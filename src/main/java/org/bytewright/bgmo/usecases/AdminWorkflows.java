@@ -8,6 +8,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.bytewright.bgmo.domain.model.AdapterInfoAndSettings;
 import org.bytewright.bgmo.domain.model.AdapterSettings;
+import org.bytewright.bgmo.domain.model.notification.NotificationContext;
+import org.bytewright.bgmo.domain.model.notification.NotificationPayload;
+import org.bytewright.bgmo.domain.model.notification.NotificationTargetType;
 import org.bytewright.bgmo.domain.model.user.RegisteredUser;
 import org.bytewright.bgmo.domain.model.user.UserRole;
 import org.bytewright.bgmo.domain.model.user.UserStatus;
@@ -15,6 +18,7 @@ import org.bytewright.bgmo.domain.service.AdapterSettingsProvider;
 import org.bytewright.bgmo.domain.service.data.AdapterSettingsDao;
 import org.bytewright.bgmo.domain.service.data.RegisteredUserDao;
 import org.bytewright.bgmo.domain.service.event.EventPublisher;
+import org.bytewright.bgmo.domain.service.notification.NotificationManager;
 import org.bytewright.bgmo.domain.service.security.BgmoUserDetailsService;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -28,9 +32,56 @@ import org.springframework.stereotype.Service;
 public class AdminWorkflows {
   private final Set<AdapterSettingsProvider> adapterSettingsProviders;
   private final BgmoUserDetailsService userDetailsService;
+  private final NotificationManager notificationManager;
   private final AdapterSettingsDao adapterSettingsDao;
   private final EventPublisher eventPublisher;
   private final RegisteredUserDao userDao;
+
+  public void broadcastToAllUsers(UUID adminId, String msg) {
+    RegisteredUser admin = userDao.findOrThrow(adminId);
+    log.info("Admin '{}' triggers broadcast with message: {}", admin.logEntity(), msg);
+    NotificationPayload payload =
+        NotificationPayload.AdminBroadcast.builder()
+            .message(msg)
+            .adminName(admin.getDisplayName())
+            .adminId(adminId)
+            .build();
+    for (RegisteredUser user :
+        userDao.findAll().stream().filter(user -> user.getStatus() == UserStatus.ACTIVE).toList()) {
+      Locale locale = Optional.ofNullable(user.getPreferredLocale()).orElse(Locale.GERMAN);
+      notificationManager.dispatch(
+          NotificationContext.builder()
+              .userId(user.getId())
+              .locale(locale)
+              .notificationTargetType(NotificationTargetType.DIRECT)
+              .payload(payload)
+              .build());
+    }
+  }
+
+  public void dispatchToUser(UUID adminId, UUID userId, String msg) {
+    RegisteredUser admin = userDao.findOrThrow(adminId);
+    RegisteredUser user = userDao.findOrThrow(userId);
+    log.info(
+        "Admin '{}' triggers msg dispatch to user {} with message: {}",
+        admin.logEntity(),
+        user.logEntity(),
+        msg);
+    NotificationPayload payload =
+        NotificationPayload.AdminDirectMessage.builder()
+            .message(msg)
+            .adminName(admin.getDisplayName())
+            .adminId(adminId)
+            .build();
+    Locale locale = Optional.ofNullable(user.getPreferredLocale()).orElse(Locale.GERMAN);
+    notificationManager.dispatch(
+        NotificationContext.builder()
+            .userId(user.getId())
+            .locale(locale)
+            .notificationTargetType(NotificationTargetType.DIRECT)
+            .payload(payload)
+            .build());
+  }
 
   public void approveUser(UUID adminId, UUID userToApprove) {
     RegisteredUser admin = userDao.findOrThrow(adminId);
