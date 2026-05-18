@@ -155,6 +155,38 @@ public class AdminWorkflows {
     userDao.createOrUpdate(user);
   }
 
+  /**
+   * Sets a user's status directly. Intended for admin UI dropdowns / status management. Prefer
+   * specific workflow methods (approveUser, toggleUserBanStatus) for business-logic-heavy
+   * transitions; use this for administrative overrides.
+   */
+  public void setUserStatus(UUID userId, UserStatus newStatus) {
+    RegisteredUser admin = findActiveAdmin();
+    RegisteredUser user = userDao.findOrThrow(userId);
+    log.info(
+        "Admin '{}' sets status of user {} from {} to {}",
+        admin.logEntity(),
+        user.logEntity(),
+        user.getStatus(),
+        newStatus);
+    user.setStatus(newStatus);
+    userDao.createOrUpdate(user);
+  }
+
+  /** Promotes or demotes a user's role. */
+  public void setUserRole(UUID userId, UserRole newRole) {
+    RegisteredUser admin = findActiveAdmin();
+    RegisteredUser user = userDao.findOrThrow(userId);
+    log.info(
+        "Admin '{}' sets role of user {} from {} to {}",
+        admin.logEntity(),
+        user.logEntity(),
+        user.getRole(),
+        newRole);
+    user.setRole(newRole);
+    userDao.createOrUpdate(user);
+  }
+
   public String generateAndSetTemporaryPassword(UUID userId) {
     RegisteredUser admin = findActiveAdmin();
     RegisteredUser user = userDao.findOrThrow(userId);

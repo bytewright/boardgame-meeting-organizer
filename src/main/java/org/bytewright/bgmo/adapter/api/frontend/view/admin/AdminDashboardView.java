@@ -7,6 +7,7 @@ import com.vaadin.flow.component.html.H1;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
+import com.vaadin.flow.dom.Style;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.PageTitle;
@@ -39,6 +40,7 @@ public class AdminDashboardView extends VerticalLayout implements BeforeEnterObs
 
     HorizontalLayout cardsRow1 = new HorizontalLayout();
     cardsRow1.setWidthFull();
+    cardsRow1.getStyle().setFlexWrap(Style.FlexWrap.WRAP);
     cardsRow1.setSpacing(true);
     cardsRow1.add(
         new NavCardComponent(
@@ -55,6 +57,12 @@ public class AdminDashboardView extends VerticalLayout implements BeforeEnterObs
             getTranslation("admin-dashboard.nav.user-mngt.subtitle"),
             false,
             () -> UI.getCurrent().navigate(AdminUserManagementView.class)),
+        new NavCardComponent(
+            VaadinIcon.MEGAPHONE,
+            getTranslation("admin-dashboard.nav.broadcast.title"),
+            getTranslation("admin-dashboard.nav.broadcast.subtitle"),
+            false,
+            () -> UI.getCurrent().navigate(AdminBroadcastView.class)),
         new NavCardComponent(
             VaadinIcon.COG,
             getTranslation("admin-dashboard.nav.site-mngt.title"),
