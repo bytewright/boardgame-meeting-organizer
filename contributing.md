@@ -1,6 +1,6 @@
 # Update dep.tree
 
-`./mvnw dependency:tree -Doutput=dep.tree`
+`./mvnw dependency:tree -DoutputFile=dep.tree`
 
 # build and push
 
