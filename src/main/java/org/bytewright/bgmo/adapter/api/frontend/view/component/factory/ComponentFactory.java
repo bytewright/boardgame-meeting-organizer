@@ -4,8 +4,11 @@ import com.vaadin.flow.server.VaadinSession;
 import java.util.*;
 import java.util.function.BiConsumer;
 import lombok.RequiredArgsConstructor;
+import org.bytewright.bgmo.adapter.api.frontend.service.SessionInfoService;
 import org.bytewright.bgmo.adapter.api.frontend.service.i18n.LocaleService;
 import org.bytewright.bgmo.adapter.api.frontend.view.component.LocalePicker;
+import org.bytewright.bgmo.adapter.api.frontend.view.meetup.component.AttendeeRequestCard;
+import org.bytewright.bgmo.adapter.api.frontend.view.meetup.model.MeetupAttendeesContext;
 import org.bytewright.bgmo.adapter.api.frontend.view.profile.*;
 import org.bytewright.bgmo.domain.model.Game;
 import org.bytewright.bgmo.domain.model.notification.MessengerLinkContext;
@@ -15,6 +18,8 @@ import org.bytewright.bgmo.domain.service.GameInformationProvider;
 import org.bytewright.bgmo.domain.service.data.GameDao;
 import org.bytewright.bgmo.domain.service.data.RegisteredUserDao;
 import org.bytewright.bgmo.domain.service.notification.VerificationCodeService;
+import org.bytewright.bgmo.usecases.AdminWorkflows;
+import org.bytewright.bgmo.usecases.MeetupWorkflows;
 import org.bytewright.bgmo.usecases.UserWorkflows;
 import org.springframework.stereotype.Component;
 
@@ -23,6 +28,9 @@ import org.springframework.stereotype.Component;
 public class ComponentFactory {
   private final Set<GameInformationProvider> providerList;
   private final VerificationCodeService verificationService;
+  private final SessionInfoService authService;
+  private final MeetupWorkflows meetupWorkflows;
+  private final AdminWorkflows adminWorkflows;
   private final LocaleService localeService;
   private final UserWorkflows userWorkflows;
   private final RegisteredUserDao userDao;
@@ -53,13 +61,27 @@ public class ComponentFactory {
           userWorkflows.addGameToLibrary(registeredUser.getId(), creation);
           runnable.run();
         };
-    AddGameDialog addGameDialog = new AddGameDialog(list, currentUser, saveConsumer);
-    return addGameDialog;
+    return new AddGameDialog(list, currentUser, saveConsumer);
   }
 
   public MessengerLinkDialog messengerLinkDialog(
       UUID currentUserId, ContactInfoType type, Runnable runnable) {
     MessengerLinkContext ctx = verificationService.buildLinkContext(currentUserId, type);
     return new MessengerLinkDialog(ctx, currentUserId, userDao, runnable);
+  }
+
+  public AttendeeRequestCard attendeeRequestCard(
+      MeetupAttendeesContext ctx,
+      MeetupAttendeesContext.AttendeeRequestItem item,
+      Runnable runnable) {
+    return new AttendeeRequestCard(
+        ctx,
+        item,
+        authService.isCurrentUserAdmin(),
+        userDao,
+        meetupWorkflows,
+        adminWorkflows,
+        localeService,
+        runnable);
   }
 }

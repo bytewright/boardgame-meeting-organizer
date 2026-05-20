@@ -4,6 +4,7 @@ import jakarta.transaction.Transactional;
 import java.util.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.bytewright.bgmo.domain.model.JoinRequestPayload;
 import org.bytewright.bgmo.domain.model.MeetupEvent;
 import org.bytewright.bgmo.domain.model.MeetupJoinRequest;
 import org.bytewright.bgmo.domain.model.event.ModelUpdatedEvents;
@@ -11,10 +12,12 @@ import org.bytewright.bgmo.domain.model.notification.NotificationContext;
 import org.bytewright.bgmo.domain.model.notification.NotificationPayload;
 import org.bytewright.bgmo.domain.model.notification.NotificationTargetType;
 import org.bytewright.bgmo.domain.model.user.*;
+import org.bytewright.bgmo.domain.service.SiteManagementService;
 import org.bytewright.bgmo.domain.service.UrlGenerator;
 import org.bytewright.bgmo.domain.service.data.MeetupDao;
 import org.bytewright.bgmo.domain.service.data.ModelDao;
 import org.bytewright.bgmo.domain.service.data.RegisteredUserDao;
+import org.bytewright.bgmo.domain.service.user.ContactInfoService;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 
@@ -28,6 +31,8 @@ import org.springframework.stereotype.Service;
 public class NotificationManager {
   private final Set<NotificationTaskExecutor> executors = new HashSet<>();
   private final ModelDao<MeetupJoinRequest> joinRequestDao;
+  private final SiteManagementService siteManagementService;
+  private final ContactInfoService contactInfoService;
   private final UrlGenerator urlGenerator;
   private final RegisteredUserDao userDao;
   private final MeetupDao meetupDao;
@@ -46,6 +51,7 @@ public class NotificationManager {
                     .meetupId(meetupId)
                     .meetupUrl(urlGenerator.getUrlFor(meetup))
                     .build())
+            .locale(siteManagementService.getDefaultLocale(NotificationTargetType.GROUP))
             .build();
 
     dispatch(context);
@@ -57,12 +63,20 @@ public class NotificationManager {
     MeetupJoinRequest joinRequest = joinRequestDao.findOrThrow(event.id());
     MeetupEvent meetup = meetupDao.findOrThrow(joinRequest.getMeetupId());
     RegisteredUser eventCreator = userDao.findOrThrow(meetup.getCreatorId());
+    String displayName =
+        switch (joinRequest.getPayload()) {
+          case JoinRequestPayload.Anon anon -> anon.displayName();
+          case JoinRequestPayload.User user -> {
+            RegisteredUser joiner = userDao.findOrThrow(user.userId());
+            yield joiner.getDisplayName();
+          }
+        };
     var context =
         NotificationContext.builder()
             .notificationTargetType(NotificationTargetType.DIRECT)
             .payload(
                 NotificationPayload.JoinRequestCreated.builder()
-                    .requesterName(joinRequest.getDisplayName())
+                    .requesterName(displayName)
                     .joinRequestId(joinRequest.getId())
                     .title(meetup.getTitle())
                     .meetupUrl(urlGenerator.getUrlFor(meetup))
@@ -78,25 +92,27 @@ public class NotificationManager {
   public void onJoinRequestApproved(ModelUpdatedEvents.JoinRequestApproved event) {
     MeetupJoinRequest joinRequest = joinRequestDao.findOrThrow(event.id());
     MeetupEvent meetup = meetupDao.findOrThrow(joinRequest.getMeetupId());
-    Optional.ofNullable(joinRequest.getUserId())
-        .flatMap(userDao::find)
-        .ifPresent(
-            joiner -> {
-              var context =
-                  NotificationContext.builder()
-                      .notificationTargetType(NotificationTargetType.DIRECT)
-                      .payload(
-                          NotificationPayload.JoinRequestApproved.builder()
-                              .eventDate(meetup.getEventDate())
-                              .title(meetup.getTitle())
-                              .joinRequestId(joinRequest.getId())
-                              .meetupUrl(urlGenerator.getUrlFor(meetup))
-                              .build())
-                      .userId(joiner.getId())
-                      .locale(joiner.getPreferredLocale())
-                      .build();
-              dispatch(context);
-            });
+    switch (joinRequest.getPayload()) {
+      case JoinRequestPayload.User user -> {
+        RegisteredUser joiner = userDao.findOrThrow(user.userId());
+        var context =
+            NotificationContext.builder()
+                .notificationTargetType(NotificationTargetType.DIRECT)
+                .payload(
+                    NotificationPayload.JoinRequestApproved.builder()
+                        .eventDate(meetup.getEventDate())
+                        .title(meetup.getTitle())
+                        .joinRequestId(joinRequest.getId())
+                        .meetupUrl(urlGenerator.getUrlFor(meetup))
+                        .build())
+                .userId(joiner.getId())
+                .locale(joiner.getPreferredLocale())
+                .build();
+        dispatch(context);
+      }
+      case JoinRequestPayload.Anon ignored ->
+          log.info("Can't dispatch request approval notification to anon user");
+    }
   }
 
   @EventListener
@@ -104,22 +120,29 @@ public class NotificationManager {
   public void addMeetupRescheduled(ModelUpdatedEvents.MeetupRescheduled event) {
     UUID meetupId = event.id();
     var meetup = meetupDao.findById(meetupId).orElseThrow();
+
     for (MeetupJoinRequest joinRequest : meetup.getJoinRequests()) {
-      RegisteredUser joiner = userDao.findOrThrow(joinRequest.getUserId());
-      var context =
-          NotificationContext.builder()
-              .notificationTargetType(NotificationTargetType.DIRECT)
-              .payload(
-                  NotificationPayload.MeetupRescheduled.builder()
-                      .title(meetup.getTitle())
-                      .meetupId(meetupId)
-                      .newEventDate(meetup.getEventDate())
-                      .meetupUrl(urlGenerator.getUrlFor(meetup))
-                      .build())
-              .userId(joiner.getId())
-              .locale(joiner.getPreferredLocale())
-              .build();
-      dispatch(context);
+      switch (joinRequest.getPayload()) {
+        case JoinRequestPayload.User user -> {
+          RegisteredUser joiner = userDao.findOrThrow(user.userId());
+          var context =
+              NotificationContext.builder()
+                  .notificationTargetType(NotificationTargetType.DIRECT)
+                  .payload(
+                      NotificationPayload.MeetupRescheduled.builder()
+                          .title(meetup.getTitle())
+                          .meetupId(meetupId)
+                          .newEventDate(meetup.getEventDate())
+                          .meetupUrl(urlGenerator.getUrlFor(meetup))
+                          .build())
+                  .userId(joiner.getId())
+                  .locale(joiner.getPreferredLocale())
+                  .build();
+          dispatch(context);
+        }
+        case JoinRequestPayload.Anon ignored ->
+            log.info("Can't dispatch meeting rescheduled notification to anon user");
+      }
     }
   }
 
@@ -129,20 +152,26 @@ public class NotificationManager {
     UUID meetupId = event.id();
     var meetup = meetupDao.findById(meetupId).orElseThrow();
     for (MeetupJoinRequest joinRequest : meetup.getJoinRequests()) {
-      RegisteredUser joiner = userDao.findOrThrow(joinRequest.getUserId());
-      var context =
-          NotificationContext.builder()
-              .notificationTargetType(NotificationTargetType.DIRECT)
-              .payload(
-                  NotificationPayload.MeetupCanceled.builder()
-                      .title(meetup.getTitle())
-                      .meetupId(meetupId)
-                      .meetupUrl(urlGenerator.getUrlFor(meetup))
-                      .build())
-              .userId(joiner.getId())
-              .locale(joiner.getPreferredLocale())
-              .build();
-      dispatch(context);
+      switch (joinRequest.getPayload()) {
+        case JoinRequestPayload.User user -> {
+          RegisteredUser joiner = userDao.findOrThrow(user.userId());
+          var context =
+              NotificationContext.builder()
+                  .notificationTargetType(NotificationTargetType.DIRECT)
+                  .payload(
+                      NotificationPayload.MeetupCanceled.builder()
+                          .title(meetup.getTitle())
+                          .meetupId(meetupId)
+                          .meetupUrl(urlGenerator.getUrlFor(meetup))
+                          .build())
+                  .userId(joiner.getId())
+                  .locale(joiner.getPreferredLocale())
+                  .build();
+          dispatch(context);
+        }
+        case JoinRequestPayload.Anon ignored ->
+            log.info("Can't dispatch meeting canceled notification to anon user");
+      }
     }
   }
 
@@ -165,6 +194,7 @@ public class NotificationManager {
                       .username(newUser.getDisplayName())
                       .build())
               .userId(user.getId())
+              .locale(user.getPreferredLocale())
               .build();
       dispatchToPrimary(user, context);
     }
@@ -192,7 +222,7 @@ public class NotificationManager {
   }
 
   private void dispatchToPrimary(RegisteredUser user, NotificationContext context) {
-    Optional<ContactOption> primaryContactOpt = getPrimaryContact(user);
+    Optional<ContactOption> primaryContactOpt = contactInfoService.getPrimaryContact(user);
     if (primaryContactOpt.isPresent()) {
       ContactOption contact = primaryContactOpt.get();
       log.info(
@@ -211,21 +241,5 @@ public class NotificationManager {
           context.payload().getClass().getSimpleName(),
           user.logEntity());
     }
-  }
-
-  private Optional<ContactOption> getPrimaryContact(RegisteredUser user) {
-    UUID primaryContactId = user.getPrimaryContactId();
-    if (primaryContactId != null) {
-      return user.getContactOptions().stream()
-          .filter(contact -> primaryContactId.equals(contact.id()))
-          .findAny();
-    }
-    Set<ContactInfoType> activeTypes = Set.of(ContactInfoType.TELEGRAM);
-    if (user.getContactOptions().size() == 1) {
-      return user.getContactOptions().stream()
-          .filter(contactInfo -> activeTypes.contains(contactInfo.getType()))
-          .findAny();
-    }
-    return Optional.empty();
   }
 }

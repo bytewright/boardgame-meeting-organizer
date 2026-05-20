@@ -1,12 +1,21 @@
 package org.bytewright.bgmo.domain.service.user;
 
+import java.util.Optional;
+import java.util.Set;
+import java.util.UUID;
 import java.util.regex.Pattern;
+import lombok.RequiredArgsConstructor;
 import org.bytewright.bgmo.domain.model.user.ContactInfo;
+import org.bytewright.bgmo.domain.model.user.ContactInfoType;
+import org.bytewright.bgmo.domain.model.user.ContactOption;
+import org.bytewright.bgmo.domain.model.user.RegisteredUser;
+import org.bytewright.bgmo.domain.service.data.RegisteredUserDao;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
 @Service
-public class ContactInfoValidationService {
+@RequiredArgsConstructor
+public class ContactInfoService {
 
   // Simple email regex - covers 99% of common cases
   private static final Pattern EMAIL_PATTERN =
@@ -14,6 +23,7 @@ public class ContactInfoValidationService {
 
   // Telegram handles: 5-32 chars, alphanumeric and underscores
   private static final Pattern TELEGRAM_PATTERN = Pattern.compile("^[a-zA-Z0-9_]{5,32}$");
+  private final RegisteredUserDao userDao;
 
   public boolean validate(ContactInfo contactInfo) {
     return switch (contactInfo) {
@@ -63,5 +73,25 @@ public class ContactInfoValidationService {
 
     // German PLZ (Postleitzahl) is exactly 5 digits
     return zipCode.matches("\\d{5}");
+  }
+
+  public Optional<ContactOption> getPrimaryContact(UUID userId) {
+    return userDao.findById(userId).flatMap(this::getPrimaryContact);
+  }
+
+  public Optional<ContactOption> getPrimaryContact(RegisteredUser user) {
+    UUID primaryContactId = user.getPrimaryContactId();
+    if (primaryContactId != null) {
+      return user.getContactOptions().stream()
+          .filter(contact -> primaryContactId.equals(contact.id()))
+          .findAny();
+    }
+    Set<ContactInfoType> activeTypes = Set.of(ContactInfoType.TELEGRAM);
+    if (user.getContactOptions().size() == 1) {
+      return user.getContactOptions().stream()
+          .filter(contactInfo -> activeTypes.contains(contactInfo.getType()))
+          .findAny();
+    }
+    return Optional.empty();
   }
 }

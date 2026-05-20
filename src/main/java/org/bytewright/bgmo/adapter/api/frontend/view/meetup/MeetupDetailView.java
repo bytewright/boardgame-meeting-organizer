@@ -14,6 +14,7 @@ import com.vaadin.flow.router.*;
 import com.vaadin.flow.server.VaadinSession;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
 import java.time.ZonedDateTime;
+import java.util.List;
 import java.util.UUID;
 import lombok.extern.slf4j.Slf4j;
 import org.bytewright.bgmo.adapter.api.frontend.service.MeetupDetailContext;
@@ -23,10 +24,10 @@ import org.bytewright.bgmo.adapter.api.frontend.service.i18n.LocaleService;
 import org.bytewright.bgmo.adapter.api.frontend.view.DashboardView;
 import org.bytewright.bgmo.adapter.api.frontend.view.component.MainLayout;
 import org.bytewright.bgmo.adapter.api.frontend.view.meetup.component.*;
-import org.bytewright.bgmo.domain.model.MeetupEvent;
-import org.bytewright.bgmo.domain.model.SlotDistributionStrategy;
+import org.bytewright.bgmo.domain.model.*;
 import org.bytewright.bgmo.domain.model.user.RegisteredUser;
 import org.bytewright.bgmo.domain.service.data.MeetupDao;
+import org.bytewright.bgmo.domain.service.data.RegisteredUserDao;
 import org.bytewright.bgmo.usecases.MeetupWorkflows;
 
 /**
@@ -59,6 +60,7 @@ public class MeetupDetailView extends VerticalLayout implements BeforeEnterObser
   private final SessionInfoService authService;
   private final MeetupWorkflows meetupWorkflows;
   private final MeetupDetailContextBuilder contextBuilder;
+  private final RegisteredUserDao userDao;
   private final MeetupDao meetupDao;
 
   private RegisteredUser currentUser;
@@ -70,22 +72,21 @@ public class MeetupDetailView extends VerticalLayout implements BeforeEnterObser
       SessionInfoService authService,
       MeetupWorkflows meetupWorkflows,
       MeetupDetailContextBuilder contextBuilder,
+      RegisteredUserDao userDao,
       MeetupDao meetupDao) {
     this.localeService = localeService;
     this.authService = authService;
     this.meetupWorkflows = meetupWorkflows;
     this.contextBuilder = contextBuilder;
+    this.userDao = userDao;
     this.meetupDao = meetupDao;
     setMaxWidth(MainLayout.MAX_DISPLAYPORT_WIDTH);
     getStyle().set("margin", "0 auto");
   }
 
-  // ── UI construction ───────────────────────────────────────────────────────
-
   private void buildUI() {
     removeAll();
 
-    // ── Shared components (always visible) ────────────────────────────────────
     add(new MeetupInfoHeader(ctx, localeService));
     add(new Hr());
 
@@ -94,7 +95,12 @@ public class MeetupDetailView extends VerticalLayout implements BeforeEnterObser
       add(new Hr());
     }
 
-    add(new ConfirmedAttendeesSection(ctx));
+    List<String> names =
+        ctx.meetup().getJoinRequests().stream()
+            .filter(r -> r.getRequestState() == RequestState.ACCEPTED)
+            .map(this::getDisplayName)
+            .toList();
+    add(new ConfirmedAttendeesSection(ctx.isOrganizer(), names));
     add(new Hr());
 
     SlotDistributionStrategy slotStrategy = meetup.getSlotStrategy();
@@ -125,17 +131,23 @@ public class MeetupDetailView extends VerticalLayout implements BeforeEnterObser
               new GuestPanel(ctx, meetupWorkflows, this::refresh);
           case ORGANIZER -> new OrganizerPanel(ctx, meetupWorkflows, this::refresh);
         });
+    if (this.authService.isCurrentUserAdmin() && !ctx.isOrganizer()) {
+      add(new OrganizerPanel(ctx, meetupWorkflows, this::refresh));
+    }
   }
 
-  // ── Refresh ───────────────────────────────────────────────────────────────
+  private String getDisplayName(MeetupJoinRequest meetupJoinRequest) {
+    return switch (meetupJoinRequest.getPayload()) {
+      case JoinRequestPayload.Anon anon -> anon.displayName();
+      case JoinRequestPayload.User user -> userDao.findOrThrow(user.userId()).getDisplayName();
+    };
+  }
 
   private void refresh() {
     this.meetup = meetupDao.findOrThrow(meetup.getId());
     this.ctx = contextBuilder.build(meetup, currentUser, getAnonSessionToken());
     buildUI();
   }
-
-  // ── Anonymous session token helpers ───────────────────────────────────────
 
   private UUID getAnonSessionToken() {
     return (UUID) VaadinSession.getCurrent().getAttribute(anonTokenKey());
@@ -154,8 +166,6 @@ public class MeetupDetailView extends VerticalLayout implements BeforeEnterObser
   private String anonTokenKey() {
     return ANON_TOKEN_KEY_PREFIX + meetup.getId();
   }
-
-  // ── BeforeEnter ───────────────────────────────────────────────────────────
 
   @Override
   public void beforeEnter(BeforeEnterEvent event) {

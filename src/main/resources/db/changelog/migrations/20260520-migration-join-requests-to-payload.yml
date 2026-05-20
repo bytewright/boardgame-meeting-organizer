@@ -1,0 +1,43 @@
+databaseChangeLog:
+  - changeSet:
+      id: 20260520-1
+      author: bytewright
+      comment: "Refactor meetup_joins: drop display_name, anon_token, contact_info; add payload jsonb"
+      changes:
+        - dropColumn:
+            tableName: meetup_joins
+            columnName: displayname
+        - dropColumn:
+            tableName: meetup_joins
+            columnName: anontoken
+        - dropColumn:
+            tableName: meetup_joins
+            columnName: contactinfo
+        - addColumn:
+            tableName: meetup_joins
+            columns:
+              - column:
+                  name: payload
+                  type: jsonb
+                  defaultValue: '{"type": "ANON", "displayName": "n/a", "contactInfo": "migrated from old format"}'
+                  constraints:
+                    nullable: false
+      rollback:
+        - dropColumn:
+            tableName: meetup_joins
+            columnName: payload
+        - addColumn:
+            tableName: meetup_joins
+            columns:
+              - column:
+                  name: display_name
+                  type: varchar(1024)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: anon_token
+                  type: uuid
+              - column:
+                  name: contact_info
+                  type: varchar(1024)
+

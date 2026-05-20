@@ -13,6 +13,7 @@ import org.bytewright.bgmo.adapter.api.frontend.service.MeetupDetailContext;
 import org.bytewright.bgmo.adapter.api.frontend.view.meetup.MeetupDetailView;
 import org.bytewright.bgmo.adapter.api.frontend.view.meetup.ViewerRole;
 import org.bytewright.bgmo.adapter.api.frontend.view.meetup.dialog.AnonJoinDialog;
+import org.bytewright.bgmo.domain.model.JoinRequestPayload;
 import org.bytewright.bgmo.domain.model.MeetupJoinRequest;
 import org.bytewright.bgmo.usecases.MeetupWorkflows;
 
@@ -47,8 +48,6 @@ public class AnonPanel extends VerticalLayout {
     }
   }
 
-  // ── No request yet ──────────────────────────────────────────────────────────
-
   private void buildNoRequest(
       MeetupDetailContext ctx,
       MeetupWorkflows meetupWorkflows,
@@ -73,7 +72,8 @@ public class AnonPanel extends VerticalLayout {
                       (displayName, contactInfo) -> {
                         UUID token = getOrCreateAnonToken.get();
                         meetupWorkflows.requestToJoinAnon(
-                            ctx.meetup().getId(), token, displayName, contactInfo);
+                            ctx.meetup().getId(),
+                            new JoinRequestPayload.Anon(displayName, token, contactInfo));
                         Notification n =
                             Notification.show(
                                 getTranslation("meetup.joinSent"),

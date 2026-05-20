@@ -1,10 +1,7 @@
 package org.bytewright.bgmo.usecases;
 
 import jakarta.transaction.Transactional;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.bytewright.bgmo.domain.model.MeetupEvent;
@@ -97,5 +94,7 @@ public class SlotDistributionWorkflows {
     eventPublisher.publishJoinRequestApprovedAfterTransaction(joinRequest.getId());
   }
 
-  public void distributeSlots(UUID meetupId) {}
+  public void distributeSlots(UUID meetupId) {
+    log.info("Should distribute slots for meetup: {}", meetupId);
+  }
 }

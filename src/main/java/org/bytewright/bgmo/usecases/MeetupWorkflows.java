@@ -8,6 +8,7 @@ import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.bytewright.bgmo.domain.model.*;
+import org.bytewright.bgmo.domain.model.user.ContactOption;
 import org.bytewright.bgmo.domain.model.user.RegisteredUser;
 import org.bytewright.bgmo.domain.service.InputSanitizer;
 import org.bytewright.bgmo.domain.service.SiteManagementService;
@@ -16,6 +17,7 @@ import org.bytewright.bgmo.domain.service.data.MeetupDao;
 import org.bytewright.bgmo.domain.service.data.ModelDao;
 import org.bytewright.bgmo.domain.service.data.RegisteredUserDao;
 import org.bytewright.bgmo.domain.service.event.EventPublisher;
+import org.bytewright.bgmo.domain.service.user.ContactInfoService;
 import org.springframework.stereotype.Service;
 
 @Slf4j
@@ -26,6 +28,7 @@ public class MeetupWorkflows {
   private final SlotDistributionWorkflows slotDistributionWorkflows;
   private final ModelDao<MeetupJoinRequest> joinRequestModelDao;
   private final SiteManagementService siteManagementService;
+  private final ContactInfoService contactInfoService;
   private final EventPublisher eventPublisher;
   private final InputSanitizer inputSanitizer;
   private final RegisteredUserDao userDao;
@@ -73,11 +76,20 @@ public class MeetupWorkflows {
   }
 
   public void requestToJoin(UUID meetupId, UUID userId, String comment) {
-    // todo comment will be added later to request
+    ContactOption primaryContact = contactInfoService.getPrimaryContact(userId).orElseThrow();
+    var requestPayload = new JoinRequestPayload.User(userId, primaryContact.getContactInfo());
+    requestToJoin(meetupId, comment, requestPayload);
+  }
+
+  public void requestToJoinAnon(UUID meetupId, JoinRequestPayload.Anon payload) {
+    requestToJoin(meetupId, null, payload);
+  }
+
+  private void requestToJoin(UUID meetupId, String comment, JoinRequestPayload payload) {
     MeetupEvent meetupEvent = meetupDao.findOrThrow(meetupId);
     Optional<MeetupJoinRequest> existingRequest =
         meetupEvent.getJoinRequests().stream()
-            .filter(r -> Objects.equals(r.getUserId(), userId))
+            .filter(r -> r.getPayload().equals(payload))
             .findAny();
     if (existingRequest.isPresent()) {
       MeetupJoinRequest request = existingRequest.get();
@@ -87,70 +99,26 @@ public class MeetupWorkflows {
           slotDistributionWorkflows.handleNewJoinRequestFCFS(meetupEvent, request);
         }
         eventPublisher.publishJoinRequestCreatedAfterTransaction(request.id());
-      } else {
-        log.info("User {} tried to join meeting he already has requested to join...", userId);
       }
       return;
     }
-    RegisteredUser user = userDao.findOrThrow(userId);
     var request =
         MeetupJoinRequest.builder()
             .meetupId(meetupEvent.getId())
-            .userId(user.getId())
-            .displayName(user.getDisplayName())
-            .tsCreation(timeSource.now())
+            .payload(payload)
             .comment(comment)
             .build();
     MeetupJoinRequest joinRequest = joinRequestModelDao.createOrUpdate(request);
-    log.info(
-        "Added join request from user {} to event: {}", user.getId(), meetupEvent.logIdentity());
     UUID requestId = joinRequest.getId();
+    log.info(
+        "Added join request ({}) to event {}: {}",
+        requestId,
+        meetupEvent.logIdentity(),
+        joinRequest.getPayload());
     if (meetupEvent.getSlotStrategy() == SlotDistributionStrategy.FIRST_COME_FIRST_SERVE) {
-      slotDistributionWorkflows.handleNewJoinRequestFCFS(meetupEvent, request);
+      slotDistributionWorkflows.handleNewJoinRequestFCFS(meetupEvent, joinRequest);
     }
     eventPublisher.publishJoinRequestCreatedAfterTransaction(requestId);
-  }
-
-  public void requestToJoinAnon(
-      UUID meetupId, UUID anonToken, String displayName, String contactInfo) {
-    MeetupEvent meetupEvent = meetupDao.findOrThrow(meetupId);
-    Optional<MeetupJoinRequest> existingRequest =
-        meetupEvent.getJoinRequests().stream()
-            .filter(meetupJoinRequest -> anonToken.equals(meetupJoinRequest.getAnonToken()))
-            .findAny();
-    if (existingRequest.isPresent()) {
-      MeetupJoinRequest request = existingRequest.get();
-      if (request.getRequestState() == RequestState.CANCELED) {
-        transitionToRequested(request);
-        if (meetupEvent.getSlotStrategy() == SlotDistributionStrategy.FIRST_COME_FIRST_SERVE) {
-          slotDistributionWorkflows.handleNewJoinRequestFCFS(meetupEvent, request);
-        }
-        eventPublisher.publishJoinRequestCreatedAfterTransaction(request.id());
-      } else {
-        log.info(
-            "Anon '{}' tried to join meeting he already has requested to join...", displayName);
-      }
-      return;
-    }
-    var request =
-        MeetupJoinRequest.builder()
-            .meetupId(meetupEvent.getId())
-            .anonToken(anonToken)
-            .displayName(displayName)
-            .contactInfo(contactInfo)
-            .tsCreation(timeSource.now())
-            .build();
-    meetupEvent.getJoinRequests().add(request);
-    log.info("Added join request from anon user to event: {}", meetupEvent.logIdentity());
-    MeetupJoinRequest persistedRequest =
-        meetupDao.createOrUpdate(meetupEvent).getJoinRequests().stream()
-            .filter(meetupJoinRequest -> anonToken.equals(meetupJoinRequest.getAnonToken()))
-            .findAny()
-            .orElseThrow();
-    if (meetupEvent.getSlotStrategy() == SlotDistributionStrategy.FIRST_COME_FIRST_SERVE) {
-      slotDistributionWorkflows.handleNewJoinRequestFCFS(meetupEvent, persistedRequest);
-    }
-    eventPublisher.publishJoinRequestCreatedAfterTransaction(persistedRequest.getId());
   }
 
   public MeetupEvent confirmAttendee(UUID meetupId, MeetupJoinRequest joinRequest) {

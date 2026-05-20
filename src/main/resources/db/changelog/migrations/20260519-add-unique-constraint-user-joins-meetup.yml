@@ -1,0 +1,9 @@
+databaseChangeLog:
+  - changeSet:
+      id: 20260516-1
+      author: bytewright
+      changes:
+        - addUniqueConstraint:
+            tableName: meetup_joins
+            columnNames: meetup_id, user_id
+            constraintName: uc_meetup_join_user

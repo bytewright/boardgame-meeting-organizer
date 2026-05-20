@@ -11,6 +11,7 @@ import org.bytewright.bgmo.domain.model.data.HasUUID;
 import org.bytewright.bgmo.domain.model.user.*;
 import org.bytewright.bgmo.domain.model.user.exception.ModifyContactsException;
 import org.bytewright.bgmo.domain.service.InputSanitizer;
+import org.bytewright.bgmo.domain.service.SiteManagementService;
 import org.bytewright.bgmo.domain.service.automation.TimeSource;
 import org.bytewright.bgmo.domain.service.data.GameDao;
 import org.bytewright.bgmo.domain.service.data.ModelDao;
@@ -27,6 +28,7 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class UserWorkflows {
   private final DisplayNameValidationService nameValidationService;
+  private final SiteManagementService siteManagementService;
   private final BgmoUserDetailsService userDetailsService;
   private final ModelDao<ContactOption> contactOptionDao;
   private final InputSanitizer inputSanitizer;
@@ -47,7 +49,9 @@ public class UserWorkflows {
                 .displayName(inputSanitizer.plainText(userDto.getDisplayName()))
                 .loginName(userDto.getLoginName())
                 .passwordHash(userDetailsService.hashPw(userDto.getPassword()))
-                .preferredLocale(userDto.getPreferredLocale())
+                .preferredLocale(
+                    Optional.ofNullable(userDto.getPreferredLocale())
+                        .orElse(siteManagementService.getDefaultLocale()))
                 .status(AFTER_REGISTRATION)
                 .role(UserRole.USER)
                 .build());

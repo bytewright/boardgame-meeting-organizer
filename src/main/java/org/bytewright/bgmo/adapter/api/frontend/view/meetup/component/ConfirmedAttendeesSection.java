@@ -4,9 +4,6 @@ import com.vaadin.flow.component.html.H3;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import java.util.List;
-import org.bytewright.bgmo.adapter.api.frontend.service.MeetupDetailContext;
-import org.bytewright.bgmo.domain.model.MeetupJoinRequest;
-import org.bytewright.bgmo.domain.model.RequestState;
 
 /**
  * Public section showing the display names of confirmed attendees.
@@ -16,20 +13,14 @@ import org.bytewright.bgmo.domain.model.RequestState;
  */
 public class ConfirmedAttendeesSection extends VerticalLayout {
 
-  public ConfirmedAttendeesSection(MeetupDetailContext ctx) {
+  public ConfirmedAttendeesSection(boolean isOrganizer, List<String> names) {
     setPadding(false);
     setSpacing(true);
 
     add(new H3(getTranslation("meetup.confirmedAttendees")));
 
-    List<String> names =
-        ctx.meetup().getJoinRequests().stream()
-            .filter(r -> r.getRequestState() == RequestState.ACCEPTED)
-            .map(MeetupJoinRequest::getDisplayName)
-            .toList();
-
     if (names.isEmpty()) {
-      if (!ctx.isOrganizer()) {
+      if (!isOrganizer) {
         add(new Span(getTranslation("meetup.confirmedAttendeesNone")));
       } else {
         add(new Span(getTranslation("meetup.confirmedAttendeesNoneOwner")));

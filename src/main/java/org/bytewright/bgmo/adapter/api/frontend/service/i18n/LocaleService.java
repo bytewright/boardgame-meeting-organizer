@@ -3,6 +3,8 @@ package org.bytewright.bgmo.adapter.api.frontend.service.i18n;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.server.VaadinSession;
+import java.time.Duration;
+import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import lombok.RequiredArgsConstructor;
@@ -67,5 +69,38 @@ public class LocaleService {
     String message = messageSource.getMessage("profile.status.saved", null, newLocale);
     Notification.show(message);
     UI.getCurrent().refreshCurrentRoute(true);
+  }
+
+  /**
+   * Returns a human-readable relative timestamp for {@code instant}, e.g. "3 days ago".
+   *
+   * <p>Uses the current Vaadin session locale and the application's {@link MessageSource} so the
+   * string is properly translated. The i18n keys required are listed below.
+   *
+   * <p>Buckets (all use the absolute value of the duration, so future instants also work):
+   *
+   * <ul>
+   *   <li>&lt; 1 min → {@code time.relative.justNow}
+   *   <li>&lt; 1 h → {@code time.relative.minutesAgo} (param: minutes)
+   *   <li>&lt; 24 h → {@code time.relative.hoursAgo} (param: hours)
+   *   <li>≥ 24 h → {@code time.relative.daysAgo} (param: days)
+   * </ul>
+   */
+  public String formatRelative(Instant instant) {
+    Locale locale = VaadinSession.getCurrent().getLocale();
+    Duration duration = Duration.between(instant, Instant.now()).abs();
+    long minutes = duration.toMinutes();
+    if (minutes < 1) {
+      return messageSource.getMessage("time.relative.justNow", null, locale);
+    }
+    long hours = duration.toHours();
+    if (hours < 1) {
+      return messageSource.getMessage("time.relative.minutesAgo", new Object[] {minutes}, locale);
+    }
+    long days = duration.toDays();
+    if (days < 1) {
+      return messageSource.getMessage("time.relative.hoursAgo", new Object[] {hours}, locale);
+    }
+    return messageSource.getMessage("time.relative.daysAgo", new Object[] {days}, locale);
   }
 }

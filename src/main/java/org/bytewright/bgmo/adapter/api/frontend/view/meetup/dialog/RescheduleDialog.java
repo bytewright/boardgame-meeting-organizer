@@ -11,7 +11,9 @@ import com.vaadin.flow.component.notification.NotificationVariant;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import java.time.ZonedDateTime;
+import org.bytewright.bgmo.domain.model.JoinRequestPayload;
 import org.bytewright.bgmo.domain.model.MeetupEvent;
+import org.bytewright.bgmo.domain.model.MeetupJoinRequest;
 import org.bytewright.bgmo.domain.model.RequestState;
 import org.bytewright.bgmo.usecases.MeetupWorkflows;
 
@@ -30,14 +32,14 @@ public class RescheduleDialog extends Dialog {
     setHeaderTitle(getTranslation("meetup.reschedule.dialog.title"));
     setWidth("400px");
 
-    // ── Notification warning ──────────────────────────────────────────────────
     long affectedCount =
         meetup.getJoinRequests().stream()
             .filter(
                 r ->
                     r.getRequestState() == RequestState.OPEN
                         || r.getRequestState() == RequestState.ACCEPTED)
-            .filter(r -> r.getUserId() != null) // only registered users receive bot notifications
+            .map(MeetupJoinRequest::getPayload)
+            .filter(JoinRequestPayload::isUser)
             .count();
 
     Paragraph warning = new Paragraph(getTranslation("meetup.reschedule.warn", affectedCount));
@@ -67,7 +69,6 @@ public class RescheduleDialog extends Dialog {
     content.setSpacing(true);
     add(content);
 
-    // ── Buttons ───────────────────────────────────────────────────────────────
     Button confirm =
         new Button(
             getTranslation("meetup.reschedule.confirm"),

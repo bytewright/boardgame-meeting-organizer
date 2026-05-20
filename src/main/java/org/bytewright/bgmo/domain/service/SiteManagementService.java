@@ -2,12 +2,15 @@ package org.bytewright.bgmo.domain.service;
 
 import java.net.URI;
 import java.time.ZoneId;
+import java.util.Locale;
+import java.util.Optional;
 import lombok.Builder;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.jackson.Jacksonized;
 import lombok.extern.slf4j.Slf4j;
 import org.bytewright.bgmo.domain.model.AdapterSettings;
+import org.bytewright.bgmo.domain.model.notification.NotificationTargetType;
 import org.bytewright.bgmo.domain.service.data.AdapterSettingsDao;
 import org.springframework.stereotype.Service;
 import tools.jackson.core.JacksonException;
@@ -32,8 +35,8 @@ public class SiteManagementService implements AdapterSettingsProvider {
   }
 
   @Override
-  public AdapterSettingsProvider.AdapterInfo getAdapterInfo() {
-    return AdapterSettingsProvider.AdapterInfo.builder()
+  public AdapterInfo getAdapterInfo() {
+    return AdapterInfo.builder()
         .stableName(ADAPTER_NAME)
         .description("Global site-wide settings management")
         .build();
@@ -63,11 +66,25 @@ public class SiteManagementService implements AdapterSettingsProvider {
     return ZoneId.of(getSettings().getTimeZone());
   }
 
+  public Locale getDefaultLocale() {
+    return getDefaultLocale(NotificationTargetType.DIRECT);
+  }
+
+  public Locale getDefaultLocale(NotificationTargetType type) {
+    Optional<SiteSettings> settings = Optional.ofNullable(getSettings());
+    return switch (type) {
+      case DIRECT -> settings.map(SiteSettings::getDefaultLocale).orElse(Locale.GERMAN);
+      case GROUP -> settings.map(SiteSettings::getDefaultGroupLocale).orElse(Locale.GERMAN);
+    };
+  }
+
   @Data
   @Builder
   @Jacksonized
   private static class SiteSettings {
     @Builder.Default private String baseUrl = "http://localhost:8080/";
     @Builder.Default private String timeZone = "Europe/Berlin";
+    @Builder.Default private Locale defaultLocale = Locale.GERMAN;
+    @Builder.Default private Locale defaultGroupLocale = Locale.GERMAN;
   }
 }

@@ -7,12 +7,19 @@ import lombok.*;
 import org.bytewright.bgmo.adapter.persistence.entity.AbstractEntity;
 import org.bytewright.bgmo.adapter.persistence.entity.user.RegisteredUserEntity;
 import org.bytewright.bgmo.domain.model.RequestState;
+import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.UuidGenerator;
+import org.hibernate.type.SqlTypes;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 @Entity
-@Table(name = "meetup_joins")
+@Table(
+    name = "meetup_joins",
+    uniqueConstraints =
+        @UniqueConstraint(
+            name = "UC_MEETUP_JOIN_USER",
+            columnNames = {"meetup_id", "user_id"}))
 @Getter
 @Setter
 @Builder
@@ -31,23 +38,19 @@ public class MeetupJoinRequestEntity extends AbstractEntity<UUID> {
   @Column(name = "created_at", nullable = false, updatable = false)
   private Instant tsCreation;
 
-  @Column(nullable = false, length = 1024)
-  private String displayName;
-
   @Column(columnDefinition = "text")
   private String comment;
-
-  @Column private UUID anonToken;
-
-  @Column(length = 1024)
-  private String contactInfo;
 
   @Enumerated(EnumType.STRING)
   @Column(nullable = false)
   @Builder.Default
   private RequestState requestState = RequestState.OPEN;
 
-  @ManyToOne(optional = false, cascade = CascadeType.ALL)
+  @Column(nullable = false, columnDefinition = "jsonb")
+  @JdbcTypeCode(SqlTypes.JSON)
+  private String payload;
+
+  @ManyToOne(optional = false)
   @JoinColumn(nullable = false)
   private MeetupEntity meetup;
 

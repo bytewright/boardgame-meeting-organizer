@@ -8,6 +8,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.bytewright.bgmo.domain.model.AdapterInfoAndSettings;
 import org.bytewright.bgmo.domain.model.AdapterSettings;
+import org.bytewright.bgmo.domain.model.MeetupJoinRequest;
+import org.bytewright.bgmo.domain.model.RequestState;
 import org.bytewright.bgmo.domain.model.notification.NotificationContext;
 import org.bytewright.bgmo.domain.model.notification.NotificationPayload;
 import org.bytewright.bgmo.domain.model.notification.NotificationTargetType;
@@ -16,6 +18,7 @@ import org.bytewright.bgmo.domain.model.user.UserRole;
 import org.bytewright.bgmo.domain.model.user.UserStatus;
 import org.bytewright.bgmo.domain.service.AdapterSettingsProvider;
 import org.bytewright.bgmo.domain.service.data.AdapterSettingsDao;
+import org.bytewright.bgmo.domain.service.data.ModelDao;
 import org.bytewright.bgmo.domain.service.data.RegisteredUserDao;
 import org.bytewright.bgmo.domain.service.event.EventPublisher;
 import org.bytewright.bgmo.domain.service.notification.NotificationManager;
@@ -34,6 +37,7 @@ public class AdminWorkflows {
   private final BgmoUserDetailsService userDetailsService;
   private final NotificationManager notificationManager;
   private final AdapterSettingsDao adapterSettingsDao;
+  private final ModelDao<MeetupJoinRequest> joinRequestModelDao;
   private final EventPublisher eventPublisher;
   private final RegisteredUserDao userDao;
 
@@ -256,5 +260,30 @@ public class AdminWorkflows {
     return provider
         .map(p -> p.isValidSettingsJson(json))
         .orElse(AdapterSettingsProvider.ValidationResult.INVALID);
+  }
+
+  /** Hard-deletes a join request from the database. */
+  public void deleteJoinRequest(UUID joinRequestId) {
+    MeetupJoinRequest request = joinRequestModelDao.findOrThrow(joinRequestId);
+    log.warn(
+        "ADMIN: Hard-deleting join request {} for meetup {}", joinRequestId, request.getMeetupId());
+    joinRequestModelDao.delete(joinRequestId);
+    // todo publish so waitlist gets updated
+  }
+
+  /** Revokes an ACCEPTED join request, transitioning it back to OPEN. */
+  public void revokeAttendeeConfirmation(UUID joinRequestId) {
+    MeetupJoinRequest request = joinRequestModelDao.findOrThrow(joinRequestId);
+    if (request.getRequestState() != RequestState.ACCEPTED) {
+      throw new IllegalStateException(
+          "Can only revoke ACCEPTED requests, current state: " + request.getRequestState());
+    }
+    log.warn(
+        "ADMIN: Revoking confirmation for join request {} on meetup {}",
+        joinRequestId,
+        request.getMeetupId());
+    request.setRequestState(RequestState.OPEN);
+    joinRequestModelDao.createOrUpdate(request);
+    // todo publish so waitlist gets updated
   }
 }

@@ -7,10 +7,7 @@ import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.bytewright.bgmo.adapter.api.frontend.view.meetup.ViewerRole;
-import org.bytewright.bgmo.domain.model.Game;
-import org.bytewright.bgmo.domain.model.MeetupEvent;
-import org.bytewright.bgmo.domain.model.MeetupJoinRequest;
-import org.bytewright.bgmo.domain.model.RequestState;
+import org.bytewright.bgmo.domain.model.*;
 import org.bytewright.bgmo.domain.model.user.RegisteredUser;
 import org.bytewright.bgmo.domain.service.data.GameDao;
 import org.bytewright.bgmo.domain.service.data.RegisteredUserDao;
@@ -61,7 +58,13 @@ public class MeetupDetailContextBuilder {
     } else if (currentUser != null) {
       myRequest =
           meetup.getJoinRequests().stream()
-              .filter(r -> currentUser.getId().equals(r.getUserId()))
+              .filter(
+                  r ->
+                      switch (r.getPayload()) {
+                        case JoinRequestPayload.Anon ignored -> false;
+                        case JoinRequestPayload.User user ->
+                            currentUser.getId().equals(user.userId());
+                      })
               .findFirst();
 
       role =
@@ -77,7 +80,12 @@ public class MeetupDetailContextBuilder {
     } else if (anonToken != null) {
       myRequest =
           meetup.getJoinRequests().stream()
-              .filter(r -> anonToken.equals(r.getAnonToken()))
+              .filter(
+                  r ->
+                      switch (r.getPayload()) {
+                        case JoinRequestPayload.Anon anon -> anon.anonToken().equals(anonToken);
+                        case JoinRequestPayload.User ignored -> false;
+                      })
               .findFirst();
 
       role =
