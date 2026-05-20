@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.util.List;
 import java.util.UUID;
 import org.bytewright.bgmo.domain.model.*;
+import org.bytewright.bgmo.domain.model.user.ContactInfo;
 import org.bytewright.bgmo.domain.model.user.RegisteredUser;
 import org.bytewright.bgmo.domain.service.data.MeetupDao;
 import org.bytewright.bgmo.testutils.IntegrationTest;
@@ -20,8 +21,8 @@ class MeetupWorkflowsTest extends IntegrationTest {
   void testCreateAndJoinMeetup() {
     // ARRANGE
     RegisteredUser creator = helper.user();
-    Game game = Game.builder().name("Testgame").build();
-    UUID gameId = userWorkflows.updateGameInLibrary(creator.getId(), game).getId();
+    var game = Game.Creation.builder().name("Testgame").build();
+    UUID gameId = userWorkflows.addGameToLibrary(creator.getId(), game).getId();
     RegisteredUser joiner = helper.user();
     MeetupEvent meetupEvent =
         meetupWorkflows.create(
@@ -32,6 +33,8 @@ class MeetupWorkflowsTest extends IntegrationTest {
                 .registrationClosingDate(helper.now().toLocalDate())
                 .joinSlots(1)
                 .offeredGames(List.of(gameId))
+                .location(new MeetupEventLocation("areahint", "fullocation"))
+                .slotStrategy(SlotDistributionStrategy.REQUEST_APPROVE)
                 .build());
 
     // ACT
@@ -43,7 +46,10 @@ class MeetupWorkflowsTest extends IntegrationTest {
     MeetupJoinRequest request = meetup.getJoinRequests().getFirst();
     assertThat(request)
         .returns(meetup.getId(), MeetupJoinRequest::getMeetupId)
-        .returns(joiner.getId(), MeetupJoinRequest::getUserId)
+        .returns(
+            new JoinRequestPayload.User(
+                joiner.getId(), new ContactInfo.EmailContact("some@mail.org")),
+            MeetupJoinRequest::getPayload)
         .returns(RequestState.OPEN, MeetupJoinRequest::getRequestState);
 
     // ACT
@@ -53,7 +59,10 @@ class MeetupWorkflowsTest extends IntegrationTest {
     MeetupJoinRequest refetchedRequest = refetchedEvent.getJoinRequests().getFirst();
     assertThat(refetchedRequest)
         .returns(meetup.getId(), MeetupJoinRequest::getMeetupId)
-        .returns(joiner.getId(), MeetupJoinRequest::getUserId)
+        .returns(
+            new JoinRequestPayload.User(
+                joiner.getId(), new ContactInfo.EmailContact("some@mail.org")),
+            MeetupJoinRequest::getPayload)
         .returns(RequestState.ACCEPTED, MeetupJoinRequest::getRequestState);
   }
 }
