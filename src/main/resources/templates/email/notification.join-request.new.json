@@ -1,0 +1,10 @@
+{
+  "de": {
+    "subject": "Neue Beitrittsanfrage für: {{title}}",
+    "body": "Hallo!\n\n{{requesterName}} möchte an deinem Treffen \"{{title}}\" teilnehmen.\n\nZur Anfrage:\n{{{meetupUrl}}}"
+  },
+  "en": {
+    "subject": "New join request for: {{title}}",
+    "body": "Hi!\n\n{{requesterName}} has requested to join your meetup \"{{title}}\".\n\nReview the request here:\n{{{meetupUrl}}}"
+  }
+}

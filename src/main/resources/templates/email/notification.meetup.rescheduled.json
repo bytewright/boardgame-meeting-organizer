@@ -1,0 +1,10 @@
+{
+  "de": {
+    "subject": "Treffen verschoben: {{title}}",
+    "body": "Hallo!\n\nDas Treffen \"{{title}}\" wurde auf einen neuen Termin verschoben: {{newEventDate}}\n\nAlle Details:\n{{{meetupUrl}}}"
+  },
+  "en": {
+    "subject": "Meetup rescheduled: {{title}}",
+    "body": "Hi!\n\nThe meetup \"{{title}}\" has been moved to a new date: {{newEventDate}}\n\nSee the updated details here:\n{{{meetupUrl}}}"
+  }
+}

@@ -1,0 +1,4 @@
+{
+  "de" : "📣 *Neues Meetup: {{title}}*\r\n▫️ ▫️ ▫️\r\nDetails: [Link]({{meetupUrl}})",
+  "en" : "📣 *New Meetup: {{title}}*\r\n▫️ ▫️ ▫️\r\nDetails: [Link]({{meetupUrl}})"
+}

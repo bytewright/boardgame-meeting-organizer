@@ -1,0 +1,10 @@
+{
+  "de": {
+    "subject": "Neues Treffen: {{title}}",
+    "body": "Hallo!\n\nEin neues Spieleabend-Treffen wurde erstellt: \"{{title}}\"\n\nHier geht es zur Veranstaltung:\n{{{meetupUrl}}}"
+  },
+  "en": {
+    "subject": "New meetup: {{title}}",
+    "body": "Hi!\n\nA new board game meetup has been created: \"{{title}}\"\n\nView the event here:\n{{{meetupUrl}}}"
+  }
+}

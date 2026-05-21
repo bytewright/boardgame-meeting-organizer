@@ -5,27 +5,30 @@ import com.github.jknack.handlebars.Template;
 import com.github.jknack.handlebars.io.ClassPathTemplateLoader;
 import com.github.jknack.handlebars.io.TemplateLoader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import lombok.extern.slf4j.Slf4j;
 import org.bytewright.bgmo.domain.model.notification.NotificationPayload;
-import org.bytewright.bgmo.domain.model.notification.NotificationType;
+import org.bytewright.bgmo.domain.service.JsonMapperFactory;
 import org.springframework.beans.factory.InitializingBean;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.json.JsonMapper;
 
 @Slf4j
 @Service
 public class TelegramTemplateService implements InitializingBean {
+  private static final List<Locale> SUPPORTED_LOCALES = List.of(Locale.ENGLISH, Locale.GERMAN);
 
-  private final Map<Locale, Map<String, Template>> templateCache = new ConcurrentHashMap<>();
+  private static final String RESOURCE_PATH = "/templates/telegram/";
+  private final Map<String, Map<Locale, Template>> templateCache = new ConcurrentHashMap<>();
   private final Handlebars handlebars;
 
   public TelegramTemplateService() {
-    // We set up a template loader to look into src/main/resources/templates/telegram/
-    TemplateLoader loader = new ClassPathTemplateLoader("/templates/telegram", ".hbs");
-
     this.handlebars =
-        new Handlebars(loader)
+        new Handlebars()
             .with(
                 value -> {
                   if (value == null) return "";
@@ -37,29 +40,35 @@ public class TelegramTemplateService implements InitializingBean {
   @Override
   public void afterPropertiesSet() throws Exception {
     List<String> requiredKeys =
-        Arrays.stream(NotificationType.values())
-            .map(NotificationType::getMessageKey)
-            .sorted(Comparator.naturalOrder())
-            .toList();
-    List<Locale> supportedLocales = List.of(Locale.ENGLISH, Locale.GERMAN);
+        NotificationPayload.allMessageKeys().stream().sorted(Comparator.naturalOrder()).toList();
+    JsonMapper jsonMapper = JsonMapperFactory.unRedactedMapper();
+    for (String key : requiredKeys) {
+      String resourcePath = RESOURCE_PATH + key + ".json";
+      ClassPathResource resource = new ClassPathResource(resourcePath);
 
-    for (Locale locale : supportedLocales) {
-      Map<String, Template> localeCache = new HashMap<>();
-      for (String key : requiredKeys) {
-        try {
-          String path = locale.getLanguage() + "/" + key;
-          Template template = handlebars.compile(path);
-          localeCache.put(key, template);
-        } catch (IOException e) {
-          throw new IllegalStateException(
-              "Missing Telegram template for key: '" + key + "' and locale: '" + locale + "'", e);
+      if (!resource.exists()) {
+        throw new IllegalStateException(
+            "Missing email template file: "
+                + resourcePath
+                + " — add the file or remove the corresponding NotificationType");
+      }
+      Map<Locale, Template> localeCache = new HashMap<>();
+      try (InputStream is = resource.getInputStream()) {
+        JsonNode root = jsonMapper.readTree(is);
+        for (Locale locale : SUPPORTED_LOCALES) {
+          JsonNode localeNode = root.get(locale.getLanguage());
+          if (localeNode == null) {
+            throw new IllegalStateException(
+                "Missing locale '" + locale.getLanguage() + "' in email template: " + resourcePath);
+          }
+          String msgTemplate = localeNode.asString();
+          Template template = handlebars.compileInline(msgTemplate);
+          localeCache.put(locale, template);
         }
       }
-      templateCache.put(locale, localeCache);
+      templateCache.put(key, localeCache);
     }
-    log.info(
-        "Successfully loaded and verified {} Telegram templates.",
-        requiredKeys.size() * supportedLocales.size());
+    log.info("Successfully loaded and verified {} Telegram templates.", templateCache.size());
   }
 
   public String render(Locale locale, NotificationPayload payload) {
@@ -68,12 +77,13 @@ public class TelegramTemplateService implements InitializingBean {
       return payload.messageKey();
     }
     // Fallback to English if the requested locale isn't cached
-    Locale targetLocale = templateCache.containsKey(locale) ? locale : Locale.ENGLISH;
-    Template template = templateCache.get(targetLocale).get(payload.messageKey());
-    if (template == null) {
-      log.error("Telegram template not found for key: {}", payload.messageKey());
+    Map<Locale, Template> localeTemplateMap = templateCache.get(payload.messageKey());
+    if (!localeTemplateMap.containsKey(locale)) {
+      log.warn(
+          "Failed to find messageKey {} with locale {} in cache!", payload.messageKey(), locale);
       return "Notification: " + payload.messageKey();
     }
+    Template template = localeTemplateMap.get(locale);
     try {
       return template.apply(payload);
     } catch (IOException e) {

@@ -1,0 +1,4 @@
+{
+  "de" : "⚠️ *Meetup Verschoben*\r\n▫️ ▫️ ▫️\r\n*{{title}}* wurde auf den {{newEventDate}} verschoben\\.\r\nDetails: [Link]({{meetupUrl}})",
+  "en" : "⚠️ *Meetup Rescheduled*\r\n▫️ ▫️ ▫️\r\n*{{title}}* has been moved to {{newEventDate}}\\.\r\nDetails: [Link]({{meetupUrl}})"
+}

@@ -52,6 +52,17 @@ See [Architecture.md](./ARCHITECTURE.md)
   - TELEGRAM_BOT_DISPLAYNAME
   - TELEGRAM_BOT_GRP_CHAT_ID
   - BGG_API_TOKEN
+  - BGMO_EMAIL_FROM_ADR=bgmo@yourdomain.com
+
+> Spring auto-configures JavaMailSender from these:
+
+  - SPRING_MAIL_HOST=smtp.provider.com
+  - SPRING_MAIL_PORT=587
+  - SPRING_MAIL_USERNAME=your-smtp-login
+  - SPRING_MAIL_PASSWORD=your-smtp-secret
+  - SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH=true
+  - SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE=true
+
 - volumes:
     - /app/logs/
     - /app/db/

@@ -7,10 +7,14 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
+import java.io.File;
+import java.io.IOException;
 import java.net.URI;
-import java.util.Locale;
-import java.util.Set;
-import java.util.UUID;
+import java.nio.file.Path;
+import java.util.*;
+
+import lombok.extern.slf4j.Slf4j;
+import org.assertj.core.util.Files;
 import org.bytewright.bgmo.domain.model.AdapterSettings;
 import org.bytewright.bgmo.domain.model.notification.NotificationContext;
 import org.bytewright.bgmo.domain.model.notification.NotificationPayload;
@@ -18,17 +22,21 @@ import org.bytewright.bgmo.domain.model.notification.NotificationTargetType;
 import org.bytewright.bgmo.domain.model.user.ContactInfo;
 import org.bytewright.bgmo.domain.model.user.ContactOption;
 import org.bytewright.bgmo.domain.model.user.RegisteredUser;
+import org.bytewright.bgmo.domain.service.JsonMapperFactory;
 import org.bytewright.bgmo.domain.service.data.AdapterSettingsDao;
 import org.bytewright.bgmo.domain.service.data.RegisteredUserDao;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.*;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
+import tools.jackson.databind.ObjectWriter;
 import tools.jackson.databind.json.JsonMapper;
 
+@Slf4j
 @ExtendWith(MockitoExtension.class)
 class TelegramNotificationAdapterTest {
 
@@ -131,4 +139,31 @@ class TelegramNotificationAdapterTest {
     assertEquals("Dein Konto ist freigeschaltet\\.", capturedMessage.getText());
     assertEquals("MarkdownV2", capturedMessage.getParseMode());
   }
+
+
+    @Test
+    @Disabled
+    void name() throws IOException {
+        Path base = Path.of("./src/main/resources/templates/telegram/");
+        assertThat(base.resolve("de")).isDirectory();
+        assertThat(base.resolve("en")).isDirectory();
+        Map<String, Map<String, String>> contentByKey = new HashMap<>();
+        List<String> locales = List.of("de", "en");
+        for (String locale : locales) {
+            for (String fileName : Files.fileNamesIn(base.resolve(locale).toString(), false)) {
+                File file = new File(fileName);
+                String key = file.getName().replace(".hbs", "");
+                log.info("{} - {}", fileName, key);
+                String content = java.nio.file.Files.readString(file.toPath());
+                contentByKey.computeIfAbsent(key, s -> new HashMap<>()).put(locale, content);
+            }
+        }
+        log.info("{}", contentByKey);
+        ObjectWriter objectWriter =
+                JsonMapperFactory.unRedactedMapper().writerWithDefaultPrettyPrinter();
+        for (Map.Entry<String, Map<String, String>> entry : contentByKey.entrySet()) {
+            String json = objectWriter.writeValueAsString(entry.getValue());
+            java.nio.file.Files.writeString(base.resolve(entry.getKey() + ".json"), json);
+        }
+    }
 }

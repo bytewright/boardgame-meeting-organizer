@@ -1,0 +1,10 @@
+{
+  "de": {
+    "subject": "Freigeschaltet",
+    "body": "Hallo!\n\nDein Konto ist nun vollständig freigeschaltet."
+  },
+  "en": {
+    "subject": "New user registration: {{username}}",
+    "body": "Hi!\n\nYour account is now fully approved."
+  }
+}

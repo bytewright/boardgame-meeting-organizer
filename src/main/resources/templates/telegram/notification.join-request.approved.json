@@ -1,0 +1,4 @@
+{
+  "de" : "✅ *Anfrage Bestätigt*\r\n▫️ ▫️ ▫️\r\nDeine Teilnahme für *{{title}}* am {{eventDate}} ist bestätigt\\.\r\nDetails: [Link]({{meetupUrl}})",
+  "en" : "✅ *Request Approved*\r\n▫️ ▫️ ▫️\r\nYour participation for *{{title}}* on {{eventDate}} is confirmed\\.\r\nDetails: [Link]({{meetupUrl}})"
+}

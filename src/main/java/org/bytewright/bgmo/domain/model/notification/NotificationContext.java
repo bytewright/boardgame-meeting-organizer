@@ -5,6 +5,7 @@ import java.util.Locale;
 import java.util.UUID;
 import lombok.Builder;
 
+/** userId is only null for type==group */
 @Builder
 public record NotificationContext(
     NotificationPayload payload,

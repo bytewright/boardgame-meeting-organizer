@@ -6,7 +6,7 @@ import org.springframework.stereotype.Component;
 
 @Data
 @Component
-@ConfigurationProperties("bgmo.adapter.bot.telegram")
+@ConfigurationProperties("bgmo.adapter.notification.telegram")
 public class TelegramAdapterProperties {
   private String botToken;
   private String botUsername;

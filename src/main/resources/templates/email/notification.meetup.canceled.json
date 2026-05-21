@@ -1,0 +1,10 @@
+{
+  "de": {
+    "subject": "Treffen abgesagt: {{title}}",
+    "body": "Hallo!\n\nLeider wurde das Treffen \"{{title}}\" abgesagt.\n\nZur Veranstaltungsseite:\n{{{meetupUrl}}}"
+  },
+  "en": {
+    "subject": "Meetup canceled: {{title}}",
+    "body": "Hi!\n\nUnfortunately, the meetup \"{{title}}\" has been canceled.\n\nView the event page:\n{{{meetupUrl}}}"
+  }
+}

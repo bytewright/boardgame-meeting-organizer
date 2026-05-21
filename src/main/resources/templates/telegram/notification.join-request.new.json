@@ -1,0 +1,4 @@
+{
+  "de" : "👤 *Neue Beitrittsanfrage*\r\n▫️ ▫️ ▫️\r\n*{{requesterName}}* möchte an *{{title}}* teilnehmen\\.\r\nDetails: [Link]({{meetupUrl}})",
+  "en" : "👤 *New Join Request*\r\n▫️ ▫️ ▫️\r\n*{{requesterName}}* requested to join *{{title}}*\\.\r\nDetails: [Link]({{meetupUrl}})"
+}

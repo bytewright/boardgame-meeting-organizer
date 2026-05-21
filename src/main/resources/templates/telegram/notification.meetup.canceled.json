@@ -1,0 +1,4 @@
+{
+  "de" : "❌ *Meetup Abgesagt*\r\n▫️ ▫️ ▫️\r\n*{{title}}* wurde abgesagt\\. [Link]({{meetupUrl}})",
+  "en" : "❌ *Meetup Canceled*\r\n▫️ ▫️ ▫️\r\n*{{title}}* has been canceled\\. [Link]({{meetupUrl}})"
+}

@@ -1,0 +1,10 @@
+{
+  "de": {
+    "subject": "Neue Benutzerregistrierung: {{username}}",
+    "body": "Hallo!\n\nEin neuer Benutzer hat sich registriert: {{username}}\n\nBitte überprüfe das Konto und genehmige es bei Bedarf im Admin-Bereich."
+  },
+  "en": {
+    "subject": "New user registration: {{username}}",
+    "body": "Hi!\n\nA new user has registered: {{username}}\n\nPlease review the account and approve it in the admin area if appropriate."
+  }
+}

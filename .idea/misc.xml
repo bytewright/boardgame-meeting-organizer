@@ -1,14 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="EntryPointsManager">
-    <list size="7">
+    <list size="8">
       <item index="0" class="java.lang.String" itemvalue="com.vaadin.flow.router.Route" />
       <item index="1" class="java.lang.String" itemvalue="org.mapstruct.Mapper" />
-      <item index="2" class="java.lang.String" itemvalue="org.mockito.Spy" />
-      <item index="3" class="java.lang.String" itemvalue="org.springframework.context.annotation.Bean" />
-      <item index="4" class="java.lang.String" itemvalue="org.springframework.context.event.EventListener" />
-      <item index="5" class="java.lang.String" itemvalue="org.springframework.scheduling.annotation.Scheduled" />
-      <item index="6" class="java.lang.String" itemvalue="org.springframework.stereotype.Component" />
+      <item index="2" class="java.lang.String" itemvalue="org.mockito.Mock" />
+      <item index="3" class="java.lang.String" itemvalue="org.mockito.Spy" />
+      <item index="4" class="java.lang.String" itemvalue="org.springframework.context.annotation.Bean" />
+      <item index="5" class="java.lang.String" itemvalue="org.springframework.context.event.EventListener" />
+      <item index="6" class="java.lang.String" itemvalue="org.springframework.scheduling.annotation.Scheduled" />
+      <item index="7" class="java.lang.String" itemvalue="org.springframework.stereotype.Component" />
     </list>
     <writeAnnotations>
       <writeAnnotation name="org.springframework.beans.factory.annotation.Autowired" />

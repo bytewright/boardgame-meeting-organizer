@@ -1,0 +1,10 @@
+{
+  "de": {
+    "subject": "Deine Teilnahme wurde bestätigt: {{title}}",
+    "body": "Hallo!\n\nDeine Beitrittsanfrage für \"{{title}}\" am {{eventDate}} wurde bestätigt. Du hast einen Platz!\n\nZur Veranstaltung:\n{{{meetupUrl}}}"
+  },
+  "en": {
+    "subject": "Your spot is confirmed: {{title}}",
+    "body": "Hi!\n\nYour request to join \"{{title}}\" on {{eventDate}} has been approved. You're in!\n\nView the event here:\n{{{meetupUrl}}}"
+  }
+}

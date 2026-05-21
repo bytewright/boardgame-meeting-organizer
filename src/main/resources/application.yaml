@@ -19,7 +19,10 @@ vaadin:
   productionMode: true
 bgmo:
   adapter:
-    bot:
+    notification:
+      email-smpt:
+        enabled: true
+        fromAddress: "${BGMO_EMAIL_FROM_ADR:}"
       telegram:
         enabled: true
         bot-token: "${TELEGRAM_BOT_TOKEN:}"
