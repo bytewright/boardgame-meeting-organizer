@@ -1,4 +1,4 @@
-package org.bytewright.bgmo.adapter.bot.telegram;
+package org.bytewright.bgmo.adapter.notification.telegram;
 
 import com.github.jknack.handlebars.Handlebars;
 import com.github.jknack.handlebars.Template;

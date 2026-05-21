@@ -1,4 +1,4 @@
-package org.bytewright.bgmo.adapter.bot.signal;
+package org.bytewright.bgmo.adapter.notification.signal;
 
 import java.util.List;
 import java.util.Optional;

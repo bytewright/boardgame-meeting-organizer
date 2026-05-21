@@ -1,4 +1,4 @@
-package org.bytewright.bgmo.adapter.bot.telegram;
+package org.bytewright.bgmo.adapter.notification.telegram;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;

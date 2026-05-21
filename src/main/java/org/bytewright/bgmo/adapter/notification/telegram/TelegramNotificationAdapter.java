@@ -1,4 +1,4 @@
-package org.bytewright.bgmo.adapter.bot.telegram;
+package org.bytewright.bgmo.adapter.notification.telegram;
 
 import java.util.List;
 import java.util.Locale;

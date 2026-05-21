@@ -1,4 +1,4 @@
-package org.bytewright.bgmo.adapter.bot.telegram;
+package org.bytewright.bgmo.adapter.notification.telegram;
 
 import static org.bytewright.bgmo.domain.service.CoreAppContextConfig.APP_NAME_SHORT;
 
