@@ -25,6 +25,7 @@ import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 import org.telegram.telegrambots.longpolling.TelegramBotsLongPollingApplication;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
@@ -54,7 +55,8 @@ public class TelegramNotificationAdapter
 
   @Override
   public boolean supports(NotificationContext context) {
-    return context.notificationTargetType() == NotificationTargetType.GROUP
+    return (context.notificationTargetType() == NotificationTargetType.GROUP
+            && StringUtils.hasText(adapterProperties.getGroupChatId()))
         || userDao.hasContactOfType(context.userId(), ContactInfoType.TELEGRAM);
   }
 
@@ -162,7 +164,7 @@ public class TelegramNotificationAdapter
 
   @Override
   public Optional<String> generateBotDeepLink() {
-    return Optional.of("https://t.me/bgmo_jena_bot");
+    return Optional.of("https://t.me/%s".formatted(adapterProperties.getBotUsername()));
   }
 
   @Override

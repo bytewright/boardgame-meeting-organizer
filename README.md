@@ -6,18 +6,19 @@ with your group without the "who's bringing what?" messaging chaos.
 
 # ✨ Features
 
+- 📅 Meetup Coordination: Create events with specific dates, durations, and player slot limits.
+    - Players can see post code so they know in which area the meeting is before signing up
+    - Organizers see who requested to join, can choose people or just roll the dice and choose randomly
 - 📚 Library Management: Keep track of your board game collection, including player counts, BGG (BoardGameGeek) IDs, and
   complexity ratings.
     - Automatic lookup of details based on provided bgg ids
-- 📅 Meetup Coordination: Create events with specific dates, durations, and player slot limits.
-    - players can see post code so they know in which area the meeting is.
-    - Organizers see who requested to join, can choose people or just roll the dice and choose randomly
 - 🤝 Flexible Signups: Supports registered users and anonymous guests (with GDPR-conscious contact info handling).
 - 🕹️ "On the Table": Organizers can offer specific games from their library for each meetup, so attendees know exactly
   what to expect.
 - 🌍 Internationalized: Full i18n support for localized gaming communities.
-- User notifications: The app is integrated with chatbots, so once something of interest to a user happens and if they
-  have linked their account to the app, the user will receive a private message by the bot
+- User notifications: The app is integrated with different notification channels, all optional.
+    - Email, telegram and signal integration
+    - Announcements into group chats for new meetups 
     - e.g. new join request for an event where the user is the organizer
     - e.g. join request approved - the user got one of the slots of an event
 
@@ -30,7 +31,8 @@ See [Architecture.md](./ARCHITECTURE.md)
 - Persistence: Jakarta Persistence (JPA) / Spring Data / MapStruct
 - Architecture: Hexagonal / Onion-architecture / Ports & Adapters
 
-> Disclaimer: Of course AI was used in parts of this - Mostly the frontend vaadin code.
+> Disclaimer: Of course AI was used in parts of this. Especially the frontend vaadin code adapter was created with
+> help of AI but nothing generated unobserved or was commited unreviewed.
 
 # 🚀 Getting Started
 
@@ -41,27 +43,26 @@ See [Architecture.md](./ARCHITECTURE.md)
 
 # Deployment
 
-- should happen with docker, needs some env vars:
-  - APP_BASE_URL
-  - APP_ADMIN_PASSWORD = plain text for `admin` account
-  - APP_PASSWORD_PEPPER = global password hasher pepper
-  - DB_USER
+Dockerfile is included, that is the easiest way.
+- Required .env env vars:
+  - APP_ADMIN_PASSWORD: Plain text for `admin` account, can be changed in app after deployment
+  - APP_PASSWORD_PEPPER: Global password hasher pepper must be kept secret or is worthless
+  - DB_USER: how to connect to db
   - DB_PASS
+> Telegram notification adapter
   - TELEGRAM_BOT_TOKEN
-  - TELEGRAM_BOT_USERNAME
+  - TELEGRAM_BOT_USERNAME: used to generate Deeplinks to bot
   - TELEGRAM_BOT_DISPLAYNAME
-  - TELEGRAM_BOT_GRP_CHAT_ID
-  - BGG_API_TOKEN
+  - TELEGRAM_BOT_GRP_CHAT_ID: Notifications of type 'GROUP' will be pushed there, optional
+> Email notification adapter
   - BGMO_EMAIL_FROM_ADR=bgmo@yourdomain.com
-
-> Spring auto-configures JavaMailSender from these:
-
+> BoardGameGeek integration adapter
+  - BGG_API_TOKEN: Must be requested on BGG site
+> Spring JavaMailSender
   - SPRING_MAIL_HOST=smtp.provider.com
   - SPRING_MAIL_PORT=587
   - SPRING_MAIL_USERNAME=your-smtp-login
   - SPRING_MAIL_PASSWORD=your-smtp-secret
-  - SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH=true
-  - SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE=true
 
 - volumes:
     - /app/logs/

@@ -11,6 +11,5 @@ import org.springframework.stereotype.Component;
 public class BgmoProperties {
   private boolean automationAutostart;
   private String securityPwPepper;
-  private URI baseUrl;
   private String profanityFilterListPath;
 }

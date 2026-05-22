@@ -11,6 +11,12 @@ spring:
     basename: vaadin-i18n/translations_de
   main:
     banner-mode: "off"
+  mail:
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls.enable: true
 server:
   # tell spring to use https, resolved by nginx beforehand
   forward-headers-strategy: framework
@@ -35,7 +41,6 @@ bgmo:
       apiToken: "${BGG_API_TOKEN:}"
       bggBaseUrl: "https://boardgamegeek.com/xmlapi2"
   core.services:
-    base-url: "${APP_BASE_URL:}"
     automation-autostart: false
     security-pw-pepper: "${APP_PASSWORD_PEPPER:}"
     profanityFilterListPath: "${APP_PROFANITY_BLOCK_LIST:classpath:blocklists/de_profanity}"
