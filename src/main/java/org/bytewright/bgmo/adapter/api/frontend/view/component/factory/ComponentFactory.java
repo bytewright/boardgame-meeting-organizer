@@ -18,6 +18,7 @@ import org.bytewright.bgmo.domain.service.GameInformationProvider;
 import org.bytewright.bgmo.domain.service.data.GameDao;
 import org.bytewright.bgmo.domain.service.data.RegisteredUserDao;
 import org.bytewright.bgmo.domain.service.notification.VerificationCodeService;
+import org.bytewright.bgmo.domain.service.user.ContactInfoService;
 import org.bytewright.bgmo.usecases.AdminWorkflows;
 import org.bytewright.bgmo.usecases.MeetupWorkflows;
 import org.bytewright.bgmo.usecases.UserWorkflows;
@@ -27,6 +28,7 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class ComponentFactory {
   private final Set<GameInformationProvider> providerList;
+  private final ContactInfoService contactInfoService;
   private final VerificationCodeService verificationService;
   private final SessionInfoService authService;
   private final MeetupWorkflows meetupWorkflows;
@@ -37,7 +39,8 @@ public class ComponentFactory {
   private final GameDao gameDao;
 
   public ContactSection contactSection(RegisteredUser currentUser, Runnable runnable) {
-    return new ContactSection(this, userWorkflows, userDao, currentUser, runnable);
+    return new ContactSection(
+        this, contactInfoService, userWorkflows, userDao, currentUser, runnable);
   }
 
   public LocalePicker localePicker() {

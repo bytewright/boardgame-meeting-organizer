@@ -32,8 +32,7 @@ public class ContactInfoService {
       case ContactInfo.EmailContact emailContact -> validateEmail(emailContact.email());
       case ContactInfo.PhoneContact phoneContact -> validatePhone(phoneContact.phoneNr());
       case ContactInfo.SignalContact signalContact -> validateSignal(signalContact.signalHandle());
-      case ContactInfo.TelegramContact telegramContact ->
-          validateTelegram(telegramContact.chatId());
+      case ContactInfo.TelegramContact telegramContact -> validateTelegram(telegramContact);
     };
   }
 
@@ -41,10 +40,11 @@ public class ContactInfoService {
     return StringUtils.hasText(email) && EMAIL_PATTERN.matcher(email).matches();
   }
 
-  public boolean validateTelegram(String chatId) {
-    if (!StringUtils.hasText(chatId)) return false;
+  public boolean validateTelegram(ContactInfo.TelegramContact telegramContact) {
+    if (!StringUtils.hasText(telegramContact.chatId())) return false;
     // Strip leading @ if user entered it
-    String handle = chatId.startsWith("@") ? chatId.substring(1) : chatId;
+    String handleRaw = telegramContact.telegramUsername();
+    String handle = handleRaw.startsWith("@") ? handleRaw.substring(1) : handleRaw;
     return TELEGRAM_PATTERN.matcher(handle).matches();
   }
 

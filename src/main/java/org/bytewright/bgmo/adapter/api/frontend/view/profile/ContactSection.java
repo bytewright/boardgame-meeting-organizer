@@ -11,6 +11,9 @@ import com.vaadin.flow.component.notification.NotificationVariant;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextField;
+import com.vaadin.flow.data.binder.Binder;
+import com.vaadin.flow.data.binder.ValidationResult;
+import com.vaadin.flow.data.binder.ValueContext;
 import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
@@ -21,6 +24,7 @@ import org.bytewright.bgmo.domain.model.user.ContactOption;
 import org.bytewright.bgmo.domain.model.user.RegisteredUser;
 import org.bytewright.bgmo.domain.model.user.exception.ModifyContactsException;
 import org.bytewright.bgmo.domain.service.data.RegisteredUserDao;
+import org.bytewright.bgmo.domain.service.user.ContactInfoService;
 import org.bytewright.bgmo.usecases.UserWorkflows;
 
 /**
@@ -31,7 +35,7 @@ import org.bytewright.bgmo.usecases.UserWorkflows;
  * only, no editing.
  */
 public class ContactSection extends VerticalLayout {
-
+  private final ContactInfoService contactInfoService;
   private final ComponentFactory componentFactory;
   private final UserWorkflows userWorkflows;
   private final RegisteredUserDao userDao;
@@ -40,10 +44,12 @@ public class ContactSection extends VerticalLayout {
 
   public ContactSection(
       ComponentFactory componentFactory,
+      ContactInfoService contactInfoService,
       UserWorkflows userWorkflows,
       RegisteredUserDao userDao,
       RegisteredUser currentUser,
       Runnable runnable) {
+    this.contactInfoService = contactInfoService;
     this.componentFactory = componentFactory;
     this.userWorkflows = userWorkflows;
     this.userDao = userDao;
@@ -70,10 +76,6 @@ public class ContactSection extends VerticalLayout {
     add(new Hr());
     add(buildFreeformSection(contacts, ContactInfoType.ADDRESS));
   }
-
-  // -------------------------------------------------------------------------
-  // Messenger section (one per type, link-via-bot only)
-  // -------------------------------------------------------------------------
 
   private Component buildMessengerSection(List<ContactOption> contacts, ContactInfoType type) {
     String typeLabel = ContactInfoLabelUtil.messengerName(type);
@@ -132,7 +134,8 @@ public class ContactSection extends VerticalLayout {
   private Component buildLinkButton(ContactInfoType type) {
     Button linkBtn =
         new Button(
-            "Link " + ContactInfoLabelUtil.messengerName(type) + " account",
+            getTranslation(
+                "profile.contacts.messenger.link.cta", ContactInfoLabelUtil.messengerName(type)),
             VaadinIcon.LINK.create());
     linkBtn.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
     linkBtn.addClickListener(
@@ -144,7 +147,9 @@ public class ContactSection extends VerticalLayout {
                   () -> {
                     Notification n =
                         Notification.show(
-                            ContactInfoLabelUtil.messengerName(type) + " linked successfully!");
+                            getTranslation(
+                                "profile.contacts.messenger.link.success",
+                                ContactInfoLabelUtil.messengerName(type)));
                     n.addThemeVariants(NotificationVariant.LUMO_SUCCESS);
                     runnable.run();
                   });
@@ -153,10 +158,6 @@ public class ContactSection extends VerticalLayout {
     linkBtn.getStyle().set("margin-top", "var(--lumo-space-xs)");
     return linkBtn;
   }
-
-  // -------------------------------------------------------------------------
-  // Freeform section (Email, Phone, Address — multiple allowed)
-  // -------------------------------------------------------------------------
 
   private Component buildFreeformSection(List<ContactOption> contacts, ContactInfoType type) {
     VerticalLayout section = new VerticalLayout();
@@ -223,25 +224,36 @@ public class ContactSection extends VerticalLayout {
 
     switch (type) {
       case EMAIL -> {
-        TextField emailField = new TextField("Email address");
+        TextField emailField = new TextField(getTranslation("profile.contacts.email.title"));
         emailField.setWidthFull();
         emailField.setPlaceholder("name@example.com");
         emailField.setHelperText(
             getTranslation(ContactInfoLabelUtil.translationKeyForExplain(ContactInfoType.EMAIL)));
+        Binder<String> emailValidator = new Binder<>();
+        emailValidator
+            .forField(emailField)
+            .withValidator(this::validateEmail)
+            .bind(u -> "", (u, v) -> {});
         form.add(
             emailField,
             saveRow(
                 () -> {
+                  String enteredEmail = emailField.getValue();
+                  if (!contactInfoService.validateEmail(enteredEmail)) {
+                    Notification.show(getTranslation("profile.contacts.email.invalid.notification"))
+                        .addThemeVariants(NotificationVariant.LUMO_ERROR);
+                    return;
+                  }
                   userWorkflows.addContactInfo(
                       currentUser.getId(),
-                      ContactInfo.EmailContact.builder().email(emailField.getValue()).build(),
+                      ContactInfo.EmailContact.builder().email(enteredEmail).build(),
                       false);
-                  rebuild(currentUser.getId());
+                  runnable.run();
                 },
                 () -> form.setVisible(false)));
       }
       case PHONE -> {
-        TextField phoneField = new TextField("Phone number");
+        TextField phoneField = new TextField(getTranslation("profile.contacts.phone.title"));
         phoneField.setWidthFull();
         phoneField.setPlaceholder("+49 123 456789");
         phoneField.setHelperText(
@@ -254,7 +266,7 @@ public class ContactSection extends VerticalLayout {
                       currentUser.getId(),
                       ContactInfo.PhoneContact.builder().phoneNr(phoneField.getValue()).build(),
                       false);
-                  rebuild(currentUser.getId());
+                  runnable.run();
                 },
                 () -> form.setVisible(false)));
       }
@@ -288,7 +300,7 @@ public class ContactSection extends VerticalLayout {
                           .comment(comment.getValue())
                           .build(),
                       false);
-                  rebuild(currentUser.getId());
+                  runnable.run();
                 },
                 () -> form.setVisible(false)));
       }
@@ -298,25 +310,25 @@ public class ContactSection extends VerticalLayout {
     return form;
   }
 
-  private HorizontalLayout saveRow(Runnable onSave, Runnable onCancel) {
-    Button saveBtn = new Button("Save", VaadinIcon.CHECK.create());
-    saveBtn.addThemeVariants(ButtonVariant.LUMO_PRIMARY, ButtonVariant.LUMO_SMALL);
-    saveBtn.addClickListener(
-        e -> {
-          onSave.run();
-          onCancel.run();
-        });
+  private ValidationResult validateEmail(String value, ValueContext context) {
+    if (!contactInfoService.validateEmail(value)) {
+      return ValidationResult.error(getTranslation("profile.contacts.email.invalid.helper"));
+    }
+    return ValidationResult.ok();
+  }
 
-    Button cancelBtn = new Button("Cancel");
+  private HorizontalLayout saveRow(Runnable onSave, Runnable onCancel) {
+    Button saveBtn =
+        new Button(getTranslation("profile.contacts.action.save"), VaadinIcon.CHECK.create());
+    saveBtn.addThemeVariants(ButtonVariant.LUMO_PRIMARY, ButtonVariant.LUMO_SMALL);
+    saveBtn.addClickListener(e -> onSave.run());
+
+    Button cancelBtn = new Button(getTranslation("profile.contacts.action.cancel"));
     cancelBtn.addThemeVariants(ButtonVariant.LUMO_TERTIARY, ButtonVariant.LUMO_SMALL);
     cancelBtn.addClickListener(e -> onCancel.run());
 
     return new HorizontalLayout(saveBtn, cancelBtn);
   }
-
-  // -------------------------------------------------------------------------
-  // Helpers
-  // -------------------------------------------------------------------------
 
   private Span sectionLabel(String text) {
     Span label = new Span(text);

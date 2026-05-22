@@ -19,6 +19,7 @@ import org.bytewright.bgmo.domain.service.data.RegisteredUserDao;
 import org.bytewright.bgmo.domain.service.event.EventPublisher;
 import org.bytewright.bgmo.domain.service.security.BgmoUserDetailsService;
 import org.bytewright.bgmo.domain.service.security.PasswordRules;
+import org.bytewright.bgmo.domain.service.user.ContactInfoService;
 import org.bytewright.bgmo.domain.service.user.DisplayNameValidationService;
 import org.springframework.stereotype.Service;
 
@@ -31,6 +32,7 @@ public class UserWorkflows {
   private final SiteManagementService siteManagementService;
   private final BgmoUserDetailsService userDetailsService;
   private final ModelDao<ContactOption> contactOptionDao;
+  private final ContactInfoService contactInfoService;
   private final InputSanitizer inputSanitizer;
   private final EventPublisher eventPublisher;
   private final RegisteredUserDao userDao;
@@ -113,6 +115,16 @@ public class UserWorkflows {
    * @return persisted user and new contactInfo
    */
   public UUID addContactInfo(UUID userId, ContactInfo contactInfo, boolean verified) {
+    boolean validate = contactInfoService.validate(contactInfo);
+    if (validate) {
+      log.info(
+          "Adding new contact info for user {} of type {}, valid=true", userId, contactInfo.type());
+    } else {
+      log.info(
+          "Adding new contact info for user {} of type {} but it couldn't be validated",
+          userId,
+          contactInfo.type());
+    }
     ContactOption newContact =
         ContactOption.builder()
             .contactInfo(contactInfo)
