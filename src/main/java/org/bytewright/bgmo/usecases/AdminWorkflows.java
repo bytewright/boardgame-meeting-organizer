@@ -12,10 +12,7 @@ import org.bytewright.bgmo.domain.model.MeetupJoinRequest;
 import org.bytewright.bgmo.domain.model.RequestState;
 import org.bytewright.bgmo.domain.model.notification.NotificationContext;
 import org.bytewright.bgmo.domain.model.notification.NotificationPayload;
-import org.bytewright.bgmo.domain.model.notification.NotificationTargetType;
-import org.bytewright.bgmo.domain.model.user.RegisteredUser;
-import org.bytewright.bgmo.domain.model.user.UserRole;
-import org.bytewright.bgmo.domain.model.user.UserStatus;
+import org.bytewright.bgmo.domain.model.user.*;
 import org.bytewright.bgmo.domain.service.AdapterSettingsProvider;
 import org.bytewright.bgmo.domain.service.data.AdapterSettingsDao;
 import org.bytewright.bgmo.domain.service.data.ModelDao;
@@ -23,6 +20,7 @@ import org.bytewright.bgmo.domain.service.data.RegisteredUserDao;
 import org.bytewright.bgmo.domain.service.event.EventPublisher;
 import org.bytewright.bgmo.domain.service.notification.NotificationManager;
 import org.bytewright.bgmo.domain.service.security.BgmoUserDetailsService;
+import org.bytewright.bgmo.domain.service.user.ContactInfoService;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.User;
@@ -37,6 +35,7 @@ public class AdminWorkflows {
   private final BgmoUserDetailsService userDetailsService;
   private final NotificationManager notificationManager;
   private final AdapterSettingsDao adapterSettingsDao;
+  private final ContactInfoService contactInfoService;
   private final ModelDao<MeetupJoinRequest> joinRequestModelDao;
   private final EventPublisher eventPublisher;
   private final RegisteredUserDao userDao;
@@ -53,11 +52,20 @@ public class AdminWorkflows {
     for (RegisteredUser user :
         userDao.findAll().stream().filter(user -> user.getStatus() == UserStatus.ACTIVE).toList()) {
       Locale locale = Optional.ofNullable(user.getPreferredLocale()).orElse(Locale.GERMAN);
+      ContactInfo primary =
+          contactInfoService
+              .getPrimaryContact(user)
+              .map(ContactOption::getContactInfo)
+              .orElseThrow();
       notificationManager.dispatch(
           NotificationContext.builder()
-              .userId(user.getId())
+              .target(
+                  NotificationContext.Target.User.builder()
+                      .userId(user.getId())
+                      .primaryContactInfo(primary)
+                      .displayName(user.getDisplayName())
+                      .build())
               .locale(locale)
-              .notificationTargetType(NotificationTargetType.DIRECT)
               .payload(payload)
               .build());
     }
@@ -78,11 +86,18 @@ public class AdminWorkflows {
             .adminId(adminId)
             .build();
     Locale locale = Optional.ofNullable(user.getPreferredLocale()).orElse(Locale.GERMAN);
+
+    ContactInfo primary =
+        contactInfoService.getPrimaryContact(user).map(ContactOption::getContactInfo).orElseThrow();
     notificationManager.dispatch(
         NotificationContext.builder()
-            .userId(user.getId())
+            .target(
+                NotificationContext.Target.User.builder()
+                    .userId(user.getId())
+                    .displayName(user.getDisplayName())
+                    .primaryContactInfo(primary)
+                    .build())
             .locale(locale)
-            .notificationTargetType(NotificationTargetType.DIRECT)
             .payload(payload)
             .build());
   }

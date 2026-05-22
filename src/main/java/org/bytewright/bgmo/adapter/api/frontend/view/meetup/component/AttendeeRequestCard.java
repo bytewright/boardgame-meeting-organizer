@@ -91,6 +91,7 @@ public class AttendeeRequestCard extends Div {
     String displayName =
         switch (request.getPayload()) {
           case JoinRequestPayload.Anon anon -> anon.displayName();
+          case JoinRequestPayload.AnonEmail anonEmail -> anonEmail.displayName();
           case JoinRequestPayload.User user ->
               userDao.findById(user.userId()).map(RegisteredUser::getDisplayName).orElse("-");
         };

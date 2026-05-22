@@ -69,12 +69,16 @@ public class TelegramBot implements LongPollingSingleThreadUpdateConsumer {
           case VerificationAttempt.Success success -> {
             NotificationContext response =
                 NotificationContext.builder()
-                    .notificationTargetType(NotificationTargetType.DIRECT)
+                    .target(
+                        NotificationContext.Target.User.builder()
+                            .userId(success.user().getId())
+                            .displayName(success.user().getDisplayName())
+                            .primaryContactInfo(success.contactOption().getContactInfo())
+                            .build())
                     .payload(
                         NotificationPayload.UserMessengerLinked.builder()
                             .username(success.user().getDisplayName())
                             .build())
-                    .userId(success.user().getId())
                     .locale(success.user().getPreferredLocale())
                     .build();
             adapter.execute(response, Long.toString(message.getChatId()));

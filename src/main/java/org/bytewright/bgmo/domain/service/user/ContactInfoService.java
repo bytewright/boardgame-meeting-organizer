@@ -86,7 +86,8 @@ public class ContactInfoService {
           .filter(contact -> primaryContactId.equals(contact.id()))
           .findAny();
     }
-    Set<ContactInfoType> activeTypes = Set.of(ContactInfoType.TELEGRAM);
+    // todo this feels hacky, why not simply resolve primary on db load
+    Set<ContactInfoType> activeTypes = Set.of(ContactInfoType.TELEGRAM, ContactInfoType.EMAIL);
     if (user.getContactOptions().size() == 1) {
       return user.getContactOptions().stream()
           .filter(contactInfo -> activeTypes.contains(contactInfo.getType()))

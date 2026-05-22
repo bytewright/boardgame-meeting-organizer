@@ -10,6 +10,7 @@ import org.bytewright.bgmo.domain.model.user.ContactInfo;
 import org.bytewright.bgmo.domain.model.user.ContactInfoType;
 import org.bytewright.bgmo.domain.model.user.ContactOption;
 import org.bytewright.bgmo.domain.model.user.RegisteredUser;
+import org.bytewright.bgmo.domain.service.data.ModelDao;
 import org.bytewright.bgmo.domain.service.data.RegisteredUserDao;
 import org.springframework.stereotype.Service;
 
@@ -19,9 +20,10 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class NotificationWorkflows {
   private final UserWorkflows userWorkflows;
+  private final ModelDao<ContactOption> contactOptionDao;
   private final RegisteredUserDao userDao;
 
-  public UUID verifyMessengerContact(
+  public ContactOption verifyMessengerContact(
       UUID userId, ContactInfoType type, String chatId, String userName) {
     Optional<ContactOption> contactInfoToVerify =
         userDao.find(userId).map(RegisteredUser::getContactOptions).stream()
@@ -31,13 +33,13 @@ public class NotificationWorkflows {
     if (contactInfoToVerify.isPresent()
         && contactInfoToVerify.get().getType().isSingletonContact()) {
       log.info("User reverified his account...?");
-      return contactInfoToVerify.get().id();
+      return contactInfoToVerify.get();
     } else {
       return createNewVerifiedSingletonContact(userId, type, chatId, userName);
     }
   }
 
-  private UUID createNewVerifiedSingletonContact(
+  private ContactOption createNewVerifiedSingletonContact(
       UUID userId, ContactInfoType type, String chatId, String userName) {
     log.info("Creating new verified messenger contact info of type {} for userId {}", type, userId);
     ContactInfo newContactInfo =
@@ -52,7 +54,8 @@ public class NotificationWorkflows {
               throw new IllegalArgumentException(
                   "Type %s can't be verified! User: %s".formatted(type, userId));
         };
-    return userWorkflows.addContactInfo(userId, newContactInfo, true);
+    UUID contactInfoId = userWorkflows.addContactInfo(userId, newContactInfo, true);
+    return contactOptionDao.findOrThrow(contactInfoId);
   }
 
   public void triggerUpcomingMeetingNotifications(UUID meetupId) {}

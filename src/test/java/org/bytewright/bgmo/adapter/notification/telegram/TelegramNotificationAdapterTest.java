@@ -13,10 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.bytewright.bgmo.domain.model.AdapterSettings;
 import org.bytewright.bgmo.domain.model.notification.NotificationContext;
 import org.bytewright.bgmo.domain.model.notification.NotificationPayload;
-import org.bytewright.bgmo.domain.model.notification.NotificationTargetType;
 import org.bytewright.bgmo.domain.model.user.ContactInfo;
-import org.bytewright.bgmo.domain.model.user.ContactOption;
-import org.bytewright.bgmo.domain.model.user.RegisteredUser;
 import org.bytewright.bgmo.domain.service.data.AdapterSettingsDao;
 import org.bytewright.bgmo.domain.service.data.RegisteredUserDao;
 import org.junit.jupiter.api.BeforeEach;
@@ -64,7 +61,7 @@ class TelegramNotificationAdapterTest {
     UUID meetupId = UUID.randomUUID();
     NotificationContext context =
         NotificationContext.builder()
-            .notificationTargetType(NotificationTargetType.GROUP)
+            .target(NotificationContext.Target.Group.builder().build())
             .payload(
                 NotificationPayload.MeetupCreated.builder()
                     .meetupUrl(URI.create("https://some.url.de/path/to-meetup/").toURL())
@@ -99,21 +96,19 @@ class TelegramNotificationAdapterTest {
       throws TelegramApiException {
     // Arrange
     UUID userId = UUID.randomUUID();
+    ContactInfo.TelegramContact telegramContact =
+        ContactInfo.TelegramContact.builder().chatId("987654321").build();
+
     NotificationContext context =
         NotificationContext.builder()
+            .target(
+                NotificationContext.Target.User.builder()
+                    .userId(userId)
+                    .primaryContactInfo(telegramContact)
+                    .build())
             .payload(NotificationPayload.UserApproved.builder().build())
-            .notificationTargetType(NotificationTargetType.DIRECT)
             .locale(Locale.GERMAN)
-            .userId(userId)
             .build();
-
-    String directChatId = "987654321";
-    RegisteredUser mockUser = mock(RegisteredUser.class);
-    ContactInfo.TelegramContact telegramContact = mock(ContactInfo.TelegramContact.class);
-    ContactOption contactOption = ContactOption.builder().contactInfo(telegramContact).build();
-    when(telegramContact.chatId()).thenReturn(directChatId);
-    when(mockUser.getContactOptions()).thenReturn(Set.of(contactOption));
-    when(userDao.findOrThrow(userId)).thenReturn(mockUser);
 
     doReturn("Dein Konto ist freigeschaltet\\.")
         .when(templateService)
@@ -127,7 +122,7 @@ class TelegramNotificationAdapterTest {
     SendMessage capturedMessage = sendMessageCaptor.getValue();
 
     assertNotNull(capturedMessage);
-    assertEquals(directChatId, capturedMessage.getChatId());
+    assertEquals(telegramContact.chatId(), capturedMessage.getChatId());
     assertEquals("Dein Konto ist freigeschaltet\\.", capturedMessage.getText());
     assertEquals("MarkdownV2", capturedMessage.getParseMode());
   }

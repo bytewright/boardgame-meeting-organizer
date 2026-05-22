@@ -62,6 +62,7 @@ public class MeetupDetailContextBuilder {
                   r ->
                       switch (r.getPayload()) {
                         case JoinRequestPayload.Anon ignored -> false;
+                        case JoinRequestPayload.AnonEmail ignored -> false;
                         case JoinRequestPayload.User user ->
                             currentUser.getId().equals(user.userId());
                       })
@@ -83,6 +84,8 @@ public class MeetupDetailContextBuilder {
               .filter(
                   r ->
                       switch (r.getPayload()) {
+                        case JoinRequestPayload.AnonEmail anonEmail ->
+                            anonEmail.anonToken().equals(anonToken);
                         case JoinRequestPayload.Anon anon -> anon.anonToken().equals(anonToken);
                         case JoinRequestPayload.User ignored -> false;
                       })

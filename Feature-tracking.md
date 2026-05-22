@@ -2,6 +2,7 @@
 
 - i18n for legal pages
 - anonview: "erstelle einen Account" should be link to register page
+- RegUser#primary should be a ContactOption instance
 
 # ToDos - Features
 - meetup MeetupEditView

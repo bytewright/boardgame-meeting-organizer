@@ -19,7 +19,16 @@ public class ContactInfoRenderer {
       case JoinRequestPayload.User user -> {
         return renderUser(user);
       }
+      case JoinRequestPayload.AnonEmail anonEmail -> {
+        return renderAnonEmail(anonEmail);
+      }
     }
+  }
+
+  private Span renderAnonEmail(JoinRequestPayload.AnonEmail anonEmail) {
+    Span contactValue = new Span("✉ " + anonEmail.emailContact().email());
+    contactValue.getStyle().set("word-break", "break-word");
+    return contactValue;
   }
 
   private Span renderUser(JoinRequestPayload.User user) {

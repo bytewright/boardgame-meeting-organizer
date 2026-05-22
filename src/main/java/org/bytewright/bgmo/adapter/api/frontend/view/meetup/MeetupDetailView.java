@@ -139,6 +139,7 @@ public class MeetupDetailView extends VerticalLayout implements BeforeEnterObser
   private String getDisplayName(MeetupJoinRequest meetupJoinRequest) {
     return switch (meetupJoinRequest.getPayload()) {
       case JoinRequestPayload.Anon anon -> anon.displayName();
+      case JoinRequestPayload.AnonEmail anonEmail -> anonEmail.displayName();
       case JoinRequestPayload.User user -> userDao.findOrThrow(user.userId()).getDisplayName();
     };
   }

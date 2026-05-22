@@ -9,15 +9,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.bytewright.bgmo.domain.model.AdapterSettings;
 import org.bytewright.bgmo.domain.model.notification.NotificationContext;
 import org.bytewright.bgmo.domain.model.notification.NotificationPayload;
-import org.bytewright.bgmo.domain.model.notification.NotificationTargetType;
 import org.bytewright.bgmo.domain.model.notification.VerificationStep;
 import org.bytewright.bgmo.domain.model.user.ContactInfo;
 import org.bytewright.bgmo.domain.model.user.ContactInfoType;
-import org.bytewright.bgmo.domain.model.user.ContactOption;
-import org.bytewright.bgmo.domain.model.user.RegisteredUser;
 import org.bytewright.bgmo.domain.service.AdapterSettingsProvider;
 import org.bytewright.bgmo.domain.service.data.AdapterSettingsDao;
-import org.bytewright.bgmo.domain.service.data.RegisteredUserDao;
 import org.bytewright.bgmo.domain.service.notification.ChatBotNotificationTaskExecutor;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.InitializingBean;
@@ -49,15 +45,18 @@ public class TelegramNotificationAdapter
   private final TelegramTemplateService templateService;
   private final AdapterSettingsDao adapterSettingsDao;
   private final TelegramBot telegramBot;
-  private final RegisteredUserDao userDao;
   private final JsonMapper objectMapper;
   private TelegramBotsLongPollingApplication botsApp;
 
   @Override
   public boolean supports(NotificationContext context) {
-    return (context.notificationTargetType() == NotificationTargetType.GROUP
-            && StringUtils.hasText(adapterProperties.getGroupChatId()))
-        || userDao.hasContactOfType(context.userId(), ContactInfoType.TELEGRAM);
+    return switch (context.target()) {
+      case NotificationContext.Target.Anon ignored -> false;
+      case NotificationContext.Target.Group ignored ->
+          StringUtils.hasText(adapterProperties.getGroupChatId());
+      case NotificationContext.Target.User user ->
+          user.primaryContactInfo() instanceof ContactInfo.TelegramContact;
+    };
   }
 
   @Override
@@ -103,21 +102,16 @@ public class TelegramNotificationAdapter
   }
 
   private String getChatId(NotificationContext context) {
-    return switch (context.notificationTargetType()) {
-      case GROUP -> adapterProperties.getGroupChatId();
-      case DIRECT -> {
-        RegisteredUser user = userDao.findOrThrow(context.userId());
-        List<ContactInfo.TelegramContact> infos =
-            user.getContactOptions().stream()
-                .map(ContactOption::getContactInfo)
-                .filter(ContactInfo.TelegramContact.class::isInstance)
-                .map(ContactInfo.TelegramContact.class::cast)
-                .toList();
-        if (infos.size() != 1) {
-          throw new IllegalArgumentException(
-              "Can't find unique ContactInfo for telegram for user " + user.logEntity());
+    return switch (context.target()) {
+      case NotificationContext.Target.Group ignored -> adapterProperties.getGroupChatId();
+      case NotificationContext.Target.Anon ignored ->
+          throw new IllegalArgumentException("Can't send telegram message to anon");
+      case NotificationContext.Target.User userTarget -> {
+        if (userTarget.primaryContactInfo()
+            instanceof ContactInfo.TelegramContact telegramContact) {
+          yield telegramContact.chatId();
         }
-        yield infos.getFirst().chatId();
+        throw new IllegalArgumentException("Can't find chatId with user " + userTarget.userId());
       }
     };
   }
@@ -199,8 +193,8 @@ public class TelegramNotificationAdapter
   }
 
   @Override
-  public AdapterSettingsProvider.AdapterInfo getAdapterInfo() {
-    return AdapterSettingsProvider.AdapterInfo.builder()
+  public AdapterInfo getAdapterInfo() {
+    return AdapterInfo.builder()
         .stableName(ADAPTER_NAME)
         .description(
             "Telegram messenger API integration, sends notifications and updates to linked users")
@@ -212,7 +206,7 @@ public class TelegramNotificationAdapter
     try {
       TelegramSettings telegramSettings = objectMapper.readValue(jsonData, TelegramSettings.class);
       return telegramSettings != null ? ValidationResult.VALID : ValidationResult.INVALID;
-    } catch (tools.jackson.core.JacksonException e) {
+    } catch (JacksonException e) {
       log.error("Error while validating json: {}", e.getMessage());
     }
     return ValidationResult.INVALID;

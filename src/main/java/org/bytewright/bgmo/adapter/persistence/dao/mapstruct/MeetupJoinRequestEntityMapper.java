@@ -37,6 +37,7 @@ public abstract class MeetupJoinRequestEntityMapper
   protected RegisteredUserEntity extractUser(JoinRequestPayload payload) {
     return switch (payload) {
       case JoinRequestPayload.Anon ignored -> null;
+      case JoinRequestPayload.AnonEmail ignored -> null;
       case JoinRequestPayload.User user ->
           entityManager.getReference(RegisteredUserEntity.class, user.userId());
     };

@@ -10,7 +10,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.jackson.Jacksonized;
 import lombok.extern.slf4j.Slf4j;
 import org.bytewright.bgmo.domain.model.AdapterSettings;
-import org.bytewright.bgmo.domain.model.notification.NotificationTargetType;
 import org.bytewright.bgmo.domain.service.data.AdapterSettingsDao;
 import org.springframework.stereotype.Service;
 import tools.jackson.core.JacksonException;
@@ -67,15 +66,9 @@ public class SiteManagementService implements AdapterSettingsProvider {
   }
 
   public Locale getDefaultLocale() {
-    return getDefaultLocale(NotificationTargetType.DIRECT);
-  }
-
-  public Locale getDefaultLocale(NotificationTargetType type) {
-    Optional<SiteSettings> settings = Optional.ofNullable(getSettings());
-    return switch (type) {
-      case DIRECT -> settings.map(SiteSettings::getDefaultLocale).orElse(Locale.GERMAN);
-      case GROUP -> settings.map(SiteSettings::getDefaultGroupLocale).orElse(Locale.GERMAN);
-    };
+    return Optional.ofNullable(getSettings())
+        .map(SiteSettings::getDefaultLocale)
+        .orElse(Locale.GERMAN);
   }
 
   @Data

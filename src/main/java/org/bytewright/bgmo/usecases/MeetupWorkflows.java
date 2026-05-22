@@ -85,6 +85,10 @@ public class MeetupWorkflows {
     requestToJoin(meetupId, null, payload);
   }
 
+  public void requestToJoinAnon(UUID meetupId, JoinRequestPayload.AnonEmail payload) {
+    requestToJoin(meetupId, null, payload);
+  }
+
   private void requestToJoin(UUID meetupId, String comment, JoinRequestPayload payload) {
     MeetupEvent meetupEvent = meetupDao.findOrThrow(meetupId);
     Optional<MeetupJoinRequest> existingRequest =

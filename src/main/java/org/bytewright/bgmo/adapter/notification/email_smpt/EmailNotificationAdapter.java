@@ -10,7 +10,6 @@ import org.bytewright.bgmo.adapter.notification.email_smpt.model.EmailSettings;
 import org.bytewright.bgmo.adapter.notification.email_smpt.model.RenderedEmail;
 import org.bytewright.bgmo.domain.model.AdapterSettings;
 import org.bytewright.bgmo.domain.model.notification.NotificationContext;
-import org.bytewright.bgmo.domain.model.notification.NotificationTargetType;
 import org.bytewright.bgmo.domain.model.user.ContactInfo;
 import org.bytewright.bgmo.domain.model.user.ContactInfoType;
 import org.bytewright.bgmo.domain.model.user.ContactOption;
@@ -18,6 +17,7 @@ import org.bytewright.bgmo.domain.model.user.RegisteredUser;
 import org.bytewright.bgmo.domain.service.AdapterSettingsProvider;
 import org.bytewright.bgmo.domain.service.data.AdapterSettingsDao;
 import org.bytewright.bgmo.domain.service.data.RegisteredUserDao;
+import org.bytewright.bgmo.domain.service.notification.NotificationManager;
 import org.bytewright.bgmo.domain.service.notification.NotificationTaskExecutor;
 import org.springframework.mail.MailException;
 import org.springframework.mail.SimpleMailMessage;
@@ -38,9 +38,9 @@ import tools.jackson.databind.json.JsonMapper;
  * the in-app admin toggle ({@link EmailSettings#isEnabled()}) are true. This two-level gate mirrors
  * the Telegram adapter's approach.
  *
- * <p>Registration with {@link org.bytewright.bgmo.domain.service.notification.NotificationManager}
- * is handled by the existing core {@code InitializingBean} that collects all {@link
- * NotificationTaskExecutor} beans and registers them — no changes needed there.
+ * <p>Registration with {@link NotificationManager} is handled by the existing core {@code
+ * InitializingBean} that collects all {@link NotificationTaskExecutor} beans and registers them —
+ * no changes needed there.
  */
 @Slf4j
 @Service
@@ -58,11 +58,13 @@ public class EmailNotificationAdapter implements NotificationTaskExecutor, Adapt
 
   @Override
   public boolean supports(NotificationContext context) {
-    // Email is DIRECT only
-    if (context.notificationTargetType() == NotificationTargetType.GROUP) {
-      return false;
-    }
-    return userDao.hasContactOfType(context.userId(), ContactInfoType.EMAIL);
+    return switch (context.target()) {
+      case NotificationContext.Target.Anon anon ->
+          anon.contactInfo().type() == ContactInfoType.EMAIL;
+      case NotificationContext.Target.User user ->
+          user.primaryContactInfo().type() == ContactInfoType.EMAIL;
+      case NotificationContext.Target.Group ignored -> false;
+    };
   }
 
   @Override
@@ -78,9 +80,7 @@ public class EmailNotificationAdapter implements NotificationTaskExecutor, Adapt
       log.info("Email integration is disabled, skipping execution of: {}", messageKey);
       return;
     }
-
-    RegisteredUser user = userDao.findOrThrow(context.userId());
-    String toAddress = resolveEmailAddress(user);
+    ContactInfo.EmailContact info = getContact(context);
     EmailSettings settings = getSettings();
     Locale locale = context.locale() != null ? context.locale() : Locale.ENGLISH;
     RenderedEmail rendered = templateService.render(locale, context.payload());
@@ -88,7 +88,7 @@ public class EmailNotificationAdapter implements NotificationTaskExecutor, Adapt
     SimpleMailMessage message = new SimpleMailMessage();
     message.setFrom(
         settings.getSenderDisplayName() + " <" + adapterProperties.getFromAddress() + ">");
-    message.setTo(toAddress);
+    message.setTo(info.email());
     if (settings.getReplyTo() != null && !settings.getReplyTo().isBlank()) {
       message.setReplyTo(settings.getReplyTo());
     }
@@ -97,10 +97,9 @@ public class EmailNotificationAdapter implements NotificationTaskExecutor, Adapt
 
     try {
       mailSender.send(message);
-      log.info("Sent email notification '{}' to user {}", messageKey, user.logEntity());
+      log.info("Sent email notification '{}' to {}", messageKey, context.target());
     } catch (MailException e) {
-      log.error(
-          "Failed to send email notification '{}' to user {}", messageKey, user.logEntity(), e);
+      log.error("Failed to send email notification '{}' to {}", messageKey, context.target(), e);
 
       // TODO: Bounce handling
       // Most SMTP relay providers can POST webhook events for hard bounces.
@@ -115,6 +114,18 @@ public class EmailNotificationAdapter implements NotificationTaskExecutor, Adapt
       //   5. Mark that ContactOption as invalid so it stops consuming quota on every notification.
       //      This likely needs a new method on ContactInfoService or RegisteredUserDao.
     }
+  }
+
+  private ContactInfo.EmailContact getContact(NotificationContext context) {
+    ContactInfo info =
+        switch (context.target()) {
+          case NotificationContext.Target.Anon anon -> anon.contactInfo();
+          case NotificationContext.Target.User user -> user.primaryContactInfo();
+          case NotificationContext.Target.Group ignored ->
+              throw new IllegalArgumentException("email cant target groups!");
+        };
+    if (info instanceof ContactInfo.EmailContact emailContact) return emailContact;
+    throw new IllegalArgumentException("Context did not contain email contact!");
   }
 
   public boolean isEnabled() {

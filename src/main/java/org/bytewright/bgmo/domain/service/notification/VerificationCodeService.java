@@ -11,6 +11,7 @@ import org.bytewright.bgmo.domain.model.notification.MessengerLinkContext;
 import org.bytewright.bgmo.domain.model.notification.VerificationAttempt;
 import org.bytewright.bgmo.domain.model.notification.VerificationStep;
 import org.bytewright.bgmo.domain.model.user.ContactInfoType;
+import org.bytewright.bgmo.domain.model.user.ContactOption;
 import org.bytewright.bgmo.domain.model.user.RegisteredUser;
 import org.bytewright.bgmo.domain.service.data.RegisteredUserDao;
 import org.bytewright.bgmo.usecases.NotificationWorkflows;
@@ -41,10 +42,11 @@ public class VerificationCodeService {
     UUID userId = pendingCodes.remove(code);
     if (userId != null) {
       log.info("Received a correct verification token from user {}, contact type {}", userId, type);
-      UUID contactId = notificationWorkflows.verifyMessengerContact(userId, type, chatId, userName);
-      log.info("Finished verification for {} contact with id: {}", type, contactId);
+      ContactOption contactOption =
+          notificationWorkflows.verifyMessengerContact(userId, type, chatId, userName);
+      log.info("Finished verification for {} contact with id: {}", type, contactOption.id());
       RegisteredUser user = userDao.findOrThrow(userId);
-      return new VerificationAttempt.Success(user);
+      return new VerificationAttempt.Success(user, contactOption);
     }
     log.info("Received unknown verification code for type {}: {}", type, code);
     return new VerificationAttempt.Failed();
