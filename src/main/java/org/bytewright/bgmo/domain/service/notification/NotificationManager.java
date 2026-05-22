@@ -41,19 +41,49 @@ public class NotificationManager {
   public void onMeetupCreatedEvent(ModelUpdatedEvents.MeetupCreated event) {
     UUID meetupId = event.id();
     var meetup = meetupDao.findById(meetupId).orElseThrow();
-    var context =
-        NotificationContext.builder()
-            .target(NotificationContext.Target.Group.builder().build())
-            .payload(
-                NotificationPayload.MeetupCreated.builder()
-                    .title(meetup.getTitle())
-                    .meetupId(meetupId)
-                    .meetupUrl(urlGenerator.getUrlFor(meetup))
-                    .build())
-            .locale(siteManagementService.getDefaultLocale())
+    var payload =
+        NotificationPayload.MeetupCreated.builder()
+            .title(meetup.getTitle())
+            .meetupId(meetupId)
+            .meetupUrl(urlGenerator.getUrlFor(meetup))
             .build();
+    switch (meetup.getVisibility()) {
+      case WITH_LINK_ONLY -> dispatchToCreatorAndAdmins(meetup, payload);
+      case PUBLIC -> {
+        var context =
+            NotificationContext.builder()
+                .target(NotificationContext.Target.Group.builder().build())
+                .payload(payload)
+                .locale(siteManagementService.getDefaultLocale())
+                .build();
+        dispatch(context);
+      }
+    }
+  }
 
-    dispatch(context);
+  private void dispatchToCreatorAndAdmins(
+      MeetupEvent meetup, NotificationPayload.MeetupCreated payload) {
+    Set<RegisteredUser> relevantUsers = new HashSet<>(userDao.findAllActiveByRole(UserRole.ADMIN));
+    relevantUsers.add(userDao.findOrThrow(meetup.getCreatorId()));
+    for (RegisteredUser user : relevantUsers) {
+      ContactInfo contactInfo =
+          contactInfoService
+              .getPrimaryContact(user)
+              .map(ContactOption::getContactInfo)
+              .orElseThrow();
+      var context =
+          NotificationContext.builder()
+              .target(
+                  NotificationContext.Target.User.builder()
+                      .userId(user.getId())
+                      .displayName(user.getDisplayName())
+                      .primaryContactInfo(contactInfo)
+                      .build())
+              .payload(payload)
+              .locale(user.getPreferredLocale())
+              .build();
+      dispatch(context);
+    }
   }
 
   @EventListener

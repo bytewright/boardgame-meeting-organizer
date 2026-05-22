@@ -10,6 +10,7 @@ import org.bytewright.bgmo.domain.model.user.ContactInfo;
 import org.bytewright.bgmo.domain.model.user.ContactInfoType;
 import org.bytewright.bgmo.domain.model.user.ContactOption;
 import org.bytewright.bgmo.domain.model.user.RegisteredUser;
+import org.bytewright.bgmo.domain.service.data.MeetupDao;
 import org.bytewright.bgmo.domain.service.data.ModelDao;
 import org.bytewright.bgmo.domain.service.data.RegisteredUserDao;
 import org.springframework.stereotype.Service;
@@ -22,6 +23,7 @@ public class NotificationWorkflows {
   private final UserWorkflows userWorkflows;
   private final ModelDao<ContactOption> contactOptionDao;
   private final RegisteredUserDao userDao;
+  private final MeetupDao meetupDao;
 
   public ContactOption verifyMessengerContact(
       UUID userId, ContactInfoType type, String chatId, String userName) {
@@ -58,5 +60,12 @@ public class NotificationWorkflows {
     return contactOptionDao.findOrThrow(contactInfoId);
   }
 
-  public void triggerUpcomingMeetingNotifications(UUID meetupId) {}
+  public void triggerUpcomingMeetingNotifications(UUID meetupId) {
+    meetupDao
+        .find(meetupId)
+        .ifPresent(
+            meetupEvent ->
+                log.info(
+                    "Should send out infos about upcoming meeting: {}", meetupEvent.logIdentity()));
+  }
 }
