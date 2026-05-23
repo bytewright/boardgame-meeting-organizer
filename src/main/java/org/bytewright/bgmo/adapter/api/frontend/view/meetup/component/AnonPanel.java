@@ -233,43 +233,18 @@ public class AnonPanel extends VerticalLayout {
       setCloseOnOutsideClick(false);
       setWidth("480px");
 
-      // ── Name ────────────────────────────────────────────────────────────────
-      // anon-join-dialog.name.label
-      //   EN: Display name
-      //   DE: Anzeigename
-      // anon-join-dialog.name.placeholder
-      //   EN: Name shown to other participants
-      //   DE: Name, der anderen Teilnehmern angezeigt wird
       nameField = new TextField(getTranslation("anon-join-dialog.name.label"));
       nameField.setRequired(true);
       nameField.setPlaceholder(getTranslation("anon-join-dialog.name.placeholder"));
       nameField.setWidthFull();
 
-      // ── Contact mode ─────────────────────────────────────────────────────────
       modeGroup = buildModeGroup();
 
-      // ── Email field (default, visible) ───────────────────────────────────────
-      // anon-join-dialog.email.label
-      //   EN: Email address
-      //   DE: E-Mail-Adresse
-      // anon-join-dialog.email.placeholder
-      //   EN: your@email.com
-      //   DE: deine@email.de
       emailField = new EmailField(getTranslation("anon-join-dialog.email.label"));
       emailField.setRequired(true);
       emailField.setPlaceholder(getTranslation("anon-join-dialog.email.placeholder"));
       emailField.setWidthFull();
 
-      // ── Freeform field (hidden until FREEFORM selected) ──────────────────────
-      // anon-join-dialog.contact.label
-      //   EN: Contact info
-      //   DE: Kontaktangabe
-      // anon-join-dialog.contact.placeholder
-      //   EN: Phone number, Signal handle, …
-      //   DE: Telefonnummer, Signal-Handle, …
-      // anon-join-dialog.contact.helper
-      //   EN: Shared only with the organiser after your request is confirmed
-      //   DE: Wird erst nach Bestätigung deiner Anfrage an den Organisator weitergegeben
       freeformContactField = new TextField(getTranslation("anon-join-dialog.contact.label"));
       freeformContactField.setRequired(true);
       freeformContactField.setPlaceholder(getTranslation("anon-join-dialog.contact.placeholder"));
@@ -277,11 +252,9 @@ public class AnonPanel extends VerticalLayout {
       freeformContactField.setWidthFull();
       freeformContactField.setVisible(false);
 
-      // ── Warning div (hidden until FREEFORM selected) ─────────────────────────
       Div warningDiv = buildWarningDiv();
       warningDiv.setVisible(false);
 
-      // ── Mode toggle wiring ────────────────────────────────────────────────────
       modeGroup.addValueChangeListener(
           e -> {
             boolean isFreeform = e.getValue() == ContactMode.FREEFORM;
@@ -290,12 +263,6 @@ public class AnonPanel extends VerticalLayout {
             warningDiv.setVisible(isFreeform);
           });
 
-      // ── GDPR notice ───────────────────────────────────────────────────────────
-      // anon-join-dialog.gdpr.text
-      //   EN: Your contact details are stored solely to facilitate coordination for this meetup and
-      //       will be deleted afterwards. They will not be shared with any third party.
-      //   DE: Deine Kontaktdaten werden ausschließlich zur Koordination dieses Treffens gespeichert
-      //       und danach gelöscht. Sie werden nicht an Dritte weitergegeben.
       Paragraph gdprNote = new Paragraph(getTranslation("anon-join-dialog.gdpr.text"));
       gdprNote
           .getStyle()
@@ -303,18 +270,12 @@ public class AnonPanel extends VerticalLayout {
           .set("color", "var(--lumo-secondary-text-color)")
           .set("line-height", "1.5");
 
-      // anon-join-dialog.consent.label
-      //   EN: I agree to the storage of my contact details for this meetup
-      //   DE: Ich stimme der Speicherung meiner Kontaktdaten für dieses Treffen zu
       consentBox = new Checkbox(getTranslation("anon-join-dialog.consent.label"));
 
       // ── Buttons ───────────────────────────────────────────────────────────────
       Button cancelBtn = new Button(getTranslation("anon-join-dialog.btn.cancel"), e -> close());
       cancelBtn.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
 
-      // anon-join-dialog.btn.submit
-      //   EN: Send join request
-      //   DE: Teilnahmeanfrage senden
       Button submitBtn = new Button(getTranslation("anon-join-dialog.btn.submit"));
       submitBtn.addThemeVariants(ButtonVariant.LUMO_PRIMARY, ButtonVariant.LUMO_SUCCESS);
       submitBtn.addClickListener(
@@ -344,21 +305,12 @@ public class AnonPanel extends VerticalLayout {
 
     private RadioButtonGroup<ContactMode> buildModeGroup() {
       RadioButtonGroup<ContactMode> group = new RadioButtonGroup<>();
-      // anon-join-dialog.mode.label
-      //   EN: How should the organiser reach you?
-      //   DE: Wie soll der Organisator dich erreichen?
       group.setLabel(getTranslation("anon-join-dialog.mode.label"));
       group.setItems(ContactMode.EMAIL, ContactMode.FREEFORM);
       group.setItemLabelGenerator(
           mode ->
               switch (mode) {
-                // anon-join-dialog.mode.email
-                //   EN: Email address (recommended)
-                //   DE: E-Mail-Adresse (empfohlen)
                 case EMAIL -> getTranslation("anon-join-dialog.mode.email");
-                // anon-join-dialog.mode.freeform
-                //   EN: Other contact info
-                //   DE: Sonstiger Kontaktweg
                 case FREEFORM -> getTranslation("anon-join-dialog.mode.freeform");
               });
       group.setValue(ContactMode.EMAIL);
@@ -376,9 +328,6 @@ public class AnonPanel extends VerticalLayout {
           .set("width", "100%")
           .set("box-sizing", "border-box");
 
-      // anon-join-dialog.freeform.warning.title
-      //   EN: ⚠ No automatic notifications
-      //   DE: ⚠ Keine automatischen Benachrichtigungen
       Span title = new Span(getTranslation("anon-join-dialog.freeform.warning.title"));
       title
           .getStyle()
@@ -386,15 +335,6 @@ public class AnonPanel extends VerticalLayout {
           .set("display", "block")
           .set("margin-bottom", "var(--lumo-space-xs)");
 
-      // anon-join-dialog.freeform.warning.text
-      //   EN: Without an email address you won't receive automatic notifications for: meetup
-      //       cancellations or rescheduling, join request confirmation (if organiser approval is
-      //       required), or lottery results. The organiser will have to contact you manually.
-      //   DE: Ohne E-Mail-Adresse erhältst du keine automatischen Benachrichtigungen über:
-      //       Absagen oder Terminänderungen des Treffens, die Bestätigung deiner Anfrage
-      //       (falls eine Freigabe durch den Organisator erforderlich ist) oder
-      //       Losentscheid-Ergebnisse. Der Organisator muss dich in diesen Fällen manuell
-      //       kontaktieren.
       Span text = new Span(getTranslation("anon-join-dialog.freeform.warning.text"));
       text.getStyle().set("font-size", "var(--lumo-font-size-s)");
 
@@ -404,13 +344,8 @@ public class AnonPanel extends VerticalLayout {
 
     private boolean validate() {
       boolean valid = true;
-
-      // Name
       if (nameField.getValue() == null || nameField.getValue().isBlank()) {
         nameField.setInvalid(true);
-        // anon-join-dialog.validation.name-required
-        //   EN: Please enter a display name
-        //   DE: Bitte einen Anzeigenamen eingeben
         nameField.setErrorMessage(getTranslation("anon-join-dialog.validation.name-required"));
         valid = false;
       } else {
@@ -424,11 +359,7 @@ public class AnonPanel extends VerticalLayout {
         valid = validateFreeformField() && valid;
       }
 
-      // Consent
       if (!consentBox.getValue()) {
-        // anon-join-dialog.validation.consent-required
-        //   EN: Please accept the data storage notice to continue
-        //   DE: Bitte stimme der Datenspeicherung zu, um fortzufahren
         Notification n =
             Notification.show(
                 getTranslation("anon-join-dialog.validation.consent-required"),
@@ -446,16 +377,10 @@ public class AnonPanel extends VerticalLayout {
 
       if (email == null || email.isBlank()) {
         emailField.setInvalid(true);
-        // anon-join-dialog.validation.email-required
-        //   EN: Please enter your email address
-        //   DE: Bitte E-Mail-Adresse eingeben
         emailField.setErrorMessage(getTranslation("anon-join-dialog.validation.email-required"));
         return false;
       }
 
-      // anon-join-dialog.validation.email-invalid
-      //   EN: Please enter a valid email address
-      //   DE: Bitte eine gültige E-Mail-Adresse eingeben
       var result =
           new EmailValidator(getTranslation("anon-join-dialog.validation.email-invalid"))
               .apply(email, new ValueContext(emailField));
@@ -473,9 +398,6 @@ public class AnonPanel extends VerticalLayout {
     private boolean validateFreeformField() {
       if (freeformContactField.getValue() == null || freeformContactField.getValue().isBlank()) {
         freeformContactField.setInvalid(true);
-        // anon-join-dialog.validation.contact-required
-        //   EN: Please enter a contact detail
-        //   DE: Bitte eine Kontaktangabe eingeben
         freeformContactField.setErrorMessage(
             getTranslation("anon-join-dialog.validation.contact-required"));
         return false;

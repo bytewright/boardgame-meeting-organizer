@@ -11,7 +11,9 @@ import jakarta.annotation.security.PermitAll;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.bytewright.bgmo.adapter.api.frontend.service.ContactInfoRenderer;
 import org.bytewright.bgmo.adapter.api.frontend.service.SessionInfoService;
 import org.bytewright.bgmo.adapter.api.frontend.service.i18n.LocaleService;
 import org.bytewright.bgmo.adapter.api.frontend.view.component.MainLayout;
@@ -29,31 +31,21 @@ import org.bytewright.bgmo.usecases.MeetupWorkflows;
 @RouteAlias(value = "home", layout = MainLayout.class)
 @PageTitle("Dashboard | Boardgame Meeting Organizer")
 @PermitAll
+@RequiredArgsConstructor
 public class DashboardView extends VerticalLayout implements BeforeEnterObserver {
-
+  private final ContactInfoRenderer contactInfoRenderer;
   private final LocaleService localeService;
   private final SessionInfoService authService;
   private final MeetupWorkflows meetupWorkflows;
   private final RegisteredUserDao registeredUserDao;
 
-  public DashboardView(
-      LocaleService localeService,
-      SessionInfoService authService,
-      MeetupWorkflows meetupWorkflows,
-      RegisteredUserDao registeredUserDao) {
-    this.localeService = localeService;
-    this.authService = authService;
-    this.meetupWorkflows = meetupWorkflows;
-    this.registeredUserDao = registeredUserDao;
+  private void buildUI(UUID currentUserId) {
 
     setWidthFull();
     setPadding(true);
     setSpacing(true);
     setMaxWidth(MainLayout.MAX_DISPLAYPORT_WIDTH);
     getStyle().set("margin", "0 auto");
-  }
-
-  private void buildUI(UUID currentUserId) {
     removeAll();
     List<MeetupEvent> meetupsFromCurrentUser =
         meetupWorkflows.findMeetupsByOrganizer(currentUserId);
@@ -88,14 +80,14 @@ public class DashboardView extends VerticalLayout implements BeforeEnterObserver
 
   private Div buildMeetupCard(MeetupEvent meetup) {
     RegisteredUser creator = registeredUserDao.findOrThrow(meetup.getCreatorId());
-    MeetupBasicsInfo card = new MeetupBasicsInfo(localeService);
+    MeetupBasicsInfo card = new MeetupBasicsInfo(contactInfoRenderer, localeService);
     MeetupBasicsInfo.Context context =
         MeetupBasicsInfo.Context.builder()
             .meetup(meetup)
             .creator(creator)
             .changeCursor(true)
             .build();
-    card.buildComponent(context);
+    card.buildComponent(context, false);
     // Hover highlight using JS — lightweight approach with style toggle
     card.getElement()
         .addEventListener(

@@ -8,9 +8,11 @@ import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
+import org.bytewright.bgmo.adapter.api.frontend.service.ContactInfoRenderer;
 import org.bytewright.bgmo.adapter.api.frontend.service.MeetupDetailContext;
 import org.bytewright.bgmo.adapter.api.frontend.service.i18n.LocaleService;
 import org.bytewright.bgmo.adapter.api.frontend.view.component.MeetupBasicsInfo;
+import org.bytewright.bgmo.adapter.api.frontend.view.meetup.ViewerRole;
 import org.bytewright.bgmo.domain.model.MeetupEvent;
 
 /**
@@ -23,7 +25,10 @@ import org.bytewright.bgmo.domain.model.MeetupEvent;
  */
 public class MeetupInfoHeader extends VerticalLayout {
 
-  public MeetupInfoHeader(MeetupDetailContext ctx, LocaleService localeService) {
+  public MeetupInfoHeader(
+      MeetupDetailContext ctx,
+      LocaleService localeService,
+      ContactInfoRenderer contactInfoRenderer) {
     setPadding(false);
     setSpacing(true);
 
@@ -61,14 +66,14 @@ public class MeetupInfoHeader extends VerticalLayout {
     titleRow.setAlignItems(Alignment.CENTER);
     titleRow.expand(title);
     add(titleRow);
-    MeetupBasicsInfo meetupBasicsInfo = new MeetupBasicsInfo(localeService);
+    MeetupBasicsInfo meetupBasicsInfo = new MeetupBasicsInfo(contactInfoRenderer, localeService);
     MeetupBasicsInfo.Context context =
         MeetupBasicsInfo.Context.builder()
             .meetup(meetup)
             .creator(ctx.creator())
             .changeCursor(false)
             .build();
-    meetupBasicsInfo.buildComponent(context);
+    meetupBasicsInfo.buildComponent(context, ctx.role() != ViewerRole.ANONYMOUS);
     add(meetupBasicsInfo);
 
     // ── Address block ─────────────────────────────────────────────────────────

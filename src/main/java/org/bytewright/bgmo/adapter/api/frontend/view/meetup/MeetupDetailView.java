@@ -16,7 +16,9 @@ import com.vaadin.flow.server.auth.AnonymousAllowed;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.UUID;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.bytewright.bgmo.adapter.api.frontend.service.ContactInfoRenderer;
 import org.bytewright.bgmo.adapter.api.frontend.service.MeetupDetailContext;
 import org.bytewright.bgmo.adapter.api.frontend.service.MeetupDetailContextBuilder;
 import org.bytewright.bgmo.adapter.api.frontend.service.SessionInfoService;
@@ -52,10 +54,11 @@ import org.bytewright.bgmo.usecases.MeetupWorkflows;
 @Route(value = "meetup/:meetupId", layout = MainLayout.class)
 @PageTitle("Meetup | " + APP_NAME_SHORT)
 @AnonymousAllowed
+@RequiredArgsConstructor
 public class MeetupDetailView extends VerticalLayout implements BeforeEnterObserver {
 
   private static final String ANON_TOKEN_KEY_PREFIX = "anonToken:meetup:";
-
+  private final ContactInfoRenderer contactInfoRenderer;
   private final LocaleService localeService;
   private final SessionInfoService authService;
   private final MeetupWorkflows meetupWorkflows;
@@ -67,27 +70,12 @@ public class MeetupDetailView extends VerticalLayout implements BeforeEnterObser
   private MeetupEvent meetup;
   private MeetupDetailContext ctx;
 
-  public MeetupDetailView(
-      LocaleService localeService,
-      SessionInfoService authService,
-      MeetupWorkflows meetupWorkflows,
-      MeetupDetailContextBuilder contextBuilder,
-      RegisteredUserDao userDao,
-      MeetupDao meetupDao) {
-    this.localeService = localeService;
-    this.authService = authService;
-    this.meetupWorkflows = meetupWorkflows;
-    this.contextBuilder = contextBuilder;
-    this.userDao = userDao;
-    this.meetupDao = meetupDao;
+  private void buildUI() {
     setMaxWidth(MainLayout.MAX_DISPLAYPORT_WIDTH);
     getStyle().set("margin", "0 auto");
-  }
-
-  private void buildUI() {
     removeAll();
 
-    add(new MeetupInfoHeader(ctx, localeService));
+    add(new MeetupInfoHeader(ctx, localeService, contactInfoRenderer));
     add(new Hr());
 
     if (!ctx.offeredGames().isEmpty()) {

@@ -1,5 +1,6 @@
 package org.bytewright.bgmo.adapter.api.frontend.view.component;
 
+import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
@@ -11,6 +12,7 @@ import java.time.ZonedDateTime;
 import java.util.Optional;
 import lombok.Builder;
 import lombok.RequiredArgsConstructor;
+import org.bytewright.bgmo.adapter.api.frontend.service.ContactInfoRenderer;
 import org.bytewright.bgmo.adapter.api.frontend.service.i18n.LocaleService;
 import org.bytewright.bgmo.domain.model.MeetupEvent;
 import org.bytewright.bgmo.domain.model.RequestState;
@@ -18,9 +20,10 @@ import org.bytewright.bgmo.domain.model.user.RegisteredUser;
 
 @RequiredArgsConstructor
 public class MeetupBasicsInfo extends Div {
+  private final ContactInfoRenderer contactInfoRenderer;
   private final LocaleService localeService;
 
-  public void buildComponent(Context context) {
+  public void buildComponent(Context context, boolean renderCreatorAsDeeplink) {
     MeetupEvent meetup = context.meetup();
     RegisteredUser creator = context.creator();
     setWidthFull();
@@ -59,11 +62,6 @@ public class MeetupBasicsInfo extends Div {
     HorizontalLayout timeRow = new GameTimeAndDuration(timeStr, meetup.getDurationHours());
 
     // ── Row 4: Creator + Slots ────────────────────────────────────────────────
-    String creatorName =
-        Optional.of(creator)
-            .map(RegisteredUser::getDisplayName)
-            .orElseGet(() -> meetup.getCreatorId().toString());
-
     long usedSlots =
         meetup.getJoinRequests().stream()
             .filter(r -> RequestState.ACCEPTED == r.getRequestState())
@@ -76,15 +74,23 @@ public class MeetupBasicsInfo extends Div {
     Icon personIcon = VaadinIcon.USER.create();
     personIcon.setSize("var(--lumo-icon-size-s)");
     personIcon.getStyle().setColor("var(--lumo-secondary-text-color)");
-    Span creatorSpan = new Span(creatorName);
 
     Icon slotsIcon = VaadinIcon.USERS.create();
     slotsIcon.setSize("var(--lumo-icon-size-s)");
     slotsIcon.getStyle().setColor("var(--lumo-secondary-text-color)");
     Span slotsSpan = new Span(slotsText);
-
-    // Each icon+label pair is its own flex item, so they wrap together as a unit
-    HorizontalLayout creatorGroup = new HorizontalLayout(personIcon, creatorSpan);
+    HorizontalLayout creatorGroup;
+    if (renderCreatorAsDeeplink) {
+      Component deeplink = contactInfoRenderer.renderAsDeeplink(context.meetup(), creator);
+      creatorGroup = new HorizontalLayout(personIcon, deeplink);
+    } else {
+      String creatorName =
+          Optional.of(creator)
+              .map(RegisteredUser::getDisplayName)
+              .orElseGet(() -> meetup.getCreatorId().toString());
+      Span creatorSpan = new Span(creatorName);
+      creatorGroup = new HorizontalLayout(personIcon, creatorSpan);
+    }
     creatorGroup.setSpacing(true);
     creatorGroup.setAlignItems(FlexComponent.Alignment.CENTER);
     creatorGroup.getStyle().set("flex", "1 1 0").setMinWidth("140px");
