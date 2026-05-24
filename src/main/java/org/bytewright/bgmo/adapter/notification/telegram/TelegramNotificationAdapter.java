@@ -1,20 +1,24 @@
 package org.bytewright.bgmo.adapter.notification.telegram;
 
-import java.util.List;
-import java.util.Locale;
-import java.util.Optional;
-import java.util.UUID;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.bytewright.bgmo.domain.model.AdapterSettings;
+import org.bytewright.bgmo.domain.model.MeetupEvent;
 import org.bytewright.bgmo.domain.model.notification.NotificationContext;
 import org.bytewright.bgmo.domain.model.notification.NotificationPayload;
 import org.bytewright.bgmo.domain.model.notification.VerificationStep;
 import org.bytewright.bgmo.domain.model.user.ContactInfo;
 import org.bytewright.bgmo.domain.model.user.ContactInfoType;
+import org.bytewright.bgmo.domain.model.user.ContactOption;
+import org.bytewright.bgmo.domain.model.user.RegisteredUser;
 import org.bytewright.bgmo.domain.service.AdapterSettingsProvider;
 import org.bytewright.bgmo.domain.service.data.AdapterSettingsDao;
+import org.bytewright.bgmo.domain.service.data.MeetupDao;
+import org.bytewright.bgmo.domain.service.data.RegisteredUserDao;
 import org.bytewright.bgmo.domain.service.notification.ChatBotNotificationTaskExecutor;
+import org.bytewright.bgmo.domain.service.user.ContactInfoService;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
@@ -43,8 +47,12 @@ public class TelegramNotificationAdapter
   private static final String ADAPTER_NAME = "Telegram-ChatBotNotificationTaskExecutor-integration";
   private final TelegramAdapterProperties adapterProperties;
   private final TelegramTemplateService templateService;
+  private final TelegramContactRenderer contactRenderer;
   private final AdapterSettingsDao adapterSettingsDao;
+  private final ContactInfoService contactInfoService;
   private final TelegramBot telegramBot;
+  private final RegisteredUserDao userDao;
+  private final MeetupDao meetupDao;
   private final JsonMapper objectMapper;
   private TelegramBotsLongPollingApplication botsApp;
 
@@ -76,13 +84,12 @@ public class TelegramNotificationAdapter
   }
 
   void execute(NotificationContext context, String chatId) {
-    Locale targetLocale = context.locale() != null ? context.locale() : Locale.GERMAN;
-    String renderedMessage = templateService.render(targetLocale, context.payload());
+    String renderedMessage = renderMessage(context);
     SendMessage message =
         SendMessage.builder().chatId(chatId).text(renderedMessage).parseMode("MarkdownV2").build();
 
     // Adding the "Join" button if a meetupId is present
-    if (context.payload() instanceof NotificationPayload.MeetupCreated meetupCreated) {
+    if (false && context.payload() instanceof NotificationPayload.MeetupCreated meetupCreated) {
       var button =
           InlineKeyboardButton.builder()
               .text("Join Meetup 🎲")
@@ -99,6 +106,38 @@ public class TelegramNotificationAdapter
     } catch (TelegramApiException e) {
       log.error("Failed to send Telegram notification", e);
     }
+  }
+
+  private String renderMessage(NotificationContext context) {
+    Locale targetLocale = context.locale() != null ? context.locale() : Locale.GERMAN;
+    if (context.payload()
+        instanceof
+        NotificationPayload.MeetupCreated(String title, UUID meetupId, java.net.URL meetupUrl)) {
+      MeetupEvent meetupEvent = meetupDao.findOrThrow(meetupId);
+      RegisteredUser creator = userDao.findOrThrow(meetupEvent.getCreatorId());
+      ContactOption contactOption = contactInfoService.getPrimaryContact(creator).orElseThrow();
+      String formattedDate =
+          meetupEvent
+              .getEventDate()
+              .format(DateTimeFormatter.ofPattern("EEE., dd.MM.yyyy 'at' HH:mm", targetLocale));
+
+      Map<String, Object> vars =
+          Map.of(
+              "title",
+              title,
+              "meetupUrl",
+              meetupUrl,
+              "organizerDeeplink",
+              contactRenderer.render(creator.getDisplayName(), contactOption.getContactInfo()),
+              "eventDate",
+              formattedDate,
+              "location",
+              meetupEvent.getAreaHint(),
+              "description",
+              Objects.requireNonNullElse(meetupEvent.getDescription(), ""));
+      return templateService.render(targetLocale, context.payload().messageKey(), vars);
+    }
+    return templateService.render(targetLocale, context.payload());
   }
 
   private String getChatId(NotificationContext context) {

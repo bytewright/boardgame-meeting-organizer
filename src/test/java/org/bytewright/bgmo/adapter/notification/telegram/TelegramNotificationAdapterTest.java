@@ -8,14 +8,21 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 import java.net.URI;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 import java.util.*;
 import lombok.extern.slf4j.Slf4j;
 import org.bytewright.bgmo.domain.model.AdapterSettings;
+import org.bytewright.bgmo.domain.model.MeetupEvent;
 import org.bytewright.bgmo.domain.model.notification.NotificationContext;
 import org.bytewright.bgmo.domain.model.notification.NotificationPayload;
 import org.bytewright.bgmo.domain.model.user.ContactInfo;
+import org.bytewright.bgmo.domain.model.user.ContactOption;
+import org.bytewright.bgmo.domain.model.user.RegisteredUser;
 import org.bytewright.bgmo.domain.service.data.AdapterSettingsDao;
+import org.bytewright.bgmo.domain.service.data.MeetupDao;
 import org.bytewright.bgmo.domain.service.data.RegisteredUserDao;
+import org.bytewright.bgmo.domain.service.user.ContactInfoService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -30,10 +37,13 @@ import tools.jackson.databind.json.JsonMapper;
 class TelegramNotificationAdapterTest {
 
   @Mock private TelegramAdapterProperties adapterProperties;
+  @Mock private ContactInfoService contactInfoService;
   @Mock private AdapterSettingsDao adapterSettingsDao;
   @Mock private TelegramBot telegramBot;
   @Mock private RegisteredUserDao userDao;
+  @Mock private MeetupDao meetupDao;
   @Mock private JsonMapper objectMapper;
+  @Spy private TelegramContactRenderer contactRenderer;
   @Spy private TelegramTemplateService templateService;
 
   @InjectMocks private TelegramNotificationAdapter adapter;
@@ -71,6 +81,27 @@ class TelegramNotificationAdapterTest {
             .locale(Locale.ENGLISH)
             .build();
 
+    UUID creatorId = UUID.randomUUID();
+    MeetupEvent meetup =
+        MeetupEvent.builder()
+            .creatorId(creatorId)
+            .areaHint("areaHint")
+            .description("test meetup for telegram render")
+            .eventDate(ZonedDateTime.of(2026, 05, 24, 18, 0, 0, 0, ZoneOffset.UTC))
+            .build();
+    when(meetupDao.findOrThrow(meetupId)).thenReturn(meetup);
+    ContactOption telegramContact =
+        ContactOption.builder()
+            .id(UUID.randomUUID())
+            .contactInfo(ContactInfo.TelegramContact.builder().telegramUsername("foo").build())
+            .build();
+    RegisteredUser creator =
+        RegisteredUser.builder()
+            .primaryContactId(telegramContact.getId())
+            .contactOptions(Set.of(telegramContact))
+            .build();
+    when(userDao.findOrThrow(creatorId)).thenReturn(creator);
+    when(contactInfoService.getPrimaryContact(creator)).thenReturn(Optional.of(telegramContact));
     String groupChatId = "-100123456789";
 
     when(adapterProperties.getGroupChatId()).thenReturn(groupChatId);

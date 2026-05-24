@@ -74,19 +74,21 @@ public class TelegramTemplateService implements InitializingBean {
       // messageKey is the actual message
       return payload.messageKey();
     }
-    // Fallback to English if the requested locale isn't cached
-    Map<Locale, Template> localeTemplateMap = templateCache.get(payload.messageKey());
+    return render(locale, payload.messageKey(), payload);
+  }
+
+  public String render(Locale locale, String messageKey, Object vars) {
+    Map<Locale, Template> localeTemplateMap = templateCache.get(messageKey);
     if (!localeTemplateMap.containsKey(locale)) {
-      log.warn(
-          "Failed to find messageKey {} with locale {} in cache!", payload.messageKey(), locale);
-      return "Notification: " + payload.messageKey();
+      log.warn("Failed to find messageKey {} with locale {} in cache!", messageKey, locale);
+      return "Notification: " + messageKey;
     }
     Template template = localeTemplateMap.get(locale);
     try {
-      return template.apply(payload);
+      return template.apply(vars);
     } catch (IOException e) {
-      log.error("Failed to render telegram template for key {}", payload.messageKey(), e);
-      return "Notification: " + payload.messageKey();
+      log.error("Failed to render telegram template for key {}", messageKey, e);
+      return "Notification: " + messageKey;
     }
   }
 }

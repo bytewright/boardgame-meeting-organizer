@@ -1,4 +1,4 @@
 {
-  "de" : "📣 *Neues Meetup: {{title}}*\r\n▫️ ▫️ ▫️\r\nDetails: [Link]({{meetupUrl}})",
-  "en" : "📣 *New Meetup: {{title}}*\r\n▫️ ▫️ ▫️\r\nDetails: [Link]({{meetupUrl}})"
+  "de": "📣 *{{title}}*\n▫️ ▫️ ▫️\n👋 Organisator: {{organizerDeeplink}}\n⏰ Termin: {{eventDate}}\n📍 Bereich: {{location}}\nDetails: [Link]({{meetupUrl}})\n▫️ ▫️ ▫️\n{{description}}",
+  "en": "📣 *{{title}}*\n▫️ ▫️ ▫️\n👋 Organizer: {{organizerDeeplink}}\n⏰ Meeting time: {{eventDate}}\n📍 Area: {{location}}\nDetails: [Link]({{meetupUrl}})\n▫️ ▫️ ▫️\n{{description}}"
 }

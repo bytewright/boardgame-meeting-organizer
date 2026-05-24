@@ -5,6 +5,7 @@
 - RegUser#primary should be a ContactOption instance
 
 # ToDos - Features
+- notification templates to db
 - meetup MeetupEditView
 - meetup details expanded
   - Event game poll
