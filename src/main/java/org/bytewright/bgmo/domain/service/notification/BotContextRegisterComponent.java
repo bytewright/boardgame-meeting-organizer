@@ -8,11 +8,11 @@ import org.springframework.stereotype.Component;
 @Component
 @RequiredArgsConstructor
 public class BotContextRegisterComponent implements InitializingBean {
-  private final VerificationCodeService verificationCodeService;
+  private final NotificationLinkCodeService notificationLinkCodeService;
   private final Set<ChatBotNotificationTaskExecutor> chatBots;
 
   @Override
   public void afterPropertiesSet() throws Exception {
-    verificationCodeService.registerChatBots(chatBots);
+    notificationLinkCodeService.registerChatBots(chatBots);
   }
 }

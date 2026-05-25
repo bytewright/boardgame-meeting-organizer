@@ -50,7 +50,7 @@ public class SignalNotificationAdapter implements ChatBotNotificationTaskExecuto
   }
 
   @Override
-  public List<VerificationStep> generateVerificationSteps() {
+  public List<VerificationStep> generateLinkingSteps() {
     return List.of(VerificationStep.builder().messageKey("adapter.signal.tutorial.step1").build());
   }
 }

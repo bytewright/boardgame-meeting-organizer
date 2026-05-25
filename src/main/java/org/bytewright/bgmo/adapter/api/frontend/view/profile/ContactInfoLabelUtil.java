@@ -49,7 +49,7 @@ public class ContactInfoLabelUtil {
     return switch (contact) {
       case ContactInfo.EmailContact e -> e.email();
       case ContactInfo.PhoneContact p -> p.phoneNr();
-      case ContactInfo.TelegramContact t -> t.chatId();
+      case ContactInfo.TelegramContact t -> t.username();
       case ContactInfo.SignalContact s -> s.signalHandle();
       case ContactInfo.AddressContact a ->
           Stream.of(a.nameOnBell(), a.street(), a.zipCode() + " " + a.city())

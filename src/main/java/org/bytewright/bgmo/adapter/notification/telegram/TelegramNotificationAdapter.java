@@ -1,17 +1,17 @@
 package org.bytewright.bgmo.adapter.notification.telegram;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.bytewright.bgmo.domain.model.AdapterSettings;
 import org.bytewright.bgmo.domain.model.MeetupEvent;
+import org.bytewright.bgmo.domain.model.notification.NotificationChannel;
 import org.bytewright.bgmo.domain.model.notification.NotificationContext;
-import org.bytewright.bgmo.domain.model.notification.NotificationPayload;
 import org.bytewright.bgmo.domain.model.notification.VerificationStep;
-import org.bytewright.bgmo.domain.model.user.ContactInfo;
 import org.bytewright.bgmo.domain.model.user.ContactInfoType;
-import org.bytewright.bgmo.domain.model.user.ContactOption;
 import org.bytewright.bgmo.domain.model.user.RegisteredUser;
 import org.bytewright.bgmo.domain.service.AdapterSettingsProvider;
 import org.bytewright.bgmo.domain.service.data.AdapterSettingsDao;
@@ -55,16 +55,20 @@ public class TelegramNotificationAdapter
   private final MeetupDao meetupDao;
   private final JsonMapper objectMapper;
   private TelegramBotsLongPollingApplication botsApp;
+  private boolean isRegistered = false;
 
   @Override
   public boolean supports(NotificationContext context) {
     return switch (context.target()) {
-      case NotificationContext.Target.Anon ignored -> false;
       case NotificationContext.Target.Group ignored ->
           StringUtils.hasText(adapterProperties.getGroupChatId());
-      case NotificationContext.Target.User user ->
-          user.primaryContactInfo() instanceof ContactInfo.TelegramContact;
+      case NotificationContext.Target.Anon anon -> isChannelTelegram(anon.channel());
+      case NotificationContext.Target.User user -> isChannelTelegram(user.channel());
     };
+  }
+
+  private boolean isChannelTelegram(NotificationChannel channel) {
+    return channel instanceof NotificationChannel.Telegram;
   }
 
   @Override
@@ -89,7 +93,8 @@ public class TelegramNotificationAdapter
         SendMessage.builder().chatId(chatId).text(renderedMessage).parseMode("MarkdownV2").build();
 
     // Adding the "Join" button if a meetupId is present
-    if (false && context.payload() instanceof NotificationPayload.MeetupCreated meetupCreated) {
+    if (false
+        && context.payload() instanceof NotificationContext.Content.MeetupCreated meetupCreated) {
       var button =
           InlineKeyboardButton.builder()
               .text("Join Meetup 🎲")
@@ -112,10 +117,15 @@ public class TelegramNotificationAdapter
     Locale targetLocale = context.locale() != null ? context.locale() : Locale.GERMAN;
     if (context.payload()
         instanceof
-        NotificationPayload.MeetupCreated(String title, UUID meetupId, java.net.URL meetupUrl)) {
+        NotificationContext.Content.MeetupCreated(
+            String title,
+            UUID meetupId,
+            java.net.URL meetupUrl)) {
       MeetupEvent meetupEvent = meetupDao.findOrThrow(meetupId);
       RegisteredUser creator = userDao.findOrThrow(meetupEvent.getCreatorId());
-      ContactOption contactOption = contactInfoService.getPrimaryContact(creator).orElseThrow();
+      Duration uniSecondsSinceEpoch =
+          Duration.between(Instant.EPOCH, meetupEvent.getEventDate().toInstant());
+
       String formattedDate =
           meetupEvent
               .getEventDate()
@@ -128,7 +138,7 @@ public class TelegramNotificationAdapter
               "meetupUrl",
               meetupUrl,
               "organizerDeeplink",
-              contactRenderer.render(creator.getDisplayName(), contactOption.getContactInfo()),
+              contactRenderer.render(creator),
               "eventDate",
               formattedDate,
               "location",
@@ -143,16 +153,17 @@ public class TelegramNotificationAdapter
   private String getChatId(NotificationContext context) {
     return switch (context.target()) {
       case NotificationContext.Target.Group ignored -> adapterProperties.getGroupChatId();
-      case NotificationContext.Target.Anon ignored ->
-          throw new IllegalArgumentException("Can't send telegram message to anon");
-      case NotificationContext.Target.User userTarget -> {
-        if (userTarget.primaryContactInfo()
-            instanceof ContactInfo.TelegramContact telegramContact) {
-          yield telegramContact.chatId();
-        }
-        throw new IllegalArgumentException("Can't find chatId with user " + userTarget.userId());
-      }
+      default -> Long.toString(extractChatId(context));
     };
+  }
+
+  private long extractChatId(NotificationContext context) {
+    return context
+        .extractChannel()
+        .filter(nc -> NotificationChannel.Telegram.class.isAssignableFrom(nc.getClass()))
+        .map(NotificationChannel.Telegram.class::cast)
+        .map(NotificationChannel.Telegram::chatId)
+        .orElseThrow();
   }
 
   @Override
@@ -171,13 +182,17 @@ public class TelegramNotificationAdapter
 
   @Override
   public void onApplicationEvent(ApplicationReadyEvent event) {
+    registerBot();
+  }
+
+  private void registerBot() {
     try {
       if (!isEnabled()) {
         log.warn("Telegram bot is disabled, skipping registering with external service.");
         return;
       }
       botsApp.registerBot(adapterProperties.getBotToken(), telegramBot);
-
+      isRegistered = true;
       log.info("Telegram bot is ready, listening to chat updates...");
     } catch (Exception e) {
       log.error("Telegram bot failed to initialize with error: {}", e.getMessage(), e);
@@ -201,7 +216,7 @@ public class TelegramNotificationAdapter
   }
 
   @Override
-  public List<VerificationStep> generateVerificationSteps() {
+  public List<VerificationStep> generateLinkingSteps() {
     TelegramSettings settings = getSettings();
     return List.of(
         VerificationStep.builder().messageKey("adapter.telegram.tutorial.step1").build(),
@@ -216,13 +231,32 @@ public class TelegramNotificationAdapter
   }
 
   private TelegramSettings getSettings() {
+    AdapterSettings adapterSettings = adapterSettingsDao.findByAdapter(getAdapterInfo());
+    return getSettings(adapterSettings);
+  }
+
+  private TelegramSettings getSettings(AdapterSettings settings) {
     try {
-      AdapterSettings adapterSettings = adapterSettingsDao.findByAdapter(getAdapterInfo());
-      return objectMapper.readValue(adapterSettings.getAdapterSettings(), TelegramSettings.class);
+      return objectMapper.readValue(settings.getAdapterSettings(), TelegramSettings.class);
     } catch (Exception e) {
       log.error(
           "Error while fetching adapter settings, falling back to default! {}", e.getMessage());
       return TelegramSettings.builder().build();
+    }
+  }
+
+  @Override
+  public void onUpdate(AdapterSettings updatedSettings) {
+    TelegramSettings settings = getSettings(updatedSettings);
+    if (settings.isEnabled() && !isRegistered) {
+      registerBot();
+    }
+    if (!settings.isEnabled() && isRegistered) {
+      try {
+        botsApp.unregisterBot(adapterProperties.getBotToken());
+      } catch (TelegramApiException e) {
+        log.error("Failed to unregister bot!", e);
+      }
     }
   }
 
@@ -254,5 +288,9 @@ public class TelegramNotificationAdapter
   @Override
   public void destroy() throws Exception {
     botsApp.close();
+  }
+
+  String getBotToken() {
+    return adapterProperties.getBotToken();
   }
 }

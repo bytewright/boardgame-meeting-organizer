@@ -64,7 +64,8 @@ public class ContactSettingsView extends VerticalLayout implements BeforeEnterOb
 
     // Show the onboarding banner for users who have not yet added any contact info.
     // The banner disappears automatically on next navigation after PENDING_APPROVAL → ACTIVE.
-    if (user.getStatus() == UserStatus.AFTER_REGISTRATION || user.getContactOptions().isEmpty()) {
+    if (user.getStatus() == UserStatus.AFTER_REGISTRATION
+        || user.resolvePrimaryContact().isEmpty()) {
       add(buildPendingBanner());
     } else {
       add(buildPrimaryContactSection(user));
@@ -104,7 +105,7 @@ public class ContactSettingsView extends VerticalLayout implements BeforeEnterOb
     comboBox.setWidthFull();
     comboBox.setItems(filteredOptions);
     filteredOptions.stream()
-        .filter(contactInfo -> contactInfo.id().equals(user.getPrimaryContactId()))
+        .filter(contactInfo -> contactInfo.id().equals(user.resolvePrimaryContact()))
         .findAny()
         .ifPresent(comboBox::setValue);
     comboBox.setHelperText(getTranslation("profile.contacts.primary.helper"));

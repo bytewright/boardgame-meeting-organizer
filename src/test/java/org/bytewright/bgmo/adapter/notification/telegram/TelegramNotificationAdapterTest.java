@@ -8,14 +8,12 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 import java.net.URI;
-import java.time.ZoneOffset;
-import java.time.ZonedDateTime;
+import java.time.*;
 import java.util.*;
 import lombok.extern.slf4j.Slf4j;
 import org.bytewright.bgmo.domain.model.AdapterSettings;
 import org.bytewright.bgmo.domain.model.MeetupEvent;
 import org.bytewright.bgmo.domain.model.notification.NotificationContext;
-import org.bytewright.bgmo.domain.model.notification.NotificationPayload;
 import org.bytewright.bgmo.domain.model.user.ContactInfo;
 import org.bytewright.bgmo.domain.model.user.ContactOption;
 import org.bytewright.bgmo.domain.model.user.RegisteredUser;
@@ -28,12 +26,15 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.*;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import tools.jackson.databind.json.JsonMapper;
 
 @Slf4j
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 class TelegramNotificationAdapterTest {
 
   @Mock private TelegramAdapterProperties adapterProperties;
@@ -73,7 +74,7 @@ class TelegramNotificationAdapterTest {
         NotificationContext.builder()
             .target(NotificationContext.Target.Group.builder().build())
             .payload(
-                NotificationPayload.MeetupCreated.builder()
+                NotificationContext.Content.MeetupCreated.builder()
                     .meetupUrl(URI.create("https://some.url.de/path/to-meetup/").toURL())
                     .meetupId(meetupId)
                     .title("Board Game Night")
@@ -101,7 +102,7 @@ class TelegramNotificationAdapterTest {
             .contactOptions(Set.of(telegramContact))
             .build();
     when(userDao.findOrThrow(creatorId)).thenReturn(creator);
-    when(contactInfoService.getPrimaryContact(creator)).thenReturn(Optional.of(telegramContact));
+    when(creator.resolvePrimaryContact()).thenReturn(Optional.of(telegramContact));
     String groupChatId = "-100123456789";
 
     when(adapterProperties.getGroupChatId()).thenReturn(groupChatId);
@@ -132,12 +133,8 @@ class TelegramNotificationAdapterTest {
 
     NotificationContext context =
         NotificationContext.builder()
-            .target(
-                NotificationContext.Target.User.builder()
-                    .userId(userId)
-                    .primaryContactInfo(telegramContact)
-                    .build())
-            .payload(NotificationPayload.UserApproved.builder().build())
+            .userTarget(mock())
+            .payload(NotificationContext.Content.UserApproved.builder().build())
             .locale(Locale.GERMAN)
             .build();
 

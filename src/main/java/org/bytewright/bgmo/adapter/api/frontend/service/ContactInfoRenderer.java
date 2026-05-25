@@ -52,7 +52,7 @@ public class ContactInfoRenderer {
           case ContactInfo.SignalContact signalContact ->
               "Signaluser: " + signalContact.signalHandle();
           case ContactInfo.TelegramContact telegramContact ->
-              "Telegramuser: " + telegramContact.telegramUsername();
+              "Telegramuser: " + telegramContact.username();
         };
     Span contactValue = new Span(contactString);
     contactValue.getStyle().set("word-break", "break-word");
@@ -66,7 +66,7 @@ public class ContactInfoRenderer {
   }
 
   public Component renderAsDeeplink(MeetupEvent meetup, RegisteredUser creator) {
-    ContactOption contactOption = contactInfoService.getPrimaryContact(creator).orElseThrow();
+    ContactOption contactOption = creator.resolvePrimaryContact().orElseThrow();
     return switch (contactOption.getContactInfo()) {
       case ContactInfo.EmailContact emailContact -> {
         Anchor anchor = new Anchor();
@@ -98,7 +98,7 @@ public class ContactInfoRenderer {
         String href =
             "https://t.me/%s?text=%s"
                 .formatted(
-                    telegramContact.telegramUsername(),
+                    telegramContact.username(),
                     URLEncoder.encode(draftText, StandardCharsets.UTF_8));
         Anchor anchor = new Anchor();
         anchor.setHref(href);

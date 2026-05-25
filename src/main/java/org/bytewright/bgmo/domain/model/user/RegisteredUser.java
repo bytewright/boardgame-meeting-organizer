@@ -2,14 +2,12 @@ package org.bytewright.bgmo.domain.model.user;
 
 import jakarta.annotation.Nullable;
 import java.time.Instant;
-import java.util.HashSet;
-import java.util.Locale;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import lombok.Builder;
 import lombok.Data;
 import lombok.ToString;
 import org.bytewright.bgmo.domain.model.data.HasUUID;
+import org.bytewright.bgmo.domain.model.notification.NotificationChannel;
 
 @Data
 @Builder(toBuilder = true)
@@ -26,6 +24,7 @@ public class RegisteredUser implements HasUUID {
   @Builder.Default private UserRole role = UserRole.USER;
   @Nullable private UUID primaryContactId;
   @ToString.Exclude @Builder.Default private Set<ContactOption> contactOptions = new HashSet<>();
+  @Builder.Default private NotificationChannel notificationChannel = new NotificationChannel.None();
   @Builder.Default private Set<UUID> ownedGames = new HashSet<>();
 
   public String logEntity() {
@@ -39,8 +38,11 @@ public class RegisteredUser implements HasUUID {
     private String loginName;
     private String password;
     private Locale preferredLocale;
-    @Nullable private String introHowDidYouHear;
-    @Nullable private String introAboutYourself;
-    @Nullable private String introWhoInvitedYou;
+  }
+
+  public Optional<ContactOption> resolvePrimaryContact() {
+    return contactOptions.stream()
+        .filter(contactOption -> contactOption.id().equals(primaryContactId))
+        .findAny();
   }
 }

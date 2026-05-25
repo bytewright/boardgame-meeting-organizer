@@ -57,8 +57,7 @@ public class AdminUserApprovalView extends VerticalLayout implements BeforeEnter
     layout.setPadding(true);
     layout.getStyle().set("background-color", "var(--lumo-contrast-5pct)");
 
-    String introText = adminWorkflows.getRegistrationIntroText(user.getId());
-    Paragraph text = new Paragraph(introText);
+    Paragraph text = new Paragraph();
     text.getStyle().set("white-space", "pre-wrap"); // Preserves newlines
 
     layout.add(new H2("Intro text"), text);

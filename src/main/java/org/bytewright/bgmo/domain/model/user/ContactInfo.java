@@ -50,7 +50,7 @@ public sealed interface ContactInfo
   }
 
   @Builder(toBuilder = true)
-  record TelegramContact(String chatId, String telegramUsername) implements ContactInfo {
+  record TelegramContact(long userId, String username) implements ContactInfo {
     @Override
     public ContactInfoType type() {
       return ContactInfoType.TELEGRAM;

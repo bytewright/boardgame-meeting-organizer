@@ -11,5 +11,5 @@ public interface ChatBotNotificationTaskExecutor extends NotificationTaskExecuto
 
   Optional<String> generateBotDeepLink();
 
-  List<VerificationStep> generateVerificationSteps();
+  List<VerificationStep> generateLinkingSteps();
 }

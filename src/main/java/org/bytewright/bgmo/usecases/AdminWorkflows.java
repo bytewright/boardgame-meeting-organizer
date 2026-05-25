@@ -11,7 +11,6 @@ import org.bytewright.bgmo.domain.model.AdapterSettings;
 import org.bytewright.bgmo.domain.model.MeetupJoinRequest;
 import org.bytewright.bgmo.domain.model.RequestState;
 import org.bytewright.bgmo.domain.model.notification.NotificationContext;
-import org.bytewright.bgmo.domain.model.notification.NotificationPayload;
 import org.bytewright.bgmo.domain.model.user.*;
 import org.bytewright.bgmo.domain.service.AdapterSettingsProvider;
 import org.bytewright.bgmo.domain.service.data.AdapterSettingsDao;
@@ -43,8 +42,8 @@ public class AdminWorkflows {
   public void broadcastToAllUsers(UUID adminId, String msg) {
     RegisteredUser admin = userDao.findOrThrow(adminId);
     log.info("Admin '{}' triggers broadcast with message: {}", admin.logEntity(), msg);
-    NotificationPayload payload =
-        NotificationPayload.AdminBroadcast.builder()
+    NotificationContext.Content payload =
+        NotificationContext.Content.AdminBroadcast.builder()
             .message(msg)
             .adminName(admin.getDisplayName())
             .adminId(adminId)
@@ -52,22 +51,8 @@ public class AdminWorkflows {
     for (RegisteredUser user :
         userDao.findAll().stream().filter(user -> user.getStatus() == UserStatus.ACTIVE).toList()) {
       Locale locale = Optional.ofNullable(user.getPreferredLocale()).orElse(Locale.GERMAN);
-      ContactInfo primary =
-          contactInfoService
-              .getPrimaryContact(user)
-              .map(ContactOption::getContactInfo)
-              .orElseThrow();
       notificationManager.dispatch(
-          NotificationContext.builder()
-              .target(
-                  NotificationContext.Target.User.builder()
-                      .userId(user.getId())
-                      .primaryContactInfo(primary)
-                      .displayName(user.getDisplayName())
-                      .build())
-              .locale(locale)
-              .payload(payload)
-              .build());
+          NotificationContext.builder().userTarget(user).locale(locale).payload(payload).build());
     }
   }
 
@@ -79,27 +64,15 @@ public class AdminWorkflows {
         admin.logEntity(),
         user.logEntity(),
         msg);
-    NotificationPayload payload =
-        NotificationPayload.AdminDirectMessage.builder()
+    NotificationContext.Content payload =
+        NotificationContext.Content.AdminDirectMessage.builder()
             .message(msg)
             .adminName(admin.getDisplayName())
             .adminId(adminId)
             .build();
     Locale locale = Optional.ofNullable(user.getPreferredLocale()).orElse(Locale.GERMAN);
-
-    ContactInfo primary =
-        contactInfoService.getPrimaryContact(user).map(ContactOption::getContactInfo).orElseThrow();
     notificationManager.dispatch(
-        NotificationContext.builder()
-            .target(
-                NotificationContext.Target.User.builder()
-                    .userId(user.getId())
-                    .displayName(user.getDisplayName())
-                    .primaryContactInfo(primary)
-                    .build())
-            .locale(locale)
-            .payload(payload)
-            .build());
+        NotificationContext.builder().userTarget(user).locale(locale).payload(payload).build());
   }
 
   public void approveUser(UUID adminId, UUID userToApprove) {
@@ -154,10 +127,6 @@ public class AdminWorkflows {
     return userDao.findAll().stream()
         .sorted(Comparator.comparing(RegisteredUser::getTsCreation).reversed())
         .toList();
-  }
-
-  public String getRegistrationIntroText(UUID userId) {
-    return userDao.getRegistrationIntroText(userId).orElse("Kein Text hinterlegt.");
   }
 
   public void toggleUserBanStatus(UUID userId) {
@@ -235,7 +204,10 @@ public class AdminWorkflows {
     try {
       var validationResult = provider.isValidSettingsJson(adapterSettings.getAdapterSettings());
       if (validationResult == VALID) {
-        adapterSettingsDao.createOrUpdate(settings.toBuilder().adapterSettings(newJson).build());
+        AdapterSettings updated =
+            adapterSettingsDao.createOrUpdate(
+                settings.toBuilder().adapterSettings(newJson).build());
+        provider.onUpdate(updated);
         return;
       }
     } catch (Exception e) {

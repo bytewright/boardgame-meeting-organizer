@@ -31,6 +31,10 @@ public interface AdapterSettingsProvider {
     }
   }
 
+  default void onUpdate(AdapterSettings updatedSettings) {
+    // do nothing
+  }
+
   @Builder
   record AdapterInfo(String stableName, String description) {}
 

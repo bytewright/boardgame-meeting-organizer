@@ -11,6 +11,7 @@ import org.bytewright.bgmo.adapter.persistence.dao.BaseEntityMapper;
 import org.bytewright.bgmo.adapter.persistence.dao.BaseMapperConfig;
 import org.bytewright.bgmo.adapter.persistence.dao.repository.RegisteredUserRepository;
 import org.bytewright.bgmo.adapter.persistence.entity.user.RegisteredUserEntity;
+import org.bytewright.bgmo.domain.model.notification.NotificationChannel;
 import org.bytewright.bgmo.domain.model.user.ContactInfoType;
 import org.bytewright.bgmo.domain.model.user.RegisteredUser;
 import org.bytewright.bgmo.domain.model.user.UserRole;
@@ -18,6 +19,7 @@ import org.bytewright.bgmo.domain.model.user.UserStatus;
 import org.bytewright.bgmo.domain.service.data.RegisteredUserDao;
 import org.mapstruct.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import tools.jackson.databind.json.JsonMapper;
 
 @Slf4j
 @Transactional
@@ -26,16 +28,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 public abstract class RegisteredUserEntityMapper
     extends BaseEntityMapper<RegisteredUser, RegisteredUserEntity> implements RegisteredUserDao {
   private RegisteredUserRepository userRepository;
+  private JsonMapper mapper;
 
   @Mapping(target = "contactInfos", source = "contactOptions")
-  @Mapping(target = "registrationIntroText", ignore = true)
   @Override
   public abstract void updateEntity(
       @MappingTarget RegisteredUserEntity currentEntity, RegisteredUser model);
 
   @InheritInverseConfiguration
   @Override
-  @BeanMapping(ignoreUnmappedSourceProperties = {"registrationIntroText"})
   public abstract RegisteredUser toDto(RegisteredUserEntity entity);
 
   @Override
@@ -61,15 +62,11 @@ public abstract class RegisteredUserEntityMapper
         .collect(Collectors.toSet());
   }
 
-  @Override
-  public void addRegistrationIntroText(UUID userId, String introText) {
-    RegisteredUserEntity userEntity = userRepository.findById(userId).orElseThrow();
-    userEntity.setRegistrationIntroText(introText);
-    userRepository.save(userEntity);
+  protected String serializeTaskPayload(NotificationChannel value) {
+    return mapper.writeValueAsString(value);
   }
 
-  @Override
-  public Optional<String> getRegistrationIntroText(UUID userId) {
-    return userRepository.findById(userId).map(RegisteredUserEntity::getRegistrationIntroText);
+  protected NotificationChannel deserializePayload(String payload) {
+    return mapper.readValue(payload, NotificationChannel.class);
   }
 }

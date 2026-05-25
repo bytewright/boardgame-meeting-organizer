@@ -39,7 +39,7 @@ class ContactInfoTest {
       // Assert
       assertThat(deserialized)
           .returns(contact.chatId(), ContactInfo.TelegramContact::chatId)
-          .returns(contact.telegramUsername(), ContactInfo.TelegramContact::telegramUsername);
+          .returns(contact.username(), ContactInfo.TelegramContact::username);
     }
   }
 

@@ -46,7 +46,7 @@ public class AddAdminTask implements CustomTaskChange {
       ps.setString(2, "admin");
       ps.setString(3, "admin");
       ps.setString(4, encodedPw);
-      ps.setString(5, "ACTIVE");
+      ps.setString(5, "AFTER_REGISTRATION");
       ps.setString(6, "ADMIN");
       ps.setObject(7, OffsetDateTime.ofInstant(Instant.now(), ZoneOffset.UTC));
       ps.executeUpdate();

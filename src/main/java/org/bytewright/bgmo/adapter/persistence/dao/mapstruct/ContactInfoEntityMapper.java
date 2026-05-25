@@ -11,6 +11,8 @@ import org.bytewright.bgmo.domain.model.user.ContactOption;
 import org.bytewright.bgmo.domain.service.data.ModelDao;
 import org.mapstruct.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import tools.jackson.core.StreamReadFeature;
+import tools.jackson.databind.DeserializationFeature;
 import tools.jackson.databind.json.JsonMapper;
 
 @Slf4j
@@ -19,7 +21,13 @@ import tools.jackson.databind.json.JsonMapper;
 @Setter(onMethod_ = {@Autowired})
 public abstract class ContactInfoEntityMapper
     extends BaseEntityMapper<ContactOption, ContactInfoEntity> implements ModelDao<ContactOption> {
-  private JsonMapper objectMapper;
+  private final JsonMapper objectMapper =
+      JsonMapper.builder()
+          .findAndAddModules()
+          .enable(StreamReadFeature.INCLUDE_SOURCE_IN_LOCATION)
+          .disable(DeserializationFeature.FAIL_ON_NULL_FOR_PRIMITIVES)
+          .build();
+  ;
 
   @Mapping(target = "user", source = "userId")
   @Mapping(target = "jsonData", source = "contactInfo")

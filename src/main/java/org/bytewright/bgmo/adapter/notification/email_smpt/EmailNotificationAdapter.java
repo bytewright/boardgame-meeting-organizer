@@ -1,22 +1,18 @@
 package org.bytewright.bgmo.adapter.notification.email_smpt;
 
 import java.util.Locale;
-import java.util.Map;
-import java.util.UUID;
-import java.util.stream.Collectors;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.bytewright.bgmo.adapter.notification.email_smpt.model.EmailSettings;
 import org.bytewright.bgmo.adapter.notification.email_smpt.model.RenderedEmail;
 import org.bytewright.bgmo.domain.model.AdapterSettings;
+import org.bytewright.bgmo.domain.model.notification.NotificationChannel;
 import org.bytewright.bgmo.domain.model.notification.NotificationContext;
 import org.bytewright.bgmo.domain.model.user.ContactInfo;
 import org.bytewright.bgmo.domain.model.user.ContactInfoType;
-import org.bytewright.bgmo.domain.model.user.ContactOption;
-import org.bytewright.bgmo.domain.model.user.RegisteredUser;
 import org.bytewright.bgmo.domain.service.AdapterSettingsProvider;
 import org.bytewright.bgmo.domain.service.data.AdapterSettingsDao;
-import org.bytewright.bgmo.domain.service.data.RegisteredUserDao;
 import org.bytewright.bgmo.domain.service.notification.NotificationManager;
 import org.bytewright.bgmo.domain.service.notification.NotificationTaskExecutor;
 import org.springframework.mail.MailException;
@@ -52,7 +48,6 @@ public class EmailNotificationAdapter implements NotificationTaskExecutor, Adapt
   private final EmailAdapterProperties adapterProperties;
   private final EmailTemplateService templateService;
   private final AdapterSettingsDao adapterSettingsDao;
-  private final RegisteredUserDao userDao;
   private final JavaMailSender mailSender;
   private final JsonMapper objectMapper;
 
@@ -60,9 +55,9 @@ public class EmailNotificationAdapter implements NotificationTaskExecutor, Adapt
   public boolean supports(NotificationContext context) {
     return switch (context.target()) {
       case NotificationContext.Target.Anon anon ->
-          anon.contactInfo().type() == ContactInfoType.EMAIL;
+          anon.channel() instanceof NotificationChannel.Email;
       case NotificationContext.Target.User user ->
-          user.primaryContactInfo().type() == ContactInfoType.EMAIL;
+          user.channel() instanceof NotificationChannel.Email;
       case NotificationContext.Target.Group ignored -> false;
     };
   }
@@ -80,7 +75,12 @@ public class EmailNotificationAdapter implements NotificationTaskExecutor, Adapt
       log.info("Email integration is disabled, skipping execution of: {}", messageKey);
       return;
     }
-    ContactInfo.EmailContact info = getContact(context);
+    Optional<String> emailAddr = extractEmail(context);
+    if (emailAddr.isEmpty()) {
+      log.error("Can't execute NotificationContext, no email found: {}", context);
+      return;
+    }
+    String email = emailAddr.get();
     EmailSettings settings = getSettings();
     Locale locale = context.locale() != null ? context.locale() : Locale.ENGLISH;
     RenderedEmail rendered = templateService.render(locale, context.payload());
@@ -88,7 +88,7 @@ public class EmailNotificationAdapter implements NotificationTaskExecutor, Adapt
     SimpleMailMessage message = new SimpleMailMessage();
     message.setFrom(
         settings.getSenderDisplayName() + " <" + adapterProperties.getFromAddress() + ">");
-    message.setTo(info.email());
+    message.setTo(email);
     if (settings.getReplyTo() != null && !settings.getReplyTo().isBlank()) {
       message.setReplyTo(settings.getReplyTo());
     }
@@ -116,16 +116,12 @@ public class EmailNotificationAdapter implements NotificationTaskExecutor, Adapt
     }
   }
 
-  private ContactInfo.EmailContact getContact(NotificationContext context) {
-    ContactInfo info =
-        switch (context.target()) {
-          case NotificationContext.Target.Anon anon -> anon.contactInfo();
-          case NotificationContext.Target.User user -> user.primaryContactInfo();
-          case NotificationContext.Target.Group ignored ->
-              throw new IllegalArgumentException("email cant target groups!");
-        };
-    if (info instanceof ContactInfo.EmailContact emailContact) return emailContact;
-    throw new IllegalArgumentException("Context did not contain email contact!");
+  private Optional<String> extractEmail(NotificationContext context) {
+    return context
+        .extractChannel()
+        .filter(nc -> NotificationChannel.Email.class.isAssignableFrom(nc.getClass()))
+        .map(NotificationChannel.Email.class::cast)
+        .map(NotificationChannel.Email::email);
   }
 
   public boolean isEnabled() {
@@ -166,32 +162,5 @@ public class EmailNotificationAdapter implements NotificationTaskExecutor, Adapt
           "Error fetching email adapter settings, falling back to defaults: {}", e.getMessage());
       return EmailSettings.builder().build();
     }
-  }
-
-  private String resolveEmailAddress(RegisteredUser user) {
-    Map<UUID, ContactInfo.EmailContact> emailContacts =
-        user.getContactOptions().stream()
-            .filter(contactOption -> contactOption.getType() == ContactInfoType.EMAIL)
-            .map(contactOption -> Map.entry(contactOption.getId(), getEmailContact(contactOption)))
-            .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-    UUID primaryId = user.getPrimaryContactId();
-    if (emailContacts.containsKey(primaryId)) {
-      return emailContacts.get(primaryId).email();
-    }
-    // todo - how the choose? Maybe only allow one email? most likely a user must be able to select
-    //  one specific for each meetup/join request
-    return emailContacts.values().stream()
-        .findAny()
-        .map(ContactInfo.EmailContact::email)
-        .orElseThrow();
-  }
-
-  private ContactInfo.EmailContact getEmailContact(ContactOption contactOption) {
-    if (contactOption.getContactInfo() instanceof ContactInfo.EmailContact emailContact) {
-      return emailContact;
-    }
-    throw new IllegalStateException(
-        "Found email type conect but not instance of ContactInfo.EmailContact: "
-            + contactOption.getId());
   }
 }

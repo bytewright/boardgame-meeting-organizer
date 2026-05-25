@@ -7,7 +7,7 @@ import java.io.InputStream;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import lombok.extern.slf4j.Slf4j;
-import org.bytewright.bgmo.domain.model.notification.NotificationPayload;
+import org.bytewright.bgmo.domain.model.notification.NotificationContext;
 import org.bytewright.bgmo.domain.service.JsonMapperFactory;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.core.io.ClassPathResource;
@@ -38,7 +38,9 @@ public class TelegramTemplateService implements InitializingBean {
   @Override
   public void afterPropertiesSet() throws Exception {
     List<String> requiredKeys =
-        NotificationPayload.allMessageKeys().stream().sorted(Comparator.naturalOrder()).toList();
+        NotificationContext.Content.allMessageKeys().stream()
+            .sorted(Comparator.naturalOrder())
+            .toList();
     JsonMapper jsonMapper = JsonMapperFactory.unRedactedMapper();
     for (String key : requiredKeys) {
       String resourcePath = RESOURCE_PATH + key + ".json";
@@ -69,7 +71,7 @@ public class TelegramTemplateService implements InitializingBean {
     log.info("Successfully loaded and verified {} Telegram templates.", templateCache.size());
   }
 
-  public String render(Locale locale, NotificationPayload payload) {
+  public String render(Locale locale, NotificationContext.Content payload) {
     if (!payload.isUsingI18N()) {
       // messageKey is the actual message
       return payload.messageKey();

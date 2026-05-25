@@ -13,7 +13,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.bytewright.bgmo.adapter.notification.email_smpt.model.RenderedEmail;
-import org.bytewright.bgmo.domain.model.notification.NotificationPayload;
+import org.bytewright.bgmo.domain.model.notification.NotificationContext;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
@@ -52,7 +52,9 @@ public class EmailTemplateService implements InitializingBean {
   @Override
   public void afterPropertiesSet() throws Exception {
     List<String> requiredKeys =
-        NotificationPayload.allMessageKeys().stream().sorted(Comparator.naturalOrder()).toList();
+        NotificationContext.Content.allMessageKeys().stream()
+            .sorted(Comparator.naturalOrder())
+            .toList();
 
     for (String key : requiredKeys) {
       String resourcePath = "/templates/email/" + key + ".json";
@@ -103,7 +105,7 @@ public class EmailTemplateService implements InitializingBean {
         SUPPORTED_LOCALES.size());
   }
 
-  public RenderedEmail render(Locale locale, NotificationPayload payload) {
+  public RenderedEmail render(Locale locale, NotificationContext.Content payload) {
     if (!payload.isUsingI18N()) {
       // messageKey is used as a literal message
       return new RenderedEmail(payload.messageKey(), payload.messageKey());

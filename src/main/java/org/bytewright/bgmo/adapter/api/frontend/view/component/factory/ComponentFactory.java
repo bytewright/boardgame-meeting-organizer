@@ -17,7 +17,7 @@ import org.bytewright.bgmo.domain.model.user.RegisteredUser;
 import org.bytewright.bgmo.domain.service.GameInformationProvider;
 import org.bytewright.bgmo.domain.service.data.GameDao;
 import org.bytewright.bgmo.domain.service.data.RegisteredUserDao;
-import org.bytewright.bgmo.domain.service.notification.VerificationCodeService;
+import org.bytewright.bgmo.domain.service.notification.NotificationLinkCodeService;
 import org.bytewright.bgmo.domain.service.user.ContactInfoService;
 import org.bytewright.bgmo.usecases.AdminWorkflows;
 import org.bytewright.bgmo.usecases.MeetupWorkflows;
@@ -29,7 +29,7 @@ import org.springframework.stereotype.Component;
 public class ComponentFactory {
   private final Set<GameInformationProvider> providerList;
   private final ContactInfoService contactInfoService;
-  private final VerificationCodeService verificationService;
+  private final NotificationLinkCodeService verificationService;
   private final SessionInfoService authService;
   private final MeetupWorkflows meetupWorkflows;
   private final AdminWorkflows adminWorkflows;

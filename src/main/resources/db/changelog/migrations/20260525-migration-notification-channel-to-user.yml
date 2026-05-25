@@ -1,0 +1,17 @@
+databaseChangeLog:
+  - changeSet:
+      id: 20260525-1
+      author: bytewright
+      changes:
+        - dropColumn:
+            tableName: registered_users
+            columnName: registrationintrotext
+        - addColumn:
+            tableName: registered_users
+            columns:
+              - column:
+                  name: notification_channel
+                  type: jsonb
+                  defaultValue: '{"type": "NONE"}'
+                  constraints:
+                    nullable: false

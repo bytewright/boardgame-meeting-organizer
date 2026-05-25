@@ -1,14 +1,8 @@
 package org.bytewright.bgmo.domain.service.user;
 
-import java.util.Optional;
-import java.util.Set;
-import java.util.UUID;
 import java.util.regex.Pattern;
 import lombok.RequiredArgsConstructor;
 import org.bytewright.bgmo.domain.model.user.ContactInfo;
-import org.bytewright.bgmo.domain.model.user.ContactInfoType;
-import org.bytewright.bgmo.domain.model.user.ContactOption;
-import org.bytewright.bgmo.domain.model.user.RegisteredUser;
 import org.bytewright.bgmo.domain.service.data.RegisteredUserDao;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
@@ -41,9 +35,9 @@ public class ContactInfoService {
   }
 
   public boolean validateTelegram(ContactInfo.TelegramContact telegramContact) {
-    if (!StringUtils.hasText(telegramContact.chatId())) return false;
+    if (!StringUtils.hasText(telegramContact.username())) return false;
     // Strip leading @ if user entered it
-    String handleRaw = telegramContact.telegramUsername();
+    String handleRaw = telegramContact.username();
     String handle = handleRaw.startsWith("@") ? handleRaw.substring(1) : handleRaw;
     return TELEGRAM_PATTERN.matcher(handle).matches();
   }
@@ -73,26 +67,5 @@ public class ContactInfoService {
 
     // German PLZ (Postleitzahl) is exactly 5 digits
     return zipCode.matches("\\d{5}");
-  }
-
-  public Optional<ContactOption> getPrimaryContact(UUID userId) {
-    return userDao.findById(userId).flatMap(this::getPrimaryContact);
-  }
-
-  public Optional<ContactOption> getPrimaryContact(RegisteredUser user) {
-    UUID primaryContactId = user.getPrimaryContactId();
-    if (primaryContactId != null) {
-      return user.getContactOptions().stream()
-          .filter(contact -> primaryContactId.equals(contact.id()))
-          .findAny();
-    }
-    // todo this feels hacky, why not simply resolve primary on db load
-    Set<ContactInfoType> activeTypes = Set.of(ContactInfoType.TELEGRAM, ContactInfoType.EMAIL);
-    if (user.getContactOptions().size() == 1) {
-      return user.getContactOptions().stream()
-          .filter(contactInfo -> activeTypes.contains(contactInfo.getType()))
-          .findAny();
-    }
-    return Optional.empty();
   }
 }

@@ -76,7 +76,8 @@ public class MeetupWorkflows {
   }
 
   public void requestToJoin(UUID meetupId, UUID userId, String comment) {
-    ContactOption primaryContact = contactInfoService.getPrimaryContact(userId).orElseThrow();
+    ContactOption primaryContact =
+        userDao.findById(userId).flatMap(RegisteredUser::resolvePrimaryContact).orElseThrow();
     var requestPayload = new JoinRequestPayload.User(userId, primaryContact.getContactInfo());
     requestToJoin(meetupId, comment, requestPayload);
   }

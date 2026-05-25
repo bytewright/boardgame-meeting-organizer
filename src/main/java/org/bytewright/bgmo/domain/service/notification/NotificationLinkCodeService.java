@@ -2,28 +2,34 @@ package org.bytewright.bgmo.domain.service.notification;
 
 import static org.bytewright.bgmo.domain.service.CoreAppContextConfig.APP_NAME_SHORT;
 
+import jakarta.annotation.Nullable;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.bytewright.bgmo.domain.model.notification.LinkingAttempt;
 import org.bytewright.bgmo.domain.model.notification.MessengerLinkContext;
-import org.bytewright.bgmo.domain.model.notification.VerificationAttempt;
+import org.bytewright.bgmo.domain.model.notification.NotificationChannel;
 import org.bytewright.bgmo.domain.model.notification.VerificationStep;
+import org.bytewright.bgmo.domain.model.user.ContactInfo;
 import org.bytewright.bgmo.domain.model.user.ContactInfoType;
 import org.bytewright.bgmo.domain.model.user.ContactOption;
-import org.bytewright.bgmo.domain.model.user.RegisteredUser;
+import org.bytewright.bgmo.domain.service.data.ModelDao;
 import org.bytewright.bgmo.domain.service.data.RegisteredUserDao;
 import org.bytewright.bgmo.usecases.NotificationWorkflows;
+import org.bytewright.bgmo.usecases.UserWorkflows;
 import org.springframework.stereotype.Service;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class VerificationCodeService {
+public class NotificationLinkCodeService {
   private final Set<ChatBotNotificationTaskExecutor> chatBots = new HashSet<>();
   private final Map<String, UUID> pendingCodes = new ConcurrentHashMap<>();
   private final NotificationWorkflows notificationWorkflows;
+  private final ModelDao<ContactOption> contactOptionDao;
+  private final UserWorkflows userWorkflows;
   private final RegisteredUserDao userDao;
 
   /** Circular deps workaround */
@@ -37,19 +43,23 @@ public class VerificationCodeService {
     return code;
   }
 
-  public VerificationAttempt attemptMessengerVerification(
-      String code, ContactInfoType type, String chatId, String userName) {
+  public LinkingAttempt attemptMessengerLinking(
+      String code,
+      ContactInfoType type,
+      NotificationChannel channel,
+      @Nullable ContactInfo contactInfo) {
     UUID userId = pendingCodes.remove(code);
     if (userId != null) {
-      log.info("Received a correct verification token from user {}, contact type {}", userId, type);
-      ContactOption contactOption =
-          notificationWorkflows.verifyMessengerContact(userId, type, chatId, userName);
-      log.info("Finished verification for {} contact with id: {}", type, contactOption.id());
-      RegisteredUser user = userDao.findOrThrow(userId);
-      return new VerificationAttempt.Success(user, contactOption);
+      log.info("Received a correct linking token from user {}, contact type {}", userId, type);
+      notificationWorkflows.linkNotificationChannel(userId, channel);
+      if (contactInfo != null) {
+        UUID contactOptionId = userWorkflows.addContactInfo(userId, contactInfo, true);
+        return new LinkingAttempt.LinkAndContactOption(userId, contactOptionId);
+      }
+      return new LinkingAttempt.Success(userId);
     }
     log.info("Received unknown verification code for type {}: {}", type, code);
-    return new VerificationAttempt.Failed();
+    return new LinkingAttempt.Failed();
   }
 
   public MessengerLinkContext buildLinkContext(UUID currentUserId, ContactInfoType type) {
@@ -59,11 +69,9 @@ public class VerificationCodeService {
         botAdapter.map(ChatBotNotificationTaskExecutor::botChatDisplayName).orElse("N/A");
     Optional<String> deeplink =
         botAdapter.flatMap(ChatBotNotificationTaskExecutor::generateBotDeepLink);
-    List<VerificationStep> verificationSteps =
-        botAdapter
-            .map(ChatBotNotificationTaskExecutor::generateVerificationSteps)
-            .orElse(List.of());
+    List<VerificationStep> linkingSteps =
+        botAdapter.map(ChatBotNotificationTaskExecutor::generateLinkingSteps).orElse(List.of());
     return new MessengerLinkContext(
-        type, generateCode(currentUserId), botDisplayName, deeplink, verificationSteps);
+        type, generateCode(currentUserId), botDisplayName, deeplink, linkingSteps);
   }
 }

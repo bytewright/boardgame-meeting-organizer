@@ -9,14 +9,12 @@ import org.bytewright.bgmo.domain.model.MeetupEvent;
 import org.bytewright.bgmo.domain.model.MeetupJoinRequest;
 import org.bytewright.bgmo.domain.model.event.ModelUpdatedEvents;
 import org.bytewright.bgmo.domain.model.notification.NotificationContext;
-import org.bytewright.bgmo.domain.model.notification.NotificationPayload;
 import org.bytewright.bgmo.domain.model.user.*;
 import org.bytewright.bgmo.domain.service.SiteManagementService;
 import org.bytewright.bgmo.domain.service.UrlGenerator;
 import org.bytewright.bgmo.domain.service.data.MeetupDao;
 import org.bytewright.bgmo.domain.service.data.ModelDao;
 import org.bytewright.bgmo.domain.service.data.RegisteredUserDao;
-import org.bytewright.bgmo.domain.service.user.ContactInfoService;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 
@@ -31,7 +29,6 @@ public class NotificationManager {
   private final Set<NotificationTaskExecutor> executors = new HashSet<>();
   private final ModelDao<MeetupJoinRequest> joinRequestDao;
   private final SiteManagementService siteManagementService;
-  private final ContactInfoService contactInfoService;
   private final UrlGenerator urlGenerator;
   private final RegisteredUserDao userDao;
   private final MeetupDao meetupDao;
@@ -42,7 +39,7 @@ public class NotificationManager {
     UUID meetupId = event.id();
     var meetup = meetupDao.findById(meetupId).orElseThrow();
     var payload =
-        NotificationPayload.MeetupCreated.builder()
+        NotificationContext.Content.MeetupCreated.builder()
             .title(meetup.getTitle())
             .meetupId(meetupId)
             .meetupUrl(urlGenerator.getUrlFor(meetup))
@@ -62,23 +59,13 @@ public class NotificationManager {
   }
 
   private void dispatchToCreatorAndAdmins(
-      MeetupEvent meetup, NotificationPayload.MeetupCreated payload) {
+      MeetupEvent meetup, NotificationContext.Content.MeetupCreated payload) {
     Set<RegisteredUser> relevantUsers = new HashSet<>(userDao.findAllActiveByRole(UserRole.ADMIN));
     relevantUsers.add(userDao.findOrThrow(meetup.getCreatorId()));
     for (RegisteredUser user : relevantUsers) {
-      ContactInfo contactInfo =
-          contactInfoService
-              .getPrimaryContact(user)
-              .map(ContactOption::getContactInfo)
-              .orElseThrow();
       var context =
           NotificationContext.builder()
-              .target(
-                  NotificationContext.Target.User.builder()
-                      .userId(user.getId())
-                      .displayName(user.getDisplayName())
-                      .primaryContactInfo(contactInfo)
-                      .build())
+              .userTarget(user)
               .payload(payload)
               .locale(user.getPreferredLocale())
               .build();
@@ -103,18 +90,9 @@ public class NotificationManager {
         };
     var context =
         NotificationContext.builder()
-            .target(
-                NotificationContext.Target.User.builder()
-                    .userId(eventCreator.id())
-                    .displayName(eventCreator.getDisplayName())
-                    .primaryContactInfo(
-                        contactInfoService
-                            .getPrimaryContact(eventCreator)
-                            .map(ContactOption::getContactInfo)
-                            .orElseThrow())
-                    .build())
+            .userTarget(eventCreator)
             .payload(
-                NotificationPayload.JoinRequestCreated.builder()
+                NotificationContext.Content.JoinRequestCreated.builder()
                     .requesterName(displayName)
                     .joinRequestId(joinRequest.getId())
                     .title(meetup.getTitle())
@@ -131,7 +109,7 @@ public class NotificationManager {
     MeetupJoinRequest joinRequest = joinRequestDao.findOrThrow(event.id());
     MeetupEvent meetup = meetupDao.findOrThrow(joinRequest.getMeetupId());
     var payload =
-        NotificationPayload.JoinRequestApproved.builder()
+        NotificationContext.Content.JoinRequestApproved.builder()
             .eventDate(meetup.getEventDate())
             .title(meetup.getTitle())
             .joinRequestId(joinRequest.getId())
@@ -142,16 +120,7 @@ public class NotificationManager {
         RegisteredUser joiner = userDao.findOrThrow(user.userId());
         var context =
             NotificationContext.builder()
-                .target(
-                    NotificationContext.Target.User.builder()
-                        .userId(joiner.id())
-                        .displayName(joiner.getDisplayName())
-                        .primaryContactInfo(
-                            contactInfoService
-                                .getPrimaryContact(joiner)
-                                .map(ContactOption::getContactInfo)
-                                .orElseThrow())
-                        .build())
+                .userTarget(joiner)
                 .payload(payload)
                 .locale(joiner.getPreferredLocale())
                 .build();
@@ -160,11 +129,7 @@ public class NotificationManager {
       case JoinRequestPayload.AnonEmail anonEmail -> {
         var context =
             NotificationContext.builder()
-                .target(
-                    NotificationContext.Target.Anon.builder()
-                        .contactInfo(anonEmail.emailContact())
-                        .displayName(anonEmail.displayName())
-                        .build())
+                .anonTarget(anonEmail)
                 .payload(payload)
                 .locale(siteManagementService.getDefaultLocale())
                 .build();
@@ -181,7 +146,7 @@ public class NotificationManager {
     UUID meetupId = event.id();
     var meetup = meetupDao.findById(meetupId).orElseThrow();
     var payload =
-        NotificationPayload.MeetupRescheduled.builder()
+        NotificationContext.Content.MeetupRescheduled.builder()
             .title(meetup.getTitle())
             .meetupId(meetupId)
             .newEventDate(meetup.getEventDate())
@@ -193,16 +158,7 @@ public class NotificationManager {
           RegisteredUser joiner = userDao.findOrThrow(user.userId());
           var context =
               NotificationContext.builder()
-                  .target(
-                      NotificationContext.Target.User.builder()
-                          .userId(joiner.id())
-                          .displayName(joiner.getDisplayName())
-                          .primaryContactInfo(
-                              contactInfoService
-                                  .getPrimaryContact(joiner)
-                                  .map(ContactOption::getContactInfo)
-                                  .orElseThrow())
-                          .build())
+                  .userTarget(joiner)
                   .payload(payload)
                   .locale(joiner.getPreferredLocale())
                   .build();
@@ -213,11 +169,7 @@ public class NotificationManager {
         case JoinRequestPayload.AnonEmail anonEmail -> {
           var context =
               NotificationContext.builder()
-                  .target(
-                      NotificationContext.Target.Anon.builder()
-                          .contactInfo(anonEmail.emailContact())
-                          .displayName(anonEmail.displayName())
-                          .build())
+                  .anonTarget(anonEmail)
                   .payload(payload)
                   .locale(siteManagementService.getDefaultLocale())
                   .build();
@@ -233,7 +185,7 @@ public class NotificationManager {
     UUID meetupId = event.id();
     var meetup = meetupDao.findById(meetupId).orElseThrow();
     var payload =
-        NotificationPayload.MeetupCanceled.builder()
+        NotificationContext.Content.MeetupCanceled.builder()
             .title(meetup.getTitle())
             .meetupId(meetupId)
             .meetupUrl(urlGenerator.getUrlFor(meetup))
@@ -244,16 +196,7 @@ public class NotificationManager {
           RegisteredUser joiner = userDao.findOrThrow(user.userId());
           var context =
               NotificationContext.builder()
-                  .target(
-                      NotificationContext.Target.User.builder()
-                          .userId(joiner.id())
-                          .displayName(joiner.getDisplayName())
-                          .primaryContactInfo(
-                              contactInfoService
-                                  .getPrimaryContact(joiner)
-                                  .map(ContactOption::getContactInfo)
-                                  .orElseThrow())
-                          .build())
+                  .userTarget(joiner)
                   .payload(payload)
                   .locale(joiner.getPreferredLocale())
                   .build();
@@ -264,11 +207,7 @@ public class NotificationManager {
         case JoinRequestPayload.AnonEmail anonEmail -> {
           var context =
               NotificationContext.builder()
-                  .target(
-                      NotificationContext.Target.Anon.builder()
-                          .contactInfo(anonEmail.emailContact())
-                          .displayName(anonEmail.displayName())
-                          .build())
+                  .anonTarget(anonEmail)
                   .payload(payload)
                   .locale(siteManagementService.getDefaultLocale())
                   .build();
@@ -291,23 +230,14 @@ public class NotificationManager {
     for (RegisteredUser user : siteAdmins) {
       var context =
           NotificationContext.builder()
-              .target(
-                  NotificationContext.Target.User.builder()
-                      .userId(user.id())
-                      .displayName(user.getDisplayName())
-                      .primaryContactInfo(
-                          contactInfoService
-                              .getPrimaryContact(user)
-                              .map(ContactOption::getContactInfo)
-                              .orElseThrow())
-                      .build())
+              .userTarget(user)
               .payload(
-                  NotificationPayload.UserRegistration.builder()
+                  NotificationContext.Content.UserRegistration.builder()
                       .username(newUser.getDisplayName())
                       .build())
               .locale(user.getPreferredLocale())
               .build();
-      dispatchToPrimary(user, context);
+      dispatch(context);
     }
   }
 
@@ -317,27 +247,5 @@ public class NotificationManager {
 
   public void dispatch(NotificationContext context) {
     executors.stream().filter(e -> e.supports(context)).forEach(e -> e.execute(context));
-  }
-
-  private void dispatchToPrimary(RegisteredUser user, NotificationContext context) {
-    Optional<ContactOption> primaryContactOpt = contactInfoService.getPrimaryContact(user);
-    if (primaryContactOpt.isPresent()) {
-      ContactOption contact = primaryContactOpt.get();
-      log.info(
-          "Dispatching {} notification to user {} over channel {}",
-          context.payload().getClass().getSimpleName(),
-          user.logEntity(),
-          contact.getType());
-      executors.stream()
-          .filter(e -> e.isContactHandlerFor(contact.getType()))
-          .filter(e -> e.supports(context))
-          .findAny()
-          .ifPresent(notificationTaskExecutor -> notificationTaskExecutor.execute(context));
-    } else {
-      log.info(
-          "Couldn't find primary contact info to dispatch '{}' to user: {}",
-          context.payload().getClass().getSimpleName(),
-          user.logEntity());
-    }
   }
 }

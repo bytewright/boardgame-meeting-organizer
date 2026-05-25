@@ -206,6 +206,7 @@
                     </annotationProcessorPaths>
                     <source>21</source>
                     <target>21</target>
+                    <generatedSourcesDirectory>target/generated-sources/annotations</generatedSourcesDirectory>
                 </configuration>
             </plugin>
             <plugin>

@@ -11,7 +11,9 @@ import org.bytewright.bgmo.adapter.persistence.entity.GameEntity_;
 import org.bytewright.bgmo.domain.model.data.HasUUID;
 import org.bytewright.bgmo.domain.model.user.UserRole;
 import org.bytewright.bgmo.domain.model.user.UserStatus;
+import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.UuidGenerator;
+import org.hibernate.type.SqlTypes;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
@@ -57,9 +59,6 @@ public class RegisteredUserEntity extends AbstractEntity<UUID> implements HasUUI
   @Column(name = "last_login")
   private Instant tsLastLogin;
 
-  @Column(columnDefinition = "text")
-  private String registrationIntroText;
-
   @Column private Locale preferredLocale;
 
   @Enumerated(EnumType.STRING)
@@ -71,6 +70,10 @@ public class RegisteredUserEntity extends AbstractEntity<UUID> implements HasUUI
   @Column(nullable = false)
   @Builder.Default
   private UserRole role = UserRole.USER;
+
+  @Column(name = "notification_channel", nullable = false, columnDefinition = "jsonb")
+  @JdbcTypeCode(SqlTypes.JSON)
+  private String notificationChannel;
 
   @Nullable @Column private UUID primaryContactId;
 
