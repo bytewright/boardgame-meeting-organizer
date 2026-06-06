@@ -23,14 +23,16 @@ import org.bytewright.bgmo.adapter.api.frontend.view.LoginView;
 import org.bytewright.bgmo.adapter.api.frontend.view.component.MainLayout;
 import org.bytewright.bgmo.adapter.api.frontend.view.component.factory.ComponentFactory;
 import org.bytewright.bgmo.domain.model.user.*;
+import org.bytewright.bgmo.usecases.NotificationWorkflows;
 import org.bytewright.bgmo.usecases.UserWorkflows;
 
 @Route(value = "profile/contacts", layout = MainLayout.class)
-@PageTitle("Contact Info | " + APP_NAME_SHORT)
+@PageTitle("Contacts & Notifications | " + APP_NAME_SHORT)
 @PermitAll
 @RequiredArgsConstructor
 public class ContactSettingsView extends VerticalLayout implements BeforeEnterObserver {
 
+  private final NotificationWorkflows notificationWorkflows;
   private final SessionInfoService authService;
   private final ComponentFactory componentFactory;
   private final UserWorkflows userWorkflows;
@@ -55,15 +57,20 @@ public class ContactSettingsView extends VerticalLayout implements BeforeEnterOb
     setMaxWidth(MainLayout.MAX_DISPLAYPORT_WIDTH);
     getStyle().setMargin("0 auto");
 
-    H2 title = new H2(getTranslation("profile.contacts.title"));
+    add(new H2(getTranslation("profile.contacts-notifications.title")));
 
-    add(title);
-    Paragraph paragraph = new Paragraph(getTranslation("profile.contacts.intro"));
-    paragraph.setWidthFull();
-    add(paragraph);
+    Paragraph intro = new Paragraph(getTranslation("profile.contacts-notifications.intro"));
+    intro.setWidthFull();
+    add(intro);
 
-    // Show the onboarding banner for users who have not yet added any contact info.
-    // The banner disappears automatically on next navigation after PENDING_APPROVAL → ACTIVE.
+    NotificationChannelSection notifSection =
+        componentFactory.notificationChannelSection(user, this::rebuildView);
+    notifSection.setMaxWidth(MainLayout.MAX_DISPLAYPORT_WIDTH);
+    notifSection.setWidthFull();
+    add(notifSection);
+
+    add(new Hr());
+
     if (user.getStatus() == UserStatus.AFTER_REGISTRATION
         || user.resolvePrimaryContact().isEmpty()) {
       add(buildPendingBanner());

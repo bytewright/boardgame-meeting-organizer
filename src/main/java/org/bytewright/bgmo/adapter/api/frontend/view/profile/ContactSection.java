@@ -28,11 +28,14 @@ import org.bytewright.bgmo.domain.service.user.ContactInfoService;
 import org.bytewright.bgmo.usecases.UserWorkflows;
 
 /**
- * Contact management section for ProfileView.
+ * Contact management section for the Contacts & Notifications view.
  *
  * <p>Messenger types (Telegram, Signal): one per type max, link-only via bot code dialog. Freeform
- * types (Email, Phone, Address): multiple allowed, inline add form. All existing entries: remove
- * only, no editing.
+ * types (Email, Phone): multiple allowed, inline add form. All existing entries: remove only, no
+ * editing.
+ *
+ * <p>Note: ADDRESS type is intentionally excluded from the UI. Existing address records stored in
+ * the database are preserved (deserialization still works) but the app no longer collects new ones.
  */
 public class ContactSection extends VerticalLayout {
   private final ContactInfoService contactInfoService;
@@ -73,8 +76,6 @@ public class ContactSection extends VerticalLayout {
     add(buildFreeformSection(contacts, ContactInfoType.EMAIL));
     add(new Hr());
     add(buildFreeformSection(contacts, ContactInfoType.PHONE));
-    add(new Hr());
-    add(buildFreeformSection(contacts, ContactInfoType.ADDRESS));
   }
 
   private Component buildMessengerSection(List<ContactOption> contacts, ContactInfoType type) {
@@ -270,41 +271,8 @@ public class ContactSection extends VerticalLayout {
                 },
                 () -> form.setVisible(false)));
       }
-      case ADDRESS -> {
-        TextField nameOnBell = new TextField("Name on bell");
-        TextField street = new TextField("Street & Nr.");
-        TextField zip = new TextField("ZIP");
-        TextField city = new TextField("City");
-        TextField comment = new TextField("Comment (optional)");
-        for (var f : List.of(nameOnBell, street, zip, city, comment)) {
-          f.setWidthFull();
-        }
-        form.add(
-            new Span(
-                getTranslation(
-                    ContactInfoLabelUtil.translationKeyForExplain(ContactInfoType.ADDRESS))),
-            nameOnBell,
-            street,
-            zip,
-            city,
-            comment,
-            saveRow(
-                () -> {
-                  userWorkflows.addContactInfo(
-                      currentUser.getId(),
-                      ContactInfo.AddressContact.builder()
-                          .nameOnBell(nameOnBell.getValue())
-                          .street(street.getValue())
-                          .zipCode(zip.getValue())
-                          .city(city.getValue())
-                          .comment(comment.getValue())
-                          .build(),
-                      false);
-                  runnable.run();
-                },
-                () -> form.setVisible(false)));
-      }
-      case TELEGRAM, SIGNAL -> throw new IllegalArgumentException();
+      default ->
+          throw new IllegalArgumentException("No add form defined for contact type: " + type);
     }
 
     return form;

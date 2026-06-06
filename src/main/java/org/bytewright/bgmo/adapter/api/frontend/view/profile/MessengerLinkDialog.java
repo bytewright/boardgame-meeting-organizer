@@ -19,17 +19,24 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.bytewright.bgmo.domain.model.notification.MessengerLinkContext;
+import org.bytewright.bgmo.domain.model.notification.NotificationChannel;
 import org.bytewright.bgmo.domain.model.notification.VerificationStep;
+import org.bytewright.bgmo.domain.model.user.ContactInfoType;
 import org.bytewright.bgmo.domain.service.data.RegisteredUserDao;
 
 /**
- * Dialog that guides a user through linking a messenger account.
+ * Dialog that guides a user through linking a messenger account as a contact option.
  *
  * <p>Shows the bot handle (copyable + optional direct-open link), the verification code (copyable),
  * optional step-by-step tutorial panels, and a refresh button to check if the bot has confirmed the
  * linking.
  *
  * <p>Stays deliberately dumb: all data arrives pre-built in a {@link MessengerLinkContext}.
+ *
+ * <p>Success detection checks both the presence of a verified ContactOption <em>and</em> whether
+ * {@code notificationChannel} is now Telegram. The latter handles users without a Telegram
+ * username, who get no ContactOption but do get {@code NotificationChannel.Telegram} written by the
+ * bot adapter.
  */
 public class MessengerLinkDialog extends Dialog {
 
@@ -65,10 +72,6 @@ public class MessengerLinkDialog extends Dialog {
     getHeader().add(closeBtn);
   }
 
-  // ---------------------------------------------------------------------------
-  // Bot handle row
-  // ---------------------------------------------------------------------------
-
   private Component buildBotHandleRow() {
     TextField handleField = new TextField(getTranslation("messenger.link.bot.field.label"));
     handleField.setValue(ctx.botHandle());
@@ -78,9 +81,6 @@ public class MessengerLinkDialog extends Dialog {
     Button copyBtn = copyButton(ctx.botHandle(), "messenger.link.handle.copied");
     handleField.setSuffixComponent(copyBtn);
 
-    // If a deep link exists, place the "Open in …" button beside the field
-
-    // Return a wrapper so deep-link row can be added inline
     VerticalLayout wrapper = new VerticalLayout();
     wrapper.setPadding(false);
     wrapper.setSpacing(false);
@@ -108,10 +108,6 @@ public class MessengerLinkDialog extends Dialog {
     codeField.setSuffixComponent(copyButton(ctx.verificationCode(), "messenger.link.code.copied"));
     return codeField;
   }
-
-  // ---------------------------------------------------------------------------
-  // Tutorial steps
-  // ---------------------------------------------------------------------------
 
   private Optional<Component> buildStepsSection() {
     List<VerificationStep> steps = ctx.steps();
@@ -168,10 +164,6 @@ public class MessengerLinkDialog extends Dialog {
     return details;
   }
 
-  // ---------------------------------------------------------------------------
-  // Status / refresh row
-  // ---------------------------------------------------------------------------
-
   private Component buildStatusRow() {
     Span statusLine = new Span(getTranslation("messenger.link.status.waiting"));
     statusLine
@@ -185,13 +177,7 @@ public class MessengerLinkDialog extends Dialog {
     refreshBtn.addClickListener(
         e -> {
           boolean nowLinked =
-              userDao
-                  .find(currentUserId)
-                  .map(
-                      u ->
-                          u.getContactOptions().stream()
-                              .anyMatch(c -> c.getType() == ctx.type() && c.isVerified()))
-                  .orElse(false);
+              userDao.find(currentUserId).map(u -> isLinked(u, ctx.type())).orElse(false);
 
           if (nowLinked) {
             close();
@@ -210,9 +196,26 @@ public class MessengerLinkDialog extends Dialog {
     return footer;
   }
 
-  // ---------------------------------------------------------------------------
-  // Shared helpers
-  // ---------------------------------------------------------------------------
+  /**
+   * A Telegram linking attempt is considered successful if either:
+   *
+   * <ul>
+   *   <li>a verified ContactOption of the expected type exists (user has a Telegram username), or
+   *   <li>the notification channel is now Telegram (user has no username; no ContactOption is
+   *       created by the bot adapter in that case, but the channel is still written).
+   * </ul>
+   *
+   * For Signal (and any future type), only the ContactOption check applies.
+   */
+  private boolean isLinked(
+      org.bytewright.bgmo.domain.model.user.RegisteredUser user, ContactInfoType type) {
+    boolean hasContactOption =
+        user.getContactOptions().stream().anyMatch(c -> c.getType() == type && c.isVerified());
+    boolean hasNotificationChannel =
+        type == ContactInfoType.TELEGRAM
+            && user.getNotificationChannel() instanceof NotificationChannel.Telegram;
+    return hasContactOption || hasNotificationChannel;
+  }
 
   /** Read-only copy-to-clipboard icon button for the given value. */
   private Button copyButton(String value, String confirmationKey) {

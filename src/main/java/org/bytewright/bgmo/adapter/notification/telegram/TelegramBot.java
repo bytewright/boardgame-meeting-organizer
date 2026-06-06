@@ -58,10 +58,7 @@ public class TelegramBot implements LongPollingSingleThreadUpdateConsumer {
       var channel = new NotificationChannel.Telegram(message.getChatId(), otherUser.getId());
       var contact =
           otherUser.getUserName() != null
-              ? ContactInfo.TelegramContact.builder()
-                  .username(otherUser.getUserName())
-                  .userId(otherUser.getId())
-                  .build()
+              ? ContactInfo.TelegramContact.builder().username(otherUser.getUserName()).build()
               : null;
       var result =
           linkCodeService.attemptMessengerLinking(text, ContactInfoType.TELEGRAM, channel, contact);

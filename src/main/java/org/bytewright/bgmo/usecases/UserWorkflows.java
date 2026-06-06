@@ -201,7 +201,7 @@ public class UserWorkflows {
     if (user.resolvePrimaryContact()
         .map(co -> co.getId().equals(refetchedOption.id()))
         .orElse(false)) {
-        return;
+      return;
     }
     log.info(
         "User {} changes his primary contact info to {}", user.logEntity(), refetchedOption.id());
@@ -216,9 +216,7 @@ public class UserWorkflows {
     }
     log.info("User {} removes contact info with id: {}", user.logEntity(), contact.id());
     user.getContactOptions().remove(contact);
-    if (user.resolvePrimaryContact()
-            .map(co -> co.getId().equals(contact.id()))
-            .orElse(false)) {
+    if (user.resolvePrimaryContact().map(co -> co.getId().equals(contact.id())).orElse(false)) {
       ContactOption newPrimary = user.getContactOptions().stream().findAny().orElseThrow();
       user.setPrimaryContactId(newPrimary.id());
     }

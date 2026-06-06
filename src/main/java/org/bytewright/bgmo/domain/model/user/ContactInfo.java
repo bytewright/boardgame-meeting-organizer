@@ -30,7 +30,10 @@ public sealed interface ContactInfo
     }
   }
 
-  /** deprecated, app doesn't need this and should be removed */
+  /**
+   * @deprecated app no longer collects postal addresses; kept for deserialization of old data only
+   */
+  @Deprecated
   @Builder(toBuilder = true)
   record AddressContact(
       String nameOnBell, String street, String zipCode, String city, String comment)
@@ -49,8 +52,18 @@ public sealed interface ContactInfo
     }
   }
 
+  /**
+   * Represents a linked Telegram account.
+   *
+   * <p>Only the username is stored here; it is shown as a contact handle to other users. The chatId
+   * needed to actually send notifications lives in {@code NotificationChannel.Telegram} and is
+   * written separately during the bot-linking flow.
+   *
+   * <p>Note: Telegram usernames can be changed or released by the user at any time. Stale usernames
+   * are a known, accepted limitation — no polling is performed.
+   */
   @Builder(toBuilder = true)
-  record TelegramContact(long userId, String username) implements ContactInfo {
+  record TelegramContact(String username) implements ContactInfo {
     @Override
     public ContactInfoType type() {
       return ContactInfoType.TELEGRAM;

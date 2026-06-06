@@ -12,6 +12,7 @@ import org.bytewright.bgmo.adapter.api.frontend.view.meetup.model.MeetupAttendee
 import org.bytewright.bgmo.adapter.api.frontend.view.profile.*;
 import org.bytewright.bgmo.domain.model.Game;
 import org.bytewright.bgmo.domain.model.notification.MessengerLinkContext;
+import org.bytewright.bgmo.domain.model.notification.NotificationChannel;
 import org.bytewright.bgmo.domain.model.user.ContactInfoType;
 import org.bytewright.bgmo.domain.model.user.RegisteredUser;
 import org.bytewright.bgmo.domain.service.GameInformationProvider;
@@ -21,6 +22,7 @@ import org.bytewright.bgmo.domain.service.notification.NotificationLinkCodeServi
 import org.bytewright.bgmo.domain.service.user.ContactInfoService;
 import org.bytewright.bgmo.usecases.AdminWorkflows;
 import org.bytewright.bgmo.usecases.MeetupWorkflows;
+import org.bytewright.bgmo.usecases.NotificationWorkflows;
 import org.bytewright.bgmo.usecases.UserWorkflows;
 import org.springframework.stereotype.Component;
 
@@ -36,6 +38,10 @@ public class ComponentFactory {
   private final LocaleService localeService;
   private final UserWorkflows userWorkflows;
   private final RegisteredUserDao userDao;
+  private final NotificationLinkCodeService notificationLinkCodeService;
+  private final NotificationWorkflows notificationWorkflows;
+  private final RegisteredUserDao registeredUserDao;
+
   private final GameDao gameDao;
 
   public ContactSection contactSection(RegisteredUser currentUser, Runnable runnable) {
@@ -86,5 +92,42 @@ public class ComponentFactory {
         adminWorkflows,
         localeService,
         runnable);
+  }
+
+  /**
+   * Creates the notification-channel section component for the Contacts & Notifications view. Kept
+   * here so the view itself does not need NotificationWorkflows injected separately — though in
+   * this project's current setup the view already has it, so this factory method is optional
+   * convenience.
+   */
+  public NotificationChannelSection notificationChannelSection(
+      RegisteredUser user, Runnable onChanged) {
+    return new NotificationChannelSection(this, notificationWorkflows, user, onChanged);
+  }
+
+  /**
+   * Creates the notification-channel change dialog.
+   *
+   * <p>A Telegram link context is built eagerly only when the user is not already on Telegram,
+   * generating a pending code in NotificationLinkCodeService. If the dialog is cancelled without
+   * the user completing the Telegram flow, that code sits in memory until app restart — accepted
+   * minor trade-off.
+   */
+  public NotificationChannelDialog notificationChannelDialog(
+      RegisteredUser user, Runnable onChanged) {
+    Optional<MessengerLinkContext> telegramCtx =
+        user.getNotificationChannel() instanceof NotificationChannel.Telegram
+            ? Optional.empty()
+            : Optional.of(
+                notificationLinkCodeService.buildLinkContext(
+                    user.getId(), ContactInfoType.TELEGRAM));
+
+    return new NotificationChannelDialog(
+        user.getId(),
+        user.getNotificationChannel(),
+        telegramCtx,
+        notificationWorkflows,
+        registeredUserDao,
+        onChanged);
   }
 }

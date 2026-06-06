@@ -42,4 +42,9 @@ public class NotificationWorkflows {
                 log.info(
                     "Should send out infos about upcoming meeting: {}", meetupEvent.logIdentity()));
   }
+
+  public void sendTestMessage(UUID userId) {
+    RegisteredUser user = userDao.findOrThrow(userId);
+    log.info("Should send out test msg to: {}", user.logEntity());
+  }
 }
