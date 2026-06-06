@@ -137,7 +137,11 @@ public class UserWorkflows {
     RegisteredUser user = userDao.findOrThrow(userId);
 
     // First contact automatically becomes the primary contact
-    if (user.getPrimaryContactId() == null) {
+    if (user.resolvePrimaryContact().isEmpty()) {
+      log.info(
+          "User {} didn'T have primary contact, setting newly added '{}' as primary",
+          user.logEntity(),
+          contactInfo.type());
       user.setPrimaryContactId(persistedContact.id());
     }
 
@@ -194,7 +198,11 @@ public class UserWorkflows {
   public void changePrimaryContactInfo(UUID userId, ContactOption contactOption) {
     RegisteredUser user = userDao.findOrThrow(userId);
     ContactOption refetchedOption = contactOptionDao.findOrThrow(contactOption.id());
-    if (Objects.equals(user.resolvePrimaryContact(), refetchedOption.id())) return;
+    if (user.resolvePrimaryContact()
+        .map(co -> co.getId().equals(refetchedOption.id()))
+        .orElse(false)) {
+        return;
+    }
     log.info(
         "User {} changes his primary contact info to {}", user.logEntity(), refetchedOption.id());
     user.setPrimaryContactId(refetchedOption.id());
@@ -208,7 +216,9 @@ public class UserWorkflows {
     }
     log.info("User {} removes contact info with id: {}", user.logEntity(), contact.id());
     user.getContactOptions().remove(contact);
-    if (Objects.equals(user.resolvePrimaryContact(), contact.id())) {
+    if (user.resolvePrimaryContact()
+            .map(co -> co.getId().equals(contact.id()))
+            .orElse(false)) {
       ContactOption newPrimary = user.getContactOptions().stream().findAny().orElseThrow();
       user.setPrimaryContactId(newPrimary.id());
     }

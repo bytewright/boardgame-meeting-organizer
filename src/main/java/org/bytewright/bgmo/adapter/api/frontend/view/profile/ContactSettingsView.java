@@ -104,10 +104,7 @@ public class ContactSettingsView extends VerticalLayout implements BeforeEnterOb
     ComboBox<ContactOption> comboBox = new ComboBox<>();
     comboBox.setWidthFull();
     comboBox.setItems(filteredOptions);
-    filteredOptions.stream()
-        .filter(contactInfo -> contactInfo.id().equals(user.resolvePrimaryContact()))
-        .findAny()
-        .ifPresent(comboBox::setValue);
+    user.resolvePrimaryContact().ifPresent(comboBox::setValue);
     comboBox.setHelperText(getTranslation("profile.contacts.primary.helper"));
     comboBox.setItemLabelGenerator(this::generateComboBoxLabel);
     comboBox.addValueChangeListener(
