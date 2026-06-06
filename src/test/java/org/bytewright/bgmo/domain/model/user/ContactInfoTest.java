@@ -27,8 +27,7 @@ class ContactInfoTest {
       // Arrange
       ContactInfo.TelegramContact contact =
           ContactInfo.TelegramContact.builder()
-              .chatId("123456")
-              .telegramUsername("SomeName")
+              .username("123456")
               .build();
 
       // Act
@@ -38,7 +37,6 @@ class ContactInfoTest {
 
       // Assert
       assertThat(deserialized)
-          .returns(contact.chatId(), ContactInfo.TelegramContact::chatId)
           .returns(contact.username(), ContactInfo.TelegramContact::username);
     }
   }
@@ -165,7 +163,7 @@ class ContactInfoTest {
     void testPolymorphicTelegram() throws Exception {
       // Arrange
       ContactInfo.TelegramContact original =
-          ContactInfo.TelegramContact.builder().chatId("789").telegramUsername("polyUser").build();
+          ContactInfo.TelegramContact.builder().username("polyUser").build();
       String json = mapper.writeValueAsString(original);
 
       // Act

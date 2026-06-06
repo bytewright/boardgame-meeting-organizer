@@ -94,7 +94,7 @@ class TelegramNotificationAdapterTest {
     ContactOption telegramContact =
         ContactOption.builder()
             .id(UUID.randomUUID())
-            .contactInfo(ContactInfo.TelegramContact.builder().telegramUsername("foo").build())
+            .contactInfo(ContactInfo.TelegramContact.builder().username("foo").build())
             .build();
     RegisteredUser creator =
         RegisteredUser.builder()
@@ -129,7 +129,7 @@ class TelegramNotificationAdapterTest {
     // Arrange
     UUID userId = UUID.randomUUID();
     ContactInfo.TelegramContact telegramContact =
-        ContactInfo.TelegramContact.builder().chatId("987654321").build();
+        ContactInfo.TelegramContact.builder().username("987654321").build();
 
     NotificationContext context =
         NotificationContext.builder()
@@ -150,7 +150,7 @@ class TelegramNotificationAdapterTest {
     SendMessage capturedMessage = sendMessageCaptor.getValue();
 
     assertNotNull(capturedMessage);
-    assertEquals(telegramContact.chatId(), capturedMessage.getChatId());
+    assertEquals(telegramContact.username(), capturedMessage.getChatId());
     assertEquals("Dein Konto ist freigeschaltet\\.", capturedMessage.getText());
     assertEquals("MarkdownV2", capturedMessage.getParseMode());
   }
