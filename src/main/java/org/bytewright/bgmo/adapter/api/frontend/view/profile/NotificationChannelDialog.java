@@ -52,6 +52,7 @@ public class NotificationChannelDialog extends Dialog {
   private static final String OPT_NONE = "none";
   private static final String OPT_EMAIL = "email";
   private static final String OPT_TELEGRAM = "telegram";
+  private static final String OPT_DISCORD = "discord";
 
   private final UUID userId;
   private final NotificationChannel currentChannel;
@@ -115,6 +116,7 @@ public class NotificationChannelDialog extends Dialog {
       case NotificationChannel.None ignored -> OPT_NONE;
       case NotificationChannel.Email ignored -> OPT_EMAIL;
       case NotificationChannel.Telegram ignored -> OPT_TELEGRAM;
+      case NotificationChannel.Discord ignored -> OPT_DISCORD;
     };
   }
 

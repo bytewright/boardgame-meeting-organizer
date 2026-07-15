@@ -9,13 +9,15 @@ import lombok.Builder;
   @JsonSubTypes.Type(value = ContactInfo.PhoneContact.class, name = "PHONE"),
   @JsonSubTypes.Type(value = ContactInfo.EmailContact.class, name = "EMAIL"),
   @JsonSubTypes.Type(value = ContactInfo.AddressContact.class, name = "ADR"),
+  @JsonSubTypes.Type(value = ContactInfo.DiscordContact.class, name = "MESSENGER_DISCORD"),
   @JsonSubTypes.Type(value = ContactInfo.SignalContact.class, name = "MESSENGER_SIGNAL"),
   @JsonSubTypes.Type(value = ContactInfo.TelegramContact.class, name = "MESSENGER_TELEGRAM")
 })
 public sealed interface ContactInfo
-    permits ContactInfo.PhoneContact,
+    permits ContactInfo.AddressContact,
+        ContactInfo.DiscordContact,
         ContactInfo.EmailContact,
-        ContactInfo.AddressContact,
+        ContactInfo.PhoneContact,
         ContactInfo.SignalContact,
         ContactInfo.TelegramContact {
 
@@ -75,6 +77,14 @@ public sealed interface ContactInfo
     @Override
     public ContactInfoType type() {
       return ContactInfoType.PHONE;
+    }
+  }
+
+  @Builder(toBuilder = true)
+  record DiscordContact(long userId, String username) implements ContactInfo {
+    @Override
+    public ContactInfoType type() {
+      return ContactInfoType.DISCORD;
     }
   }
 }

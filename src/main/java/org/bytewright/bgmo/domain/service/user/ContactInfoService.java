@@ -27,7 +27,12 @@ public class ContactInfoService {
       case ContactInfo.PhoneContact phoneContact -> validatePhone(phoneContact.phoneNr());
       case ContactInfo.SignalContact signalContact -> validateSignal(signalContact.signalHandle());
       case ContactInfo.TelegramContact telegramContact -> validateTelegram(telegramContact);
+      case ContactInfo.DiscordContact discordContact -> validateDiscord(discordContact);
     };
+  }
+
+  private boolean validateDiscord(ContactInfo.DiscordContact contact) {
+    return StringUtils.hasText(contact.username()) && contact.userId() > 0;
   }
 
   public boolean validateEmail(String email) {

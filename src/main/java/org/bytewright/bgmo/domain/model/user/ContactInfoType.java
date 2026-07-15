@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 public enum ContactInfoType {
   EMAIL(true, false, "contact.type.email.name"),
   TELEGRAM(true, true, "contact.type.telegram.name"),
+  DISCORD(true, true, "contact.type.discord.name"),
   SIGNAL(true, true, "contact.type.signal.name"),
   ADDRESS(false, false, "contact.type.address.name"),
   PHONE(true, false, "contact.type.phone.name");

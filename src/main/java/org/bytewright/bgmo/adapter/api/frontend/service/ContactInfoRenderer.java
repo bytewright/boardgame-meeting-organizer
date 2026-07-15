@@ -53,6 +53,7 @@ public class ContactInfoRenderer {
               "Signaluser: " + signalContact.signalHandle();
           case ContactInfo.TelegramContact telegramContact ->
               "Telegramuser: " + telegramContact.username();
+          case ContactInfo.DiscordContact discordContact -> "Discord: " + discordContact.username();
         };
     Span contactValue = new Span(contactString);
     contactValue.getStyle().set("word-break", "break-word");
@@ -107,6 +108,10 @@ public class ContactInfoRenderer {
         // todo hmm maybe this should use the telegram icon?
         //  meaning this would need to be a horizontalLayout?
         yield anchor;
+      }
+      case ContactInfo.DiscordContact discordContact -> {
+        // for later, not relevant
+        throw new NotImplementedException();
       }
       case ContactInfo.SignalContact signalContact -> {
         // for later, not relevant

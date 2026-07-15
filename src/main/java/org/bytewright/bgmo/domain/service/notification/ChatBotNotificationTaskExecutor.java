@@ -9,6 +9,10 @@ public interface ChatBotNotificationTaskExecutor extends NotificationTaskExecuto
 
   String botChatDisplayName();
 
+  /**
+   * Only used for displaying tutorial steps how to link external supported service with app, i.e.
+   * "contact bot at [deeplink]"
+   */
   Optional<String> generateBotDeepLink();
 
   List<VerificationStep> generateLinkingSteps();

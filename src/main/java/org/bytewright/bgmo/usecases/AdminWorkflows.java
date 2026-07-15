@@ -19,7 +19,6 @@ import org.bytewright.bgmo.domain.service.data.RegisteredUserDao;
 import org.bytewright.bgmo.domain.service.event.EventPublisher;
 import org.bytewright.bgmo.domain.service.notification.NotificationManager;
 import org.bytewright.bgmo.domain.service.security.BgmoUserDetailsService;
-import org.bytewright.bgmo.domain.service.user.ContactInfoService;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.User;
@@ -34,7 +33,6 @@ public class AdminWorkflows {
   private final BgmoUserDetailsService userDetailsService;
   private final NotificationManager notificationManager;
   private final AdapterSettingsDao adapterSettingsDao;
-  private final ContactInfoService contactInfoService;
   private final ModelDao<MeetupJoinRequest> joinRequestModelDao;
   private final EventPublisher eventPublisher;
   private final RegisteredUserDao userDao;

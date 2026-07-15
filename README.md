@@ -56,6 +56,10 @@ Dockerfile is included, that is the easiest way.
   - TELEGRAM_BOT_GRP_CHAT_ID: Notifications of type 'GROUP' will be pushed there, optional
 > Email notification adapter
   - BGMO_EMAIL_FROM_ADR=bgmo@yourdomain.com
+> Discord notification adapter
+  - DISCORD_BOT_TOKEN
+  - DISCORD_CLIENT_ID
+  - DISCORD_BOT_DISPLAYNAME
 > BoardGameGeek integration adapter
   - BGG_API_TOKEN: Must be requested on BGG site
 > Spring JavaMailSender

@@ -40,6 +40,11 @@ bgmo:
         bot-display-name: "${TELEGRAM_BOT_DISPLAYNAME:}"
         group-chat-id: "${TELEGRAM_BOT_GRP_CHAT_ID:}"
         group-locale: DE
+      discord:
+        enabled: true
+        bot-token: "${DISCORD_BOT_TOKEN:}"
+        client-id: "${DISCORD_CLIENT_ID:}"
+        bot-display-name: "${DISCORD_BOT_DISPLAYNAME:}"
     bgg:
       enabled: true
       apiToken: "${BGG_API_TOKEN:}"

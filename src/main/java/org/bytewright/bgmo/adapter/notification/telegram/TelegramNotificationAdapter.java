@@ -18,7 +18,6 @@ import org.bytewright.bgmo.domain.service.data.AdapterSettingsDao;
 import org.bytewright.bgmo.domain.service.data.MeetupDao;
 import org.bytewright.bgmo.domain.service.data.RegisteredUserDao;
 import org.bytewright.bgmo.domain.service.notification.ChatBotNotificationTaskExecutor;
-import org.bytewright.bgmo.domain.service.user.ContactInfoService;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
@@ -49,7 +48,6 @@ public class TelegramNotificationAdapter
   private final TelegramTemplateService templateService;
   private final TelegramContactRenderer contactRenderer;
   private final AdapterSettingsDao adapterSettingsDao;
-  private final ContactInfoService contactInfoService;
   private final TelegramBot telegramBot;
   private final RegisteredUserDao userDao;
   private final MeetupDao meetupDao;

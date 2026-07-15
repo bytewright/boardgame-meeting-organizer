@@ -7,13 +7,19 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 @JsonSubTypes({
   @JsonSubTypes.Type(value = NotificationChannel.None.class, name = "NONE"),
   @JsonSubTypes.Type(value = NotificationChannel.Email.class, name = "EMAIL"),
+  @JsonSubTypes.Type(value = NotificationChannel.Discord.class, name = "DISCORD"),
   @JsonSubTypes.Type(value = NotificationChannel.Telegram.class, name = "MESSENGER_TELEGRAM")
 })
 public sealed interface NotificationChannel
-    permits NotificationChannel.Email, NotificationChannel.None, NotificationChannel.Telegram {
+    permits NotificationChannel.Discord,
+        NotificationChannel.Email,
+        NotificationChannel.None,
+        NotificationChannel.Telegram {
   record None() implements NotificationChannel {}
 
   record Email(String email) implements NotificationChannel {}
 
   record Telegram(Long chatId, Long userId) implements NotificationChannel {}
+
+  record Discord(long userId) implements NotificationChannel {}
 }

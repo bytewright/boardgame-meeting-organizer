@@ -76,6 +76,8 @@ public class NotificationChannelSection extends VerticalLayout {
           getTranslation("profile.notifications.channel.status.email", e.email());
       case NotificationChannel.Telegram ignored ->
           getTranslation("profile.notifications.channel.status.telegram");
+      case NotificationChannel.Discord ignored ->
+          getTranslation("profile.notifications.channel.status.discord");
     };
   }
 }

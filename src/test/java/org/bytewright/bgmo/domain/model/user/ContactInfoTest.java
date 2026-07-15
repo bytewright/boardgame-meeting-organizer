@@ -26,9 +26,7 @@ class ContactInfoTest {
     void testSerializationTelegram() throws Exception {
       // Arrange
       ContactInfo.TelegramContact contact =
-          ContactInfo.TelegramContact.builder()
-              .username("123456")
-              .build();
+          ContactInfo.TelegramContact.builder().username("123456").build();
 
       // Act
       String json = mapper.writeValueAsString(contact);
@@ -36,8 +34,7 @@ class ContactInfoTest {
           mapper.readValue(json, ContactInfo.TelegramContact.class);
 
       // Assert
-      assertThat(deserialized)
-          .returns(contact.username(), ContactInfo.TelegramContact::username);
+      assertThat(deserialized).returns(contact.username(), ContactInfo.TelegramContact::username);
     }
   }
 
