@@ -17,13 +17,15 @@ public record NotificationContext(Content payload, Target target, Locale locale)
 
   public Optional<NotificationChannel> extractChannel() {
     return switch (target) {
-      case NotificationContext.Target.Anon anon -> Optional.of(anon.channel());
-      case NotificationContext.Target.User user -> Optional.of(user.channel());
-      case NotificationContext.Target.Group ignore -> Optional.empty();
+      case Target.Anon anon -> Optional.of(anon.channel());
+      case Target.User user -> Optional.of(user.channel());
+      case Target.Group ignore -> Optional.empty();
     };
   }
 
   public sealed interface Target permits Target.Anon, Target.User, Target.Group {
+    Group GROUP = new Group();
+
     @Builder
     record Anon(String displayName, NotificationChannel channel) implements Target {}
 
@@ -67,7 +69,8 @@ public record NotificationContext(Content payload, Target target, Locale locale)
     }
 
     @Builder
-    record MeetupCreated(String title, UUID meetupId, URL meetupUrl) implements Content {
+    record MeetupCreated(String title, UUID meetupId, URL meetupUrl)
+        implements Content, HasMeetUpUrl {
 
       static final String MESSAGE_KEY = "notification.meetup.created";
 
@@ -79,7 +82,7 @@ public record NotificationContext(Content payload, Target target, Locale locale)
 
     @Builder
     record JoinRequestCreated(String requesterName, UUID joinRequestId, String title, URL meetupUrl)
-        implements Content {
+        implements Content, HasMeetUpUrl {
 
       static final String MESSAGE_KEY = "notification.join-request.new";
 
@@ -92,7 +95,7 @@ public record NotificationContext(Content payload, Target target, Locale locale)
     @Builder
     record JoinRequestApproved(
         ZonedDateTime eventDate, String title, UUID joinRequestId, URL meetupUrl)
-        implements Content {
+        implements Content, HasMeetUpUrl {
 
       static final String MESSAGE_KEY = "notification.join-request.approved";
 
@@ -104,7 +107,7 @@ public record NotificationContext(Content payload, Target target, Locale locale)
 
     @Builder
     record MeetupRescheduled(String title, UUID meetupId, ZonedDateTime newEventDate, URL meetupUrl)
-        implements Content {
+        implements Content, HasMeetUpUrl {
 
       static final String MESSAGE_KEY = "notification.meetup.rescheduled";
 
@@ -115,7 +118,8 @@ public record NotificationContext(Content payload, Target target, Locale locale)
     }
 
     @Builder
-    record MeetupCanceled(String title, UUID meetupId, URL meetupUrl) implements Content {
+    record MeetupCanceled(String title, UUID meetupId, URL meetupUrl)
+        implements Content, HasMeetUpUrl {
 
       static final String MESSAGE_KEY = "notification.meetup.canceled";
 
@@ -201,19 +205,38 @@ public record NotificationContext(Content payload, Target target, Locale locale)
   public static class NotificationContextBuilder {
     public NotificationContextBuilder anonTarget(JoinRequestPayload.AnonEmail anonEmail) {
       return target(
-          NotificationContext.Target.Anon.builder()
+          Target.Anon.builder()
               .displayName(anonEmail.displayName())
               .channel(new NotificationChannel.Email(anonEmail.emailContact().email()))
               .build());
     }
 
+    public NotificationContextBuilder channelUserTarget(
+        JoinRequestPayload.NotificationChannelAnonUser channelUser) {
+      NotificationChannel channel =
+          switch (channelUser.contactType()) {
+            // TODO hmm adapter specific info here...
+            case DISCORD ->
+                new NotificationChannel.Discord(
+                    Long.parseLong(channelUser.channelSpecificIdentifier()));
+            default ->
+                throw new IllegalStateException("Unexpected value: " + channelUser.contactType());
+          };
+      return target(
+          Target.Anon.builder().displayName(channelUser.displayName()).channel(channel).build());
+    }
+
     public NotificationContextBuilder userTarget(RegisteredUser user) {
       return target(
-          NotificationContext.Target.User.builder()
+          Target.User.builder()
               .userId(user.id())
               .displayName(user.getDisplayName())
               .channel(user.getNotificationChannel())
               .build());
     }
+  }
+
+  public interface HasMeetUpUrl {
+    URL meetupUrl();
   }
 }

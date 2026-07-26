@@ -49,7 +49,7 @@ public class NotificationManager {
       case PUBLIC -> {
         var context =
             NotificationContext.builder()
-                .target(NotificationContext.Target.Group.builder().build())
+                .target(NotificationContext.Target.GROUP)
                 .payload(payload)
                 .locale(siteManagementService.getDefaultLocale())
                 .build();
@@ -67,7 +67,7 @@ public class NotificationManager {
           NotificationContext.builder()
               .userTarget(user)
               .payload(payload)
-              .locale(user.getPreferredLocale())
+              .locale(localeOrDefault(user))
               .build();
       dispatch(context);
     }
@@ -79,15 +79,7 @@ public class NotificationManager {
     MeetupJoinRequest joinRequest = joinRequestDao.findOrThrow(event.id());
     MeetupEvent meetup = meetupDao.findOrThrow(joinRequest.getMeetupId());
     RegisteredUser eventCreator = userDao.findOrThrow(meetup.getCreatorId());
-    String displayName =
-        switch (joinRequest.getPayload()) {
-          case JoinRequestPayload.Anon anon -> anon.displayName();
-          case JoinRequestPayload.AnonEmail anonEmail -> anonEmail.displayName();
-          case JoinRequestPayload.User user -> {
-            RegisteredUser joiner = userDao.findOrThrow(user.userId());
-            yield joiner.getDisplayName();
-          }
-        };
+    String displayName = JoinRequestPayload.displayName(userDao, joinRequest.getPayload());
     var context =
         NotificationContext.builder()
             .userTarget(eventCreator)
@@ -98,7 +90,7 @@ public class NotificationManager {
                     .title(meetup.getTitle())
                     .meetupUrl(urlGenerator.getUrlFor(meetup))
                     .build())
-            .locale(eventCreator.getPreferredLocale())
+            .locale(localeOrDefault(eventCreator))
             .build();
     dispatch(context);
   }
@@ -115,6 +107,13 @@ public class NotificationManager {
             .joinRequestId(joinRequest.getId())
             .meetupUrl(urlGenerator.getUrlFor(meetup))
             .build();
+    var groupContext =
+        NotificationContext.builder()
+            .target(NotificationContext.Target.GROUP)
+            .payload(payload)
+            .locale(siteManagementService.getDefaultLocale())
+            .build();
+    dispatch(groupContext);
     switch (joinRequest.getPayload()) {
       case JoinRequestPayload.User user -> {
         RegisteredUser joiner = userDao.findOrThrow(user.userId());
@@ -122,7 +121,7 @@ public class NotificationManager {
             NotificationContext.builder()
                 .userTarget(joiner)
                 .payload(payload)
-                .locale(joiner.getPreferredLocale())
+                .locale(localeOrDefault(joiner))
                 .build();
         dispatch(context);
       }
@@ -137,6 +136,12 @@ public class NotificationManager {
       }
       case JoinRequestPayload.Anon ignored ->
           log.info("Can't dispatch request approval notification to anon user");
+      case JoinRequestPayload.NotificationChannelAnonUser channelUser -> {
+        log.info(
+            "Can't dispatch request approval notification to NotificationChannel: {}, User: {}",
+            channelUser.contactType().name(),
+            channelUser.displayName());
+      }
     }
   }
 
@@ -160,12 +165,10 @@ public class NotificationManager {
               NotificationContext.builder()
                   .userTarget(joiner)
                   .payload(payload)
-                  .locale(joiner.getPreferredLocale())
+                  .locale(localeOrDefault(joiner))
                   .build();
           dispatch(context);
         }
-        case JoinRequestPayload.Anon ignored ->
-            log.info("Can't dispatch meeting rescheduled notification to anon user");
         case JoinRequestPayload.AnonEmail anonEmail -> {
           var context =
               NotificationContext.builder()
@@ -175,8 +178,26 @@ public class NotificationManager {
                   .build();
           dispatch(context);
         }
+        case JoinRequestPayload.NotificationChannelAnonUser channelUser -> {
+          var context =
+              NotificationContext.builder()
+                  .channelUserTarget(channelUser)
+                  .payload(payload)
+                  .locale(siteManagementService.getDefaultLocale())
+                  .build();
+          dispatch(context);
+        }
+        case JoinRequestPayload.Anon ignored ->
+            log.info("Can't dispatch meeting rescheduled notification to anon user");
       }
     }
+    var context =
+        NotificationContext.builder()
+            .target(NotificationContext.Target.GROUP)
+            .payload(payload)
+            .locale(siteManagementService.getDefaultLocale())
+            .build();
+    dispatch(context);
   }
 
   @EventListener
@@ -198,12 +219,10 @@ public class NotificationManager {
               NotificationContext.builder()
                   .userTarget(joiner)
                   .payload(payload)
-                  .locale(joiner.getPreferredLocale())
+                  .locale(localeOrDefault(joiner))
                   .build();
           dispatch(context);
         }
-        case JoinRequestPayload.Anon ignored ->
-            log.info("Can't dispatch meeting canceled notification to anon user");
         case JoinRequestPayload.AnonEmail anonEmail -> {
           var context =
               NotificationContext.builder()
@@ -213,8 +232,26 @@ public class NotificationManager {
                   .build();
           dispatch(context);
         }
+        case JoinRequestPayload.NotificationChannelAnonUser channelUser -> {
+          var context =
+              NotificationContext.builder()
+                  .channelUserTarget(channelUser)
+                  .payload(payload)
+                  .locale(siteManagementService.getDefaultLocale())
+                  .build();
+          dispatch(context);
+        }
+        case JoinRequestPayload.Anon ignored ->
+            log.info("Can't dispatch meeting canceled notification to anon user");
       }
     }
+    var context =
+        NotificationContext.builder()
+            .target(NotificationContext.Target.GROUP)
+            .payload(payload)
+            .locale(siteManagementService.getDefaultLocale())
+            .build();
+    dispatch(context);
   }
 
   @EventListener
@@ -235,10 +272,15 @@ public class NotificationManager {
                   NotificationContext.Content.UserRegistration.builder()
                       .username(newUser.getDisplayName())
                       .build())
-              .locale(user.getPreferredLocale())
+              .locale(localeOrDefault(user))
               .build();
       dispatch(context);
     }
+  }
+
+  private Locale localeOrDefault(RegisteredUser user) {
+    return Optional.ofNullable(user.getPreferredLocale())
+        .orElse(siteManagementService.getDefaultLocale());
   }
 
   void registerTaskExecutors(Collection<NotificationTaskExecutor> executors) {

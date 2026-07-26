@@ -1,5 +1,6 @@
 package org.bytewright.bgmo.adapter.notification.discord;
 
+import static org.bytewright.bgmo.adapter.notification.discord.DispatcherForums.JOIN_BUTTON_PREFIX;
 import static org.bytewright.bgmo.domain.service.CoreAppContextConfig.APP_NAME_SHORT;
 
 import java.util.Locale;
@@ -9,11 +10,14 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.ChannelType;
+import net.dv8tion.jda.api.entities.channel.concrete.ForumChannel;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.interactions.commands.OptionMapping;
+import org.bytewright.bgmo.domain.model.JoinRequestPayload;
+import org.bytewright.bgmo.domain.model.JoinRequestResult;
 import org.bytewright.bgmo.domain.model.notification.LinkingAttempt;
 import org.bytewright.bgmo.domain.model.notification.NotificationChannel;
 import org.bytewright.bgmo.domain.model.notification.NotificationContext;
@@ -23,6 +27,7 @@ import org.bytewright.bgmo.domain.model.user.RegisteredUser;
 import org.bytewright.bgmo.domain.service.data.RegisteredUserDao;
 import org.bytewright.bgmo.domain.service.notification.NotificationLinkCodeService;
 import org.bytewright.bgmo.domain.service.notification.NotificationManager;
+import org.bytewright.bgmo.usecases.MeetupWorkflows;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Service;
 
@@ -30,11 +35,15 @@ import org.springframework.stereotype.Service;
 @Service
 @RequiredArgsConstructor
 public class DiscordBot extends ListenerAdapter {
+  static final String CMD_USE_FORUM_CHANNEL = "use_forum_channel";
+  static final String CMD_USE_FORUM_CHANNEL_ARG_LOCALE = "locale";
+  static final String CMD_USE_FORUM_CHANNEL_ARG_CHANNEL = "forum_channel";
   static final String CMD_ANNOUNCE_HERE = "announce_here";
   static final String CMD_STOP_ANNOUNCE_HERE = "stop_announcing_here";
 
   private final NotificationLinkCodeService linkCodeService;
   private final NotificationManager notificationManager;
+  private final MeetupWorkflows meetupWorkflows;
   private final RegisteredUserDao userDao;
 
   private DiscordNotificationAdapter adapter;
@@ -49,22 +58,66 @@ public class DiscordBot extends ListenerAdapter {
     String commandName = event.getName();
     long guildId = event.getGuild().getIdLong();
     long channelId = event.getChannel().getIdLong();
+    switch (commandName) {
+      case CMD_USE_FORUM_CHANNEL:
+        {
+          OptionMapping localeOption = event.getOption(CMD_USE_FORUM_CHANNEL_ARG_LOCALE);
+          String locale = localeOption != null ? localeOption.getAsString() : "de";
+          OptionMapping first = event.getOption(CMD_USE_FORUM_CHANNEL_ARG_CHANNEL);
+          ChannelType channelType = first.getChannelType();
+          if (channelType != ChannelType.FORUM) {
+            event
+                .reply("Provided channel must be a forum but is %s!".formatted(channelType))
+                .setEphemeral(true)
+                .queue();
+            return;
+          }
+          ForumChannel forum = first.getAsChannel().asForumChannel();
+          log.info("Received forum to post in, id: {}", forum.getIdLong());
+          boolean result = adapter.addForumChannel(guildId, forum, locale);
+          if (!result) {
+            event
+                .reply("Channel couldn't be found - check visibility permissions!")
+                .setEphemeral(true)
+                .queue();
+            return;
+          }
+          event
+              .reply(
+                  "Forum '%s' will now be used to post new Meetups (Locale: %s)."
+                      .formatted(forum.getName(), locale))
+              .setEphemeral(true)
+              .queue();
+        }
+        break;
+      case CMD_ANNOUNCE_HERE:
+        {
+          OptionMapping localeOption = event.getOption("locale");
+          String locale = localeOption != null ? localeOption.getAsString() : "de";
 
-    if (CMD_ANNOUNCE_HERE.equals(commandName)) {
-      OptionMapping localeOption = event.getOption("locale");
-      String locale = localeOption != null ? localeOption.getAsString() : "de";
-
-      boolean result = adapter.addAnnouncementChannel(guildId, channelId, locale);
-      if (!result) {
-        event.reply("Channel couldn't be found - check visibility permissions!").queue();
-        return;
-      }
-      event
-          .reply("Announcements will now be posted in this channel (Locale: " + locale + ").")
-          .queue();
-    } else if (CMD_STOP_ANNOUNCE_HERE.equals(commandName)) {
-      adapter.removeAnnouncementChannel(guildId, channelId);
-      event.reply("Announcements will no longer be posted in this channel.").queue();
+          boolean result = adapter.addAnnouncementChannel(guildId, channelId, locale);
+          if (!result) {
+            event
+                .reply("Channel couldn't be found - check visibility permissions!")
+                .setEphemeral(true)
+                .queue();
+            return;
+          }
+          event
+              .reply("Announcements will now be posted in this channel (Locale: " + locale + ").")
+              .setEphemeral(true)
+              .queue();
+        }
+        break;
+      case CMD_STOP_ANNOUNCE_HERE:
+        {
+          adapter.removeAnnouncementChannel(guildId, channelId);
+          event
+              .reply("Announcements will no longer be posted in this channel.")
+              .setEphemeral(true)
+              .queue();
+        }
+        break;
     }
   }
 
@@ -135,12 +188,27 @@ public class DiscordBot extends ListenerAdapter {
   @Override
   public void onButtonInteraction(@NotNull ButtonInteractionEvent event) {
     String componentId = event.getComponentId();
-    if (componentId.startsWith("join:")) {
-      UUID meetupId = UUID.fromString(componentId.split(":")[1]);
-      long discordUserId = event.getUser().getIdLong();
-      adapter.handleJoinRequestFromChat(meetupId, discordUserId);
-      event.reply("Join request sent!").setEphemeral(true).queue();
+    if (!componentId.startsWith(JOIN_BUTTON_PREFIX)) {
+      return;
     }
+    UUID meetupId = UUID.fromString(componentId.split(":")[1]);
+    log.info("Received join request by discord forum channel button for meetup: {}", meetupId);
+    event.deferReply(true).queue();
+    User discordUser = event.getUser();
+    var payload =
+        new JoinRequestPayload.NotificationChannelAnonUser(
+            ContactInfoType.DISCORD, discordUser.getEffectiveName(), discordUser.getId());
+
+    JoinRequestResult result = meetupWorkflows.requestToJoinChannelAnon(meetupId, payload);
+    String reply =
+        switch (result) {
+          case JoinRequestResult.Duplicate ignore ->
+              "You've already requested to join this meetup.";
+          case JoinRequestResult.Success ignore -> "Request sent! 🎲";
+          case JoinRequestResult.Failed failed ->
+              "There was an error processing your request: " + failed.reason();
+        };
+    event.getHook().sendMessage(reply).setEphemeral(true).queue();
   }
 
   void setAdapter(DiscordNotificationAdapter adapter) {

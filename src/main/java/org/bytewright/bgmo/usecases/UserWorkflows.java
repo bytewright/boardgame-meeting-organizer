@@ -139,7 +139,7 @@ public class UserWorkflows {
     // First contact automatically becomes the primary contact
     if (user.resolvePrimaryContact().isEmpty()) {
       log.info(
-          "User {} didn'T have primary contact, setting newly added '{}' as primary",
+          "User {} didn't have primary contact, setting newly added '{}' as primary",
           user.logEntity(),
           contactInfo.type());
       user.setPrimaryContactId(persistedContact.id());

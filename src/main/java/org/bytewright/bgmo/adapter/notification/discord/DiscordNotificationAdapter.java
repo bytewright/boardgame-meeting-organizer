@@ -1,7 +1,5 @@
 package org.bytewright.bgmo.adapter.notification.discord;
 
-import static org.bytewright.bgmo.adapter.notification.discord.DiscordBot.CMD_ANNOUNCE_HERE;
-import static org.bytewright.bgmo.adapter.notification.discord.DiscordBot.CMD_STOP_ANNOUNCE_HERE;
 import static org.bytewright.bgmo.domain.model.notification.NotificationContext.*;
 import static org.bytewright.bgmo.domain.model.notification.NotificationContext.Content.*;
 
@@ -11,12 +9,8 @@ import java.util.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.EmbedBuilder;
-import net.dv8tion.jda.api.JDA;
-import net.dv8tion.jda.api.JDABuilder;
+import net.dv8tion.jda.api.entities.channel.concrete.ForumChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
-import net.dv8tion.jda.api.interactions.commands.OptionType;
-import net.dv8tion.jda.api.interactions.commands.build.Commands;
-import net.dv8tion.jda.api.requests.GatewayIntent;
 import org.bytewright.bgmo.domain.model.AdapterSettings;
 import org.bytewright.bgmo.domain.model.MeetupEvent;
 import org.bytewright.bgmo.domain.model.notification.NotificationChannel;
@@ -29,7 +23,6 @@ import org.bytewright.bgmo.domain.service.data.AdapterSettingsDao;
 import org.bytewright.bgmo.domain.service.data.MeetupDao;
 import org.bytewright.bgmo.domain.service.data.RegisteredUserDao;
 import org.bytewright.bgmo.domain.service.notification.ChatBotNotificationTaskExecutor;
-import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.ApplicationListener;
@@ -46,20 +39,24 @@ public class DiscordNotificationAdapter
     implements ChatBotNotificationTaskExecutor,
         AdapterSettingsProvider,
         InitializingBean,
-        DisposableBean,
         ApplicationListener<ApplicationReadyEvent> {
-
   private static final String ADAPTER_NAME = "Discord-ChatBotNotificationTaskExecutor-integration";
+  public static final AdapterInfo DISCORD_ADAPTER =
+      AdapterInfo.builder()
+          .stableName(ADAPTER_NAME)
+          .description("Discord integration, sends notifications and updates to linked users")
+          .build();
   private final DiscordAdapterProperties adapterProperties;
   private final AdapterSettingsDao adapterSettingsDao;
+  private final DiscordDataService discordDataService;
   private final RegisteredUserDao userDao;
   private final MessageSource messageSource;
   private final DiscordBot discordBot;
   private final MeetupDao meetupDao;
   private final JsonMapper objectMapper;
-
-  private JDA jda;
-  private boolean isRegistered = false;
+  private final DispatcherAnnouncements dispatcherAnnouncements;
+  private final DispatcherForums dispatcherForums;
+  private final ApiManager apiManager;
 
   @Override
   public boolean supports(NotificationContext context) {
@@ -87,42 +84,30 @@ public class DiscordNotificationAdapter
       log.info("Discord integration is disabled, skipping execution of: {}", messageKey);
       return;
     }
-
     switch (context.target()) {
       case Target.Group ignored -> sendToGroupChannels(context);
       case Target.User user -> sendToUser(user, context);
-      default ->
-          throw new UnsupportedOperationException(
-              "Can't send messages to target: " + context.target());
+      case Target.Anon ignore ->
+          log.info("Ignoring NotificationContext with target Anon {}: {}", ignore, messageKey);
     }
   }
 
   private void sendToGroupChannels(NotificationContext context) {
     DiscordSettings settings = getSettings();
-    for (var announcementChannel : settings.getAnnouncementChannels()) {
-      TextChannel channel = jda.getTextChannelById(announcementChannel.getChannelId());
-      if (channel == null) {
-        log.error(
-            "Configured Discord group channel {} not found/visible to bot",
-            announcementChannel.getChannelId());
-        return;
-      }
-      EmbedBuilder embed = buildEmbed(context, Locale.of(announcementChannel.getLocale()));
-      channel
-          .sendMessageEmbeds(embed.build())
-          .queue(
-              message ->
-                  log.info(
-                      "Successfully posted message to channel: {}",
-                      announcementChannel.getChannelId()),
-              failure -> log.error("Failed to send Discord group notification", failure));
+    Optional<UUID> meetupId = discordDataService.findMeetupId(context);
+    if (meetupId.isPresent()) {
+      dispatcherForums.dispatchToMeetupForumChannels(settings, meetupId.get(), context);
+    } else {
+      dispatcherAnnouncements.dispatchToAnnouncements(settings, context);
     }
   }
 
   private void sendToUser(Target.User userTarget, NotificationContext context) {
     long discordUserId = extractDiscordUserId(context);
     EmbedBuilder embed = buildEmbed(context);
-    jda.retrieveUserById(discordUserId)
+    apiManager
+        .getJda()
+        .retrieveUserById(discordUserId)
         .queue(
             user ->
                 user.openPrivateChannel()
@@ -198,43 +183,13 @@ public class DiscordNotificationAdapter
     discordBot.setAdapter(this);
   }
 
-  private void registerBot() {
-    try {
-      if (!isEnabled()) {
-        log.warn("Discord bot is disabled, skipping registration.");
-        return;
-      }
-      jda =
-          JDABuilder.createDefault(
-                  adapterProperties.getBotToken(),
-                  GatewayIntent.DIRECT_MESSAGES,
-                  GatewayIntent.GUILD_MESSAGES)
-              .addEventListeners(discordBot)
-              .build();
-      jda.awaitReady();
-      // Register the global slash commands
-      jda.updateCommands()
-          .addCommands(
-              Commands.slash(CMD_ANNOUNCE_HERE, "Start posting announcements in this channel")
-                  .addOption(
-                      OptionType.STRING,
-                      "locale",
-                      "Language for the announcements (e.g., de, en)",
-                      false),
-              Commands.slash(CMD_STOP_ANNOUNCE_HERE, "Stop posting announcements in this channel"))
-          .queue(
-              success -> log.info("Successfully registered Discord slash commands."),
-              failure -> log.error("Failed to register Discord slash commands.", failure));
-      isRegistered = true;
-      log.info("Discord bot is ready.");
-    } catch (Exception e) {
-      log.error("Discord bot failed to initialize with error: {}", e.getMessage(), e);
-    }
-  }
-
   @Override
   public void onApplicationEvent(ApplicationReadyEvent event) {
-    registerBot();
+    if (!isEnabled()) {
+      log.warn("Discord bot is disabled, skipping registration.");
+      return;
+    }
+    apiManager.registerBot();
   }
 
   void handleJoinRequestFromChat(UUID meetupId, long discordUserId) {
@@ -320,12 +275,12 @@ public class DiscordNotificationAdapter
   @Override
   public void onUpdate(AdapterSettings updatedSettings) {
     DiscordSettings settings = getSettings(updatedSettings);
-    if (settings.isEnabled() && !isRegistered) {
-      registerBot();
+    if (settings.isEnabled()) {
+      apiManager.registerBot();
     }
 
-    if (!settings.isEnabled() && isRegistered) {
-      isRegistered = false;
+    if (!settings.isEnabled()) {
+      apiManager.unregisterBot();
     }
   }
 
@@ -336,10 +291,7 @@ public class DiscordNotificationAdapter
 
   @Override
   public AdapterInfo getAdapterInfo() {
-    return AdapterInfo.builder()
-        .stableName(ADAPTER_NAME)
-        .description("Discord integration, sends notifications and updates to linked users")
-        .build();
+    return DISCORD_ADAPTER;
   }
 
   @Override
@@ -353,16 +305,8 @@ public class DiscordNotificationAdapter
     return ValidationResult.INVALID;
   }
 
-  @Override
-  public void destroy() {
-    if (jda != null) {
-      log.info("Shutting down discord adapter");
-      jda.shutdown();
-    }
-  }
-
   public boolean addAnnouncementChannel(long guildId, long channelId, String locale) {
-    TextChannel channel = jda.getTextChannelById(channelId);
+    TextChannel channel = apiManager.getJda().getTextChannelById(channelId);
     if (channel == null) {
       log.warn(
           "Received new announcementChannel registration but channel can not be found by jda!");
@@ -400,5 +344,31 @@ public class DiscordNotificationAdapter
     log.info("Removing discord announcing channel: guidId={}, channelId={}", guildId, channelId);
     settings.setAnnouncementChannels(channels);
     saveSettings(settings);
+  }
+
+  public boolean addForumChannel(long guildId, ForumChannel forum, String locale) {
+    var channel = apiManager.getJda().getForumChannelById(forum.getIdLong());
+    if (channel == null) {
+      log.warn("Received new forumChannel registration but channel can not be found by jda!");
+      return false;
+    }
+    DiscordSettings settings = getSettings();
+    // Ensure mutable list
+    var channels = new ArrayList<>(settings.getForumChannels());
+
+    // Remove if already exists to update locale
+    channels.removeIf(c -> c.getGuildId() == guildId && c.getChannelId() == forum.getIdLong());
+    var forumChannel =
+        DiscordSettings.ForumChannel.builder()
+            .guildId(guildId)
+            .channelId(forum.getIdLong())
+            .locale(locale)
+            .build();
+    log.info("Adding new discord forum channel: {}", forumChannel);
+    channels.add(forumChannel);
+
+    settings.setForumChannels(channels);
+    saveSettings(settings);
+    return true;
   }
 }

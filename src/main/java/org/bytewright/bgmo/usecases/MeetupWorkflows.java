@@ -8,6 +8,7 @@ import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.bytewright.bgmo.domain.model.*;
+import org.bytewright.bgmo.domain.model.JoinRequestResult;
 import org.bytewright.bgmo.domain.model.user.ContactOption;
 import org.bytewright.bgmo.domain.model.user.RegisteredUser;
 import org.bytewright.bgmo.domain.service.InputSanitizer;
@@ -90,8 +91,22 @@ public class MeetupWorkflows {
     requestToJoin(meetupId, null, payload);
   }
 
-  private void requestToJoin(UUID meetupId, String comment, JoinRequestPayload payload) {
-    MeetupEvent meetupEvent = meetupDao.findOrThrow(meetupId);
+  public JoinRequestResult requestToJoinChannelAnon(
+      UUID meetupId, JoinRequestPayload.NotificationChannelAnonUser channelUser) {
+    try {
+      return requestToJoin(meetupId, null, channelUser);
+    } catch (Exception e) {
+      log.error(
+          "Failed to generate JoinRequest from channel {}", channelUser.contactType().name(), e);
+      return new JoinRequestResult.Failed(e.getMessage());
+    }
+  }
+
+  private JoinRequestResult requestToJoin(
+      UUID meetupId, String comment, JoinRequestPayload payload) {
+    var meetupEventOpt = meetupDao.findById(meetupId);
+    if (meetupEventOpt.isEmpty()) return new JoinRequestResult.Failed("Meetup not found!");
+    MeetupEvent meetupEvent = meetupEventOpt.get();
     Optional<MeetupJoinRequest> existingRequest =
         meetupEvent.getJoinRequests().stream()
             .filter(r -> r.getPayload().equals(payload))
@@ -104,8 +119,9 @@ public class MeetupWorkflows {
           slotDistributionWorkflows.handleNewJoinRequestFCFS(meetupEvent, request);
         }
         eventPublisher.publishJoinRequestCreatedAfterTransaction(request.id());
+        return JoinRequestResult.SUCCESS;
       }
-      return;
+      return JoinRequestResult.DUPLICATE;
     }
     var request =
         MeetupJoinRequest.builder()
@@ -124,6 +140,7 @@ public class MeetupWorkflows {
       slotDistributionWorkflows.handleNewJoinRequestFCFS(meetupEvent, joinRequest);
     }
     eventPublisher.publishJoinRequestCreatedAfterTransaction(requestId);
+    return JoinRequestResult.SUCCESS;
   }
 
   public MeetupEvent confirmAttendee(UUID meetupId, MeetupJoinRequest joinRequest) {
@@ -234,7 +251,12 @@ public class MeetupWorkflows {
   }
 
   public List<MeetupEvent> findMeetupsByOrganizer(UUID currentUserId) {
-    return meetupDao.findAllByOrganizer(currentUserId);
+    try {
+      return meetupDao.findAllByOrganizer(currentUserId);
+    } catch (Exception e) {
+      log.error("Failed to load meetups!", e);
+      return List.of();
+    }
   }
 
   public void removeExpiredMeetup(UUID meetupId) {

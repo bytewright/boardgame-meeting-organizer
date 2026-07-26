@@ -42,9 +42,9 @@ bgmo:
         group-locale: DE
       discord:
         enabled: true
-        bot-token: "${DISCORD_BOT_TOKEN:}"
-        client-id: "${DISCORD_CLIENT_ID:}"
-        bot-display-name: "${DISCORD_BOT_DISPLAYNAME:}"
+        bot-token: "${DISCORD_BOT_TOKEN}"
+        client-id: "${DISCORD_CLIENT_ID}"
+        bot-display-name: "${DISCORD_BOT_DISPLAYNAME}"
     bgg:
       enabled: true
       apiToken: "${BGG_API_TOKEN:}"

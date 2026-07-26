@@ -14,7 +14,6 @@ import org.bytewright.bgmo.adapter.api.frontend.view.meetup.model.MeetupAttendee
 import org.bytewright.bgmo.adapter.api.frontend.view.meetup.model.MeetupAttendeesContext.AttendeeRequestItem;
 import org.bytewright.bgmo.domain.model.JoinRequestPayload;
 import org.bytewright.bgmo.domain.model.RequestState;
-import org.bytewright.bgmo.domain.model.user.RegisteredUser;
 import org.bytewright.bgmo.domain.service.data.RegisteredUserDao;
 import org.bytewright.bgmo.usecases.AdminWorkflows;
 import org.bytewright.bgmo.usecases.MeetupWorkflows;
@@ -88,13 +87,7 @@ public class AttendeeRequestCard extends Div {
     add(headerRow);
 
     Div nameRow = fullWidthRow(true);
-    String displayName =
-        switch (request.getPayload()) {
-          case JoinRequestPayload.Anon anon -> anon.displayName();
-          case JoinRequestPayload.AnonEmail anonEmail -> anonEmail.displayName();
-          case JoinRequestPayload.User user ->
-              userDao.findById(user.userId()).map(RegisteredUser::getDisplayName).orElse("-");
-        };
+    String displayName = JoinRequestPayload.displayName(userDao, request.getPayload());
 
     Span nameTitle = new Span(getTranslation("meetup.attendees.name"));
     Span nameSpan = new Span(displayName);

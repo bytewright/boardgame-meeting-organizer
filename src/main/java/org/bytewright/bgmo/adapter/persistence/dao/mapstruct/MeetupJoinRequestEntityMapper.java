@@ -38,6 +38,7 @@ public abstract class MeetupJoinRequestEntityMapper
     return switch (payload) {
       case JoinRequestPayload.Anon ignored -> null;
       case JoinRequestPayload.AnonEmail ignored -> null;
+      case JoinRequestPayload.NotificationChannelAnonUser ignored -> null;
       case JoinRequestPayload.User user ->
           entityManager.getReference(RegisteredUserEntity.class, user.userId());
     };

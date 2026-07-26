@@ -15,12 +15,23 @@ public class DiscordSettings {
   @Builder.Default private String tutorialStep2Link = "Some first step";
   @Builder.Default private String tutorialStep3Link = "Some second step";
   @Builder.Default private List<AnnouncementChannel> announcementChannels = new ArrayList<>();
+  @Builder.Default private List<ForumChannel> forumChannels = new ArrayList<>();
 
   /** Represents a Discord channel where announcements should be sent. */
   @Data
   @Builder
   @Jacksonized
   public static class AnnouncementChannel {
+    private long guildId;
+    private long channelId;
+    private String locale; // e.g., "de", "en"
+  }
+
+  /** Represents a Discord channel where announcements should be sent. */
+  @Data
+  @Builder
+  @Jacksonized
+  public static class ForumChannel {
     private long guildId;
     private long channelId;
     private String locale; // e.g., "de", "en"

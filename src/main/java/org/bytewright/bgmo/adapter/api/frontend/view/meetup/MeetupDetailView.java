@@ -86,7 +86,9 @@ public class MeetupDetailView extends VerticalLayout implements BeforeEnterObser
     List<String> names =
         ctx.meetup().getJoinRequests().stream()
             .filter(r -> r.getRequestState() == RequestState.ACCEPTED)
-            .map(this::getDisplayName)
+            .map(
+                meetupJoinRequest ->
+                    JoinRequestPayload.displayName(userDao, meetupJoinRequest.getPayload()))
             .toList();
     add(new ConfirmedAttendeesSection(ctx.isOrganizer(), names));
     add(new Hr());
@@ -122,14 +124,6 @@ public class MeetupDetailView extends VerticalLayout implements BeforeEnterObser
     if (this.authService.isCurrentUserAdmin() && !ctx.isOrganizer()) {
       add(new OrganizerPanel(ctx, meetupWorkflows, this::refresh));
     }
-  }
-
-  private String getDisplayName(MeetupJoinRequest meetupJoinRequest) {
-    return switch (meetupJoinRequest.getPayload()) {
-      case JoinRequestPayload.Anon anon -> anon.displayName();
-      case JoinRequestPayload.AnonEmail anonEmail -> anonEmail.displayName();
-      case JoinRequestPayload.User user -> userDao.findOrThrow(user.userId()).getDisplayName();
-    };
   }
 
   private void refresh() {

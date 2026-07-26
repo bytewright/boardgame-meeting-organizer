@@ -34,6 +34,14 @@ public class ContactInfoRenderer {
       case JoinRequestPayload.AnonEmail anonEmail -> {
         return renderAnonEmail(anonEmail);
       }
+      case JoinRequestPayload.NotificationChannelAnonUser channelUser -> {
+        Span contactValue = new Span();
+        String translation =
+            contactValue.getTranslation(channelUser.contactType().getNameMessageKey());
+        contactValue.setText("%s: %s".formatted(translation, channelUser.displayName()));
+        contactValue.getStyle().set("word-break", "break-word");
+        return contactValue;
+      }
     }
   }
 
